@@ -77,7 +77,7 @@ no service-role key is needed.
 | Savings dashboard | `/` | Sort and filter opportunities, "⋯" menu to mark won, snooze or dismiss (KPIs update), urgent banner, lever bars filter the table, weekly digest preview |
 | Contract renewal detail | `/contracts/salesforce` (and every other vendor) | Renewal math with "What to ask for" toggle, extracted clauses with page and confidence, seat usage, pushback email with Firm/Friendly tone, open in email, copy, mark as sent |
 | Contracts | `/contracts` | Your uploaded contracts and the sample ones, sorted by notice deadline, with risk flags |
-| Uploaded contract page | `/contracts/<id>` | Every extracted term with the clause and page it came from, risk flags, open the original PDF, delete |
+| Uploaded contract page | `/contracts/<id>` | Savings found, a Claude-drafted pushback email (goal and tone), every extracted term with the clause and page it came from, risk flags, open the original PDF, delete |
 | Workspace & team | `/settings` | Show or hide sample data, rename the workspace, invite teammates |
 | Upload contract | `/upload` | Real Claude extraction from a PDF. Click "Try the sample Acme Analytics MSA" if you have no contract handy |
 | Onboarding | `/welcome` | First-login flow: free 3-contract audit, connect logins and spend (simulated), "Found so far" counter |
@@ -127,10 +127,11 @@ The product spec is in `docs/dashboard-spec.md` (PR #1).
 |---|---|
 | Contract PDF extraction | **Real** (Claude, with an API key). Demo result without one |
 | Notice deadlines, renewal math, savings per lever | Real calculations, run over sample data |
-| Pushback email | Template filled from the contract data. Next step: have Claude draft it from the clauses |
+| Pushback email | Sample contracts: template. Uploaded contracts: **drafted by Claude** from the contract's own clauses (template without an API key) |
 | Google Workspace, Microsoft 365, Okta, QuickBooks, Xero, cards | Simulated connect buttons |
 | Accounts, shared workspace, saved contracts and PDFs | **Real** with Supabase. Browser-only in demo mode |
-| Weekly digest sending, savings opportunities from uploaded contracts | Not built yet |
+| Savings opportunities from uploaded contracts | Estimates from the contract alone: no renewal cap (a typical 7% rise held to 3%) and the seat-reduction allowance. Real usage and quotes come with connectors |
+| Weekly digest sending | Not built yet |
 | "Today" | Fixed to Nov 15, 2026 in `src/lib/engine.ts` so the sample deadlines always read the same |
 
 ## Scripts

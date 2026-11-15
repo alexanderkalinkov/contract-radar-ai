@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { daysUntil, TODAY } from "@/lib/engine";
-import { longDate } from "@/lib/format";
+import { longDate, usd } from "@/lib/format";
 import { useSavedContracts } from "@/lib/portfolio";
 import { hueFor, initialsFor, isRisky } from "@/lib/saved";
+import { opportunitiesFromSaved } from "@/lib/opportunities";
+import { EmailDrafter } from "./EmailDrafter";
 import { ExtractionCard } from "./Uploader";
 import { btnGhost, Card, cx, VendorLogo } from "./ui";
 import { useWorkspace } from "./WorkspaceProvider";
@@ -35,6 +37,7 @@ export function SavedContractPage({ id }: { id: string }) {
   const d = s.data;
   const days = s.noticeDeadline ? daysUntil(s.noticeDeadline, TODAY) : null;
   const flags = isRisky(s);
+  const found = opportunitiesFromSaved(s);
 
   async function openPdf() {
     setBusy("pdf");
@@ -113,6 +116,30 @@ export function SavedContractPage({ id }: { id: string }) {
         </button>
       </div>
       {err && <p role="alert" className="m-0 text-sm text-[#912018]">{err}</p>}
+
+      {found.length > 0 && (
+        <Card label="Savings found" className="flex flex-col gap-3 p-5">
+          <div className="flex flex-col gap-1">
+            <h2 className="m-0 font-display text-[19px] font-semibold">Savings found</h2>
+            <span className="text-[13px] text-muted">Estimates from this contract alone. Connecting logins and spend will firm them up.</span>
+          </div>
+          <ul className="m-0 flex list-none flex-col divide-y divide-line-soft p-0">
+            {found.map((o) => (
+              <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-sm font-semibold">{o.finding}</span>
+                  <span className="text-[13px] text-muted">{o.basis}</span>
+                </div>
+                <span className={cx("font-display text-lg font-semibold whitespace-nowrap", o.annualSavings > 0 ? "text-good" : "text-muted")}>
+                  {o.annualSavings > 0 ? `up to ${usd(o.annualSavings)}/yr` : "Not sized yet"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <EmailDrafter contract={s} defaultGoal={found[0]?.goal ?? "review"} />
 
       <div className="flex flex-col gap-2">
         <h2 className="m-0 font-display text-[19px] font-semibold">Extracted terms</h2>
