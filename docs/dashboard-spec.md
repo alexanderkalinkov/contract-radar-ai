@@ -251,32 +251,7 @@ When the vendor comes back with a revised quote, the user uploads it, and the ap
 
 ---
 
-## 8. Scope: B2B first, B2C later
-
-**Now: B2B (mid-market SaaS spend).** Everything above is the B2B product.
-
-**Later: B2C household bills** (energy, broadband, mobile, insurance, subscriptions). The same engine reuses directly:
-
-| Engine piece | B2B | B2C |
-|---|---|---|
-| Document extraction | SaaS MSAs and order forms | Energy, broadband and mobile contracts, terms PDFs, bills |
-| Deadline engine (`act_by`) | Notice periods, auto-renewal | End of fixed-term tariff, minimum term end, cooling-off periods |
-| Price-change detection | Uplift cap vs. renewal quote, pricing-page and ToS radar | Mid-contract price rises (e.g. CPI + X%), tariff changes vs. contract terms |
-| Usage vs. paid | Seats vs. logins | Data allowance vs. actual use, unused subscriptions |
-| Spend ingestion | QuickBooks, Xero, cards | Open-banking feed or bank CSV |
-| Action drafting | Pushback email to the account executive | Complaint, cancellation or switching letter to the provider |
-| Benchmarking (later) | Peer SaaS pricing | Market tariffs and switching offers |
-
-Implications for the B2B build, so B2C stays cheap later:
-
-- Keep `vendor`, `contract`, `opportunity` and `act_by` **generic**, not SaaS-specific. Lever types are a registry, not hard-coded columns.
-- Keep extraction schemas per **document type** (SaaS MSA, energy tariff…) as config.
-- The dashboard layout carries over almost as is: KPI strip → deadlines → ranked opportunities → digest. B2C would simplify it to a single "money you can save" number and a list. The language changes (no "seats", no "procurement").
-- B2C is a different go-to-market (consumer acquisition, smaller tickets, likely savings-share or a flat subscription), so it stays out of scope until B2B has paying customers.
-
----
-
-## 9. Open questions
+## 8. Open questions
 
 1. Does "Captured this year" use the calendar year or the customer's fiscal year? (Recommendation: fiscal year, configurable at onboarding.)
 2. Do we show identified savings before a human confirms them? (Recommendation: yes for high confidence, "Needs review" for the rest, as in §4.)
