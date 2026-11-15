@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// Email confirmation links land here with a one-time code.
+// Email confirmation and password reset links land here with a one-time code.
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -12,5 +12,6 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(new URL(next, url.origin));
   }
+  if (next === "/login/reset") return NextResponse.redirect(new URL(next, url.origin));
   return NextResponse.redirect(new URL("/login?error=" + encodeURIComponent("That link has expired. Sign in again."), url.origin));
 }
