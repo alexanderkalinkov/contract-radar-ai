@@ -1,5 +1,161 @@
 # Contract Radar AI
 
 AI contract radar and price-increase tracker that helps mid-market companies cut SaaS spend.
+The buyer is the CFO, VP Finance or procurement lead.
 
-See `docs/` for product specs.
+This is the **first clickable version**: the screens from the dashboard spec, running on seeded sample data for a
+fictional company (Northwind Logistics), with stubbed connectors. One piece is real AI: upload a contract PDF and
+Claude extracts the notice date, auto-renewal, uplift cap and other renewal terms, quoting the clause behind each one.
+
+![Savings dashboard](docs/screenshots/dashboard.png)
+
+## Run it locally
+
+You need [Node.js](https://nodejs.org/) 20 or newer.
+
+```bash
+git clone https://github.com/alexanderkalinkov/contract-radar-ai.git
+cd contract-radar-ai
+npm install
+npm run dev
+```
+
+Open http://localhost:3000.
+
+### Turn on real contract extraction (optional)
+
+Without an API key the upload screen runs in **demo mode** and returns sample results, so everything stays clickable.
+To have Claude read your own PDFs:
+
+```bash
+cp .env.example .env.local
+# then edit .env.local and set ANTHROPIC_API_KEY=sk-ant-...
+npm run dev
+```
+
+Get a key at https://platform.claude.com/. Each contract costs a few cents to read.
+
+## Turn on login and a shared workspace (Supabase)
+
+Without Supabase the app runs in **demo mode**: no login, and uploaded contracts are saved in your browser only.
+With Supabase you get accounts, one shared workspace for your team, and every uploaded contract (and its PDF)
+saved in the database.
+
+1. **Create a project** at https://supabase.com/dashboard (any region near you; the free plan is fine).
+2. **Create the tables.** Open *SQL Editor → New query*, paste the whole of
+   [`supabase/migrations/20261115000000_workspaces_and_contracts.sql`](supabase/migrations/20261115000000_workspaces_and_contracts.sql)
+   and click *Run*. It creates the tables, the security rules and a private `contracts` storage bucket. It is safe to run again.
+3. **Copy the keys.** *Project Settings → API*: copy the Project URL and the publishable key into `.env.local`:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   ```
+4. **(Optional, for quick testing)** *Authentication → Sign In / Providers → Email*: turn off "Confirm email" so new
+   accounts can sign in straight away. Leave it on for real use; the confirmation link returns to `/auth/callback`.
+   If you deploy the app, add its URL under *Authentication → URL Configuration*.
+5. Restart `npm run dev`. You'll be sent to `/login`. Create an account: a workspace is created for you.
+6. **Invite your partner:** *Workspace & team* in the sidebar → enter their email → ask them to create an account with
+   that email. They land in your workspace and see the same contracts.
+
+How it fits together:
+
+| Table | What it holds |
+|---|---|
+| `workspaces` | One per team. Includes the "show sample data" switch |
+| `workspace_members` | Who belongs to which workspace (`owner` or `member`) |
+| `workspace_invites` | Pending invites by email, accepted automatically on sign-in |
+| `contracts` | Each uploaded contract: the full Claude extraction (quotes, pages, confidence) plus key columns (vendor, term end, notice deadline, cap, fee, seats) |
+| Storage bucket `contracts` | The original PDFs, one folder per workspace |
+
+Row-level security means people only ever see their own workspace's rows and files. Only the publishable key is used;
+no service-role key is needed.
+
+## What to click
+
+| Screen | URL | What works |
+|---|---|---|
+| Savings dashboard | `/` | Sort and filter opportunities, "⋯" menu to mark won, snooze or dismiss (KPIs update), urgent banner, lever bars filter the table, weekly digest preview |
+| Contract renewal detail | `/contracts/salesforce` (and every other vendor) | Renewal math with "What to ask for" toggle, extracted clauses with page and confidence, seat usage, pushback email with Firm/Friendly tone, open in email, copy, mark as sent |
+| Contracts | `/contracts` | Your uploaded contracts and the sample ones, sorted by notice deadline, with risk flags |
+| Uploaded contract page | `/contracts/<id>` | Every extracted term with the clause and page it came from, risk flags, open the original PDF, delete |
+| Workspace & team | `/settings` | Show or hide sample data, rename the workspace, invite teammates |
+| Upload contract | `/upload` | Real Claude extraction from a PDF. Click "Try the sample Acme Analytics MSA" if you have no contract handy |
+| Onboarding | `/welcome` | First-login flow: free 3-contract audit, connect logins and spend (simulated), "Found so far" counter |
+| Renewal calendar, Seats & usage, Price changes, Sources | sidebar | Read-only views over the same sample data |
+
+Uploaded contracts appear in Contracts, the Renewal calendar, the dashboard's Notice deadlines and Price changes
+(when there is no cap). Sample data can be hidden from any page or in *Workspace & team*. Clicks on the sample
+opportunities are remembered in your browser; "Reset demo" clears them.
+
+## How it's built
+
+- [Next.js 15](https://nextjs.org/) (App Router) + TypeScript + [Tailwind CSS 4](https://tailwindcss.com/)
+- [`@anthropic-ai/sdk`](https://github.com/anthropics/anthropic-sdk-typescript) with structured outputs (Zod schema) for extraction
+- [Supabase](https://supabase.com/) (optional) for Postgres, auth and PDF storage, via `@supabase/ssr`
+- Sample data lives in code (`src/lib/seed.ts`)
+
+```
+src/
+  app/
+    (app)/            screens that share the sidebar: dashboard, contracts, calendar, seats, price changes, sources, upload
+    welcome/          onboarding (no sidebar)
+    login/, auth/     sign in, sign up, email confirmation, sign out
+    api/extract/      POST a PDF → Claude → structured renewal terms → saved to the workspace
+    api/contracts/    list, open PDF, delete saved contracts
+    api/invites/, api/workspace/   team invites and workspace settings
+  components/         Dashboard, ContractDetail, ConnectSources, Uploader, shared UI
+  lib/
+    seed.ts           sample company, contracts, opportunities, sources  ← edit this to change the demo data
+    engine.ts         date maths (act-by = term end − notice days), renewal math, pushback email template
+    extraction.ts     the Zod schema Claude fills in, plus the demo-mode result
+    saved.ts          saved-contract shape and the adapter into the views
+    portfolio.ts      client hook: sample data + your team's contracts
+    supabase/         Supabase clients and the session-refresh middleware
+    server/           server-only helpers (current user and workspace)
+    store.ts          localStorage store used in demo mode
+supabase/migrations/  database schema, security rules and storage bucket
+public/samples/       fictional sample contract for trying the upload
+scripts/              regenerates the sample PDF
+docs/screenshots/     screenshots used in this README and the PR
+```
+
+The product spec is in `docs/dashboard-spec.md` (PR #1).
+
+## What's real and what's stubbed
+
+| Piece | Status |
+|---|---|
+| Contract PDF extraction | **Real** (Claude, with an API key). Demo result without one |
+| Notice deadlines, renewal math, savings per lever | Real calculations, run over sample data |
+| Pushback email | Template filled from the contract data. Next step: have Claude draft it from the clauses |
+| Google Workspace, Microsoft 365, Okta, QuickBooks, Xero, cards | Simulated connect buttons |
+| Accounts, shared workspace, saved contracts and PDFs | **Real** with Supabase. Browser-only in demo mode |
+| Weekly digest sending, savings opportunities from uploaded contracts | Not built yet |
+| "Today" | Fixed to Nov 15, 2026 in `src/lib/engine.ts` so the sample deadlines always read the same |
+
+## Scripts
+
+```bash
+npm run dev     # dev server on :3000
+npm run build   # production build
+npm run start   # serve the production build
+npm run lint    # eslint
+```
+
+## Put it online (Vercel)
+
+The app runs on [Vercel](https://vercel.com/) as-is. PDFs go straight from the browser to Supabase storage, so
+Vercel's 4.5 MB request limit doesn't apply to uploads (the limit is 20 MB per PDF).
+
+1. **Import the repo.** At https://vercel.com/new, sign in with GitHub, pick `contract-radar-ai` and click *Import*.
+   Framework preset: Next.js (detected). Leave the build settings alone.
+2. **Add environment variables** (same values as your `.env.local`) before the first deploy:
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `ANTHROPIC_API_KEY`. Then click *Deploy*.
+3. **Tell Supabase about the new address.** In Supabase, *Authentication → URL Configuration*:
+   - *Site URL*: your production address, e.g. `https://contract-radar-ai.vercel.app`
+   - *Redirect URLs*: add `https://contract-radar-ai.vercel.app/**`, `https://*-<your-vercel-team>.vercel.app/**`
+     (so pull-request previews can confirm emails too) and keep `http://localhost:3000/**` for local work.
+4. Open the address, create an account (or sign in with your existing one: it's the same Supabase project, so your
+   workspace and contracts are already there), and share the link with your partner.
+
+Vercel deploys `main` to the production address and gives every pull request its own preview link.
