@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
-import { CONTRACTS } from "@/lib/seed";
+import { usePortfolio } from "@/lib/portfolio";
 import { usd } from "@/lib/format";
 import { Card, PageHeader, VendorLogo } from "@/components/ui";
 
 export default function SeatsPage() {
+  const { contracts: CONTRACTS } = usePortfolio();
   const rows = CONTRACTS.filter((c) => c.usage)
     .map((c) => {
       const u = c.usage!;
@@ -16,7 +19,13 @@ export default function SeatsPage() {
   return (
     <>
       <PageHeader eyebrow={`From Okta and Google Workspace sign-ins · ${usd(totalWaste)} / yr on seats nobody used in 60 days`} title="Seats & usage" />
-      <Card label="Seat usage by app" className="overflow-x-auto">
+      {rows.length === 0 && (
+        <Card className="p-8 text-center text-sm text-muted">
+          Seat usage appears once a login source (Google Workspace, Microsoft 365 or Okta) is connected. Those connectors
+          are coming next.
+        </Card>
+      )}
+      <Card label="Seat usage by app" className={rows.length ? "overflow-x-auto" : "hidden"}>
         <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead>
             <tr className="text-left text-xs tracking-wide text-muted uppercase">

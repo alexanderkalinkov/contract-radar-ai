@@ -25,7 +25,11 @@ export function daysUntil(iso: string, from: string = TODAY): number {
 }
 
 /** act_by for an auto-renewal: term_end − notice_period_days (spec §4). */
-export function noticeDeadline(c: Pick<Contract, "termEnd" | "noticeDays">): string {
+export function noticeDeadline(
+  c: Pick<Contract, "termEnd" | "noticeDays" | "noticeDeadlineOverride">,
+): string {
+  if (c.noticeDeadlineOverride !== undefined) return c.noticeDeadlineOverride ?? "";
+  if (!c.termEnd) return "";
   return addDays(c.termEnd, -c.noticeDays);
 }
 

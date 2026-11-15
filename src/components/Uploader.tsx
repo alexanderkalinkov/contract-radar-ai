@@ -1,24 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import Link from "next/link";
+import { useState } from "react";
 import type { ExtractionResult } from "@/lib/extraction";
-import { useStored } from "@/lib/store";
+import type { SavedContract } from "@/lib/saved";
+import { useSavedContracts } from "@/lib/portfolio";
 import { daysUntil } from "@/lib/engine";
 import { longDate, usd } from "@/lib/format";
+import { useWorkspace } from "./WorkspaceProvider";
 import { ConfidenceTag, cx } from "./ui";
 import { IconUpload } from "./icons";
 
-type Job = { id: string; name: string; status: "reading" | "done" | "error"; error?: string; result?: ExtractionResult };
-
-export function useUploads() {
-  return useStored<ExtractionResult[]>("cr-uploads", []);
-}
+type Job = { id: string; name: string; status: "reading" | "done" | "error"; error?: string; result?: SavedContract };
 
 export function Uploader({ compact = false }: { compact?: boolean }) {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [uploads, setUploads] = useUploads();
-  const latest = useRef(uploads);
-  latest.current = uploads;
+  const { add } = useSavedContracts();
   const [drag, setDrag] = useState(false);
 
   async function handle(files: FileList | File[]) {
@@ -31,10 +28,9 @@ export function Uploader({ compact = false }: { compact?: boolean }) {
         const res = await fetch("/api/extract", { method: "POST", body });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? `Upload failed (${res.status})`);
-        const result = json as ExtractionResult;
+        const result = json as SavedContract;
         setJobs((j) => j.map((x) => (x.id === id ? { ...x, status: "done", result } : x)));
-        setUploads([result, ...latest.current.filter((u) => u.fileName !== result.fileName)]);
-        latest.current = [result, ...latest.current];
+        add(result);
       } catch (e) {
         setJobs((j) => j.map((x) => (x.id === id ? { ...x, status: "error", error: (e as Error).message } : x)));
       }
@@ -105,7 +101,14 @@ export function Uploader({ compact = false }: { compact?: boolean }) {
               <p className="m-0 mt-1 text-[#912018]">{j.error}</p>
             </div>
           )}
-          {j.status === "done" && j.result && !compact && <ExtractionCard r={j.result} />}
+          {j.status === "done" && j.result && !compact && (
+            <div className="flex flex-col gap-2">
+              <Link href={`/contracts/${j.result.id}`} className="self-start text-sm font-semibold text-brand hover:underline">
+                Saved to Contracts · open the contract page →
+              </Link>
+              <ExtractionCard r={j.result} />
+            </div>
+          )}
           {j.status === "done" && j.result && compact && <ExtractionSummary r={j.result} />}
         </div>
       ))}
@@ -113,7 +116,7 @@ export function Uploader({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function ExtractionSummary({ r }: { r: ExtractionResult }) {
+export function ExtractionSummary({ r }: { r: SavedContract }) {
   const d = r.data;
   const bits = [
     r.noticeDeadline && `notice ${longDate(r.noticeDeadline)}`,
@@ -122,14 +125,15 @@ export function ExtractionSummary({ r }: { r: ExtractionResult }) {
   ].filter(Boolean);
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-good-line bg-[#F6FEF9] p-3.5">
-      <span className="text-sm font-semibold">{r.fileName}</span>
+      <Link href={`/contracts/${r.id}`} className="text-sm font-semibold text-ink hover:underline">{r.fileName}</Link>
       <span className="text-[13px] font-semibold text-good-dark">Done: {bits.join(", ")}</span>
       {r.demo && <span className="text-xs text-muted">Demo result (no API key set)</span>}
     </div>
   );
 }
 
-export function ExtractionCard({ r }: { r: ExtractionResult }) {
+export function ExtractionCard({ r, hideHeader = false }: { r: ExtractionResult; hideHeader?: boolean }) {
+  const ws = useWorkspace();
   const d = r.data;
   const days = r.noticeDeadline ? daysUntil(r.noticeDeadline) : null;
   const fields: { label: string; value: string; f: { quote: string | null; page: number | null; confidence: "high" | "medium" | "low" } }[] = [
@@ -148,7 +152,7 @@ export function ExtractionCard({ r }: { r: ExtractionResult }) {
 
   return (
     <div className="flex flex-col gap-4 rounded-[14px] border border-line bg-white p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className={cx("flex flex-wrap items-start justify-between gap-3", hideHeader && "hidden")}>
         <div className="flex flex-col gap-0.5">
           <span className="font-display text-lg font-semibold">{d.vendor}</span>
           <span className="text-[13px] text-muted">
@@ -164,7 +168,7 @@ export function ExtractionCard({ r }: { r: ExtractionResult }) {
       </div>
       {r.demo && (
         <p className="m-0 rounded-lg bg-brand-soft px-3 py-2 text-[13px] text-brand-dark">
-          Demo mode: these are sample results because no ANTHROPIC_API_KEY is set on the server. Add a key to read your own PDFs.
+          Sample extraction: no ANTHROPIC_API_KEY is set on the server, so these are example results, not your PDF. Add a key to read your own contracts.
         </p>
       )}
       <div className="flex flex-col divide-y divide-line-soft">
@@ -198,7 +202,7 @@ export function ExtractionCard({ r }: { r: ExtractionResult }) {
         </div>
       )}
       <span className="text-xs text-muted">
-        {r.demo ? "Sample data" : `Read by ${r.model}`} · {new Date(r.extractedAt).toLocaleString("en-US")} · saved to Contracts in this browser
+        {r.demo ? "Sample data" : `Read by ${r.model}`} · {new Date(r.extractedAt).toLocaleString("en-US")} · {ws.mode === "cloud" ? `saved to ${ws.workspaceName}` : "saved in this browser (demo mode)"}
       </span>
     </div>
   );

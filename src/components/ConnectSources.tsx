@@ -6,14 +6,15 @@ import { COMPANY, SOURCES } from "@/lib/seed";
 import { useSources } from "@/lib/store";
 import { usd } from "@/lib/format";
 import type { Source } from "@/lib/types";
-import { Uploader, useUploads } from "./Uploader";
+import { Uploader } from "./Uploader";
+import { useSavedContracts } from "@/lib/portfolio";
 import { cx, VendorLogo } from "./ui";
 
 const DEFAULTS = Object.fromEntries(SOURCES.map((s) => [s.id, s.connected]));
 
 export function ConnectSources({ onboarding = false }: { onboarding?: boolean }) {
   const [on, setOn] = useSources(DEFAULTS);
-  const [uploads] = useUploads();
+  const { saved: uploads } = useSavedContracts();
   const [pending, setPending] = useState<string | null>(null);
 
   const connected = (id: string) => on[id] ?? DEFAULTS[id];

@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
-import { IconCal, IconDoc, IconHome, IconMenu, IconPlug, IconTrend, IconUsers, IconX, Logo } from "./icons";
+import { IconCal, IconDoc, IconGear, IconHome, IconMenu, IconPlug, IconTrend, IconUsers, IconX, Logo } from "./icons";
+import { useWorkspace } from "./WorkspaceProvider";
 import { cx } from "./ui";
 
 const NAV = [
@@ -15,11 +16,13 @@ const NAV = [
   { href: "/seats", label: "Seats & usage", Icon: IconUsers },
   { href: "/price-changes", label: "Price changes", Icon: IconTrend },
   { href: "/sources", label: "Sources", Icon: IconPlug },
+  { href: "/settings", label: "Workspace & team", Icon: IconGear },
 ];
 
 export function Sidebar() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
+  const ws = useWorkspace();
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
   return (
@@ -60,12 +63,27 @@ export function Sidebar() {
           </Link>
         ))}
       </div>
-      <div className="mt-auto hidden flex-col gap-1.5 rounded-xl bg-navy-2 p-4 lg:flex">
+      <div className={cx("mt-auto flex-col gap-2 lg:flex", open ? "flex" : "hidden")}>
+        {ws.showSample && <div className="flex flex-col gap-1.5 rounded-xl bg-navy-2 p-4">
         <span className="text-xs font-medium text-navy-muted">Spend under management</span>
         <span className="font-display text-[22px] font-semibold">{usdShort(COMPANY.spendUnderManagement)} / yr</span>
         <span className="text-xs text-navy-muted">
           {COMPANY.appsDetected} apps · {COMPANY.plan}
         </span>
+        </div>}
+        <div className="flex flex-col gap-1 px-2 text-xs text-navy-muted">
+          <span className="truncate font-semibold text-white">{ws.workspaceName}</span>
+          {ws.mode === "cloud" ? (
+            <form action="/auth/signout" method="post" className="flex items-center justify-between gap-2">
+              <span className="truncate">{ws.email}</span>
+              <button type="submit" className="min-h-8 flex-none rounded px-1 font-semibold text-navy-text hover:text-white">
+                Sign out
+              </button>
+            </form>
+          ) : (
+            <span>Demo mode · data stays in this browser</span>
+          )}
+        </div>
       </div>
     </nav>
     </div>

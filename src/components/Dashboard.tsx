@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { COMPANY, CONTRACTS, LEVERS, OPPORTUNITIES, PORTFOLIO, SAVINGS_BY_LEVER } from "@/lib/seed";
+import { COMPANY, LEVERS, SAVINGS_BY_LEVER } from "@/lib/seed";
+import { usePortfolio } from "@/lib/portfolio";
+import { noticeDeadline } from "@/lib/engine";
+import { SampleDataNote } from "./SampleDataNote";
+import { useWorkspace } from "./WorkspaceProvider";
 import { daysUntil, TODAY, urgency } from "@/lib/engine";
 import { longDate, shortDate, usd } from "@/lib/format";
 import { useOppStatus, type OppStatus } from "@/lib/store";
@@ -26,13 +30,15 @@ export function Dashboard() {
   const [digestOpen, setDigestOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const { statusOf, setStatus, reset } = useOppStatus();
+  const ws = useWorkspace();
+  const { contracts: CONTRACTS, opportunities: OPPORTUNITIES, totals: PORTFOLIO, showSample, saved } = usePortfolio();
 
   const visible = OPPORTUNITIES.filter((o) => statusOf(o.id) !== "dismissed");
   const open = visible.filter((o) => statusOf(o.id) !== "won");
 
   const wonNow = OPPORTUNITIES.filter((o) => statusOf(o.id) === "won").reduce((s, o) => s + o.annualSavings, 0);
   const captured = PORTFOLIO.capturedThisYear + wonNow;
-  const capturedPct = Math.round((captured / PORTFOLIO.identifiedSavings) * 100);
+  const capturedPct = PORTFOLIO.identifiedSavings ? Math.round((captured / PORTFOLIO.identifiedSavings) * 100) : 0;
 
   const next30 = open.filter((o) => {
     const d = daysUntil(o.actBy);
@@ -59,7 +65,7 @@ export function Dashboard() {
   const bannerContract = banner && CONTRACTS.find((c) => c.id === banner.contractId);
 
   // Notice deadlines: one entry per contract date in the next 90 days (spec §3E).
-  const deadlines = Object.values(
+  const deadlines: { contractId: string; vendor: string; actBy: string; amount: number }[] = Object.values(
     open.reduce<Record<string, { contractId: string; vendor: string; actBy: string; amount: number }>>((acc, o) => {
       const d = daysUntil(o.actBy);
       if (d < 0 || d > 90) return acc;
@@ -69,9 +75,16 @@ export function Dashboard() {
       acc[key].amount += o.annualSavings;
       return acc;
     }, {}),
-  )
-    .sort((a, b) => a.actBy.localeCompare(b.actBy))
-    .slice(0, 5);
+  );
+  // Uploaded contracts show their notice date even before any savings are attached to them.
+  for (const c of CONTRACTS) {
+    if (!c.uploaded) continue;
+    const date = noticeDeadline(c);
+    const d = date ? daysUntil(date) : -1;
+    if (d >= 0 && d <= 90) deadlines.push({ contractId: c.id, vendor: c.vendor, actBy: date, amount: 0 });
+  }
+  deadlines.sort((a, b) => a.actBy.localeCompare(b.actBy));
+  deadlines.splice(5);
 
   const maxLever = Math.max(...SAVINGS_BY_LEVER.map((l) => l.value));
   const filterDefs: { id: Filter; label: string }[] = [
@@ -81,7 +94,7 @@ export function Dashboard() {
 
   return (
     <>
-      <PageHeader eyebrow={`${COMPANY.name} · Week of ${longDate(TODAY)}`} title="Savings overview">
+      <PageHeader eyebrow={`${showSample ? COMPANY.name : ws.workspaceName} · Week of ${longDate(TODAY)}`} title="Savings overview">
         <button type="button" className={btnGhost} onClick={() => setDigestOpen(true)}>
           <IconMail /> Preview weekly digest
         </button>
@@ -89,6 +102,8 @@ export function Dashboard() {
           <IconUpload /> Upload contract
         </Link>
       </PageHeader>
+
+      <SampleDataNote />
 
       <section aria-label="Key numbers" className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
         <button
@@ -103,12 +118,14 @@ export function Dashboard() {
           </span>
           <span className="text-[13px] text-navy-text">
             {PORTFOLIO.opportunityCount} opportunities ·{" "}
-            {((PORTFOLIO.identifiedSavings / COMPANY.spendUnderManagement) * 100).toFixed(1)}% of spend
+            {showSample ? `${((PORTFOLIO.identifiedSavings / COMPANY.spendUnderManagement) * 100).toFixed(1)}% of spend` : "connect spend to compare"}
           </span>
         </button>
         <Kpi label="At stake in next 30 days" value={usd(atStake)} valueClass="text-warn">
-          {deadlineDates.length} notice deadlines
-          {deadlineDates[0] && ` · first in ${daysUntil(deadlineDates[0])} days`}
+          {(() => {
+            const dates = Array.from(new Set([...deadlineDates, ...deadlines.filter((d) => daysUntil(d.actBy) <= 30).map((d) => d.actBy)])).sort();
+            return `${dates.length} notice deadline${dates.length === 1 ? "" : "s"}${dates[0] ? ` · first in ${daysUntil(dates[0])} days` : ""}`;
+          })()}
         </Kpi>
         <Kpi label="Captured this year" value={usd(captured)} valueClass="text-good">
           <div
@@ -121,8 +138,14 @@ export function Dashboard() {
           {capturedPct}% of identified · {PORTFOLIO.wins + OPPORTUNITIES.filter((o) => statusOf(o.id) === "won").length} wins
         </Kpi>
         <Link href="/contracts" className="block">
-          <Kpi label="Contracts tracked" value={String(PORTFOLIO.contractsTracked)} suffix={` of ${COMPANY.appsDetected} apps`}>
-            {COMPANY.appsDetected - PORTFOLIO.contractsTracked} apps have no contract on file
+          <Kpi
+            label="Contracts tracked"
+            value={String(PORTFOLIO.contractsTracked)}
+            suffix={showSample ? ` of ${COMPANY.appsDetected + saved.length} apps` : " uploaded"}
+          >
+            {showSample
+              ? `${COMPANY.appsDetected - PORTFOLIO.contractsTracked + saved.length} apps have no contract on file`
+              : "Connect spend to find apps with no contract"}
           </Kpi>
         </Link>
       </section>
@@ -217,8 +240,9 @@ export function Dashboard() {
                 {rows.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-5 py-10 text-center text-muted">
-                      No open opportunities in this view. Next renewal is Gong on Dec 28. We&apos;ll flag anything new in
-                      Monday&apos;s digest.
+                      {showSample
+                        ? "No open opportunities in this view. Next renewal is Gong on Dec 28. We'll flag anything new in Monday's digest."
+                        : "No savings opportunities yet. They appear once logins and spend are connected; uploaded contracts already show their deadlines on the right."}
                     </td>
                   </tr>
                 )}
@@ -227,7 +251,7 @@ export function Dashboard() {
           </div>
           <div className="flex flex-wrap justify-between gap-2 border-t border-line-soft px-5 py-3.5 text-[13px] text-muted">
             <span>
-              Showing top {rows.length} of {PORTFOLIO.opportunityCount} · savings are annualized, based on your current
+              Showing {rows.length} of {PORTFOLIO.opportunityCount} · savings are annualized, based on your current
               contract terms
             </span>
             <button type="button" onClick={reset} className="font-semibold text-brand hover:text-brand-dark">
@@ -242,6 +266,9 @@ export function Dashboard() {
               <H2>Notice deadlines</H2>
               <span className="text-[13px] text-muted">Next 90 days</span>
             </div>
+            {deadlines.length === 0 && (
+              <p className="m-0 text-sm text-muted">No notice deadlines in the next 90 days.</p>
+            )}
             {deadlines.map((d) => {
               const days = daysUntil(d.actBy);
               const c = CONTRACTS.find((x) => x.id === d.contractId)!;
@@ -255,7 +282,11 @@ export function Dashboard() {
                     <span className="text-sm font-semibold">{d.vendor}</span>
                     <span className="text-[13px] text-muted">{c.deadlineLabel}</span>
                   </div>
-                  <span className="text-[13px] font-semibold whitespace-nowrap text-good">{usd(d.amount)}</span>
+                  {d.amount > 0 ? (
+                    <span className="text-[13px] font-semibold whitespace-nowrap text-good">{usd(d.amount)}</span>
+                  ) : (
+                    <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-dark">Uploaded</span>
+                  )}
                 </Link>
               );
             })}
@@ -264,6 +295,7 @@ export function Dashboard() {
             </Link>
           </Card>
 
+          {showSample && (
           <Card label="Savings by lever" className="flex flex-col gap-3.5 p-5">
             <H2>Where the money is</H2>
             {SAVINGS_BY_LEVER.map((l) => (
@@ -284,6 +316,7 @@ export function Dashboard() {
               </button>
             ))}
           </Card>
+          )}
 
           <button
             type="button"
@@ -292,8 +325,9 @@ export function Dashboard() {
           >
             <span className="text-xs font-bold tracking-wider text-brand-dark">MONDAY DIGEST · 8:00 AM</span>
             <span className="text-sm leading-normal text-[#1E2A4A]">
-              Next digest goes to you and {COMPANY.digestRecipients.length} others: 3 new findings, 4 deadlines this month,
-              and the Salesforce pushback draft ready to send.
+              {showSample
+                ? `Next digest goes to you and ${COMPANY.digestRecipients.length} others: 3 new findings, 4 deadlines this month, and the Salesforce pushback draft ready to send.`
+                : `Every Monday: new findings and the notice deadlines coming up for ${ws.workspaceName}.`}
             </span>
           </button>
         </div>

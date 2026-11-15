@@ -53,6 +53,10 @@ export interface Contract {
   /** Set when the finding is "retire this tool and move users to another one". */
   consolidation?: { keepVendor: string; movedUsers: number; extraCost: number };
   deadlineLabel: string; // what happens on the act-by date
+  /** True for contracts the user uploaded (as opposed to sample data). */
+  uploaded?: boolean;
+  /** Uploaded contracts carry the deadline computed at extraction time (null when not found). */
+  noticeDeadlineOverride?: string | null;
 }
 
 export interface Opportunity {
