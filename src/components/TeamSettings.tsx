@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useWorkspace } from "./WorkspaceProvider";
@@ -8,11 +9,10 @@ import { btnGhost, btnPrimary, Card, H2 } from "./ui";
 export type Member = { user_id: string; email: string; role: "owner" | "member"; created_at: string };
 export type Invite = { id: string; email: string; created_at: string };
 
-export function TeamSettings({ members, invites, currentUserId }: { members: Member[]; invites: Invite[]; currentUserId: string | null }) {
+export function TeamSettings({ members, invites }: { members: Member[]; invites: Invite[]; currentUserId?: string | null }) {
   const ws = useWorkspace();
   const router = useRouter();
   const [name, setName] = useState(ws.workspaceName);
-  const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -81,59 +81,15 @@ export function TeamSettings({ members, invites, currentUserId }: { members: Mem
             </form>
           </Card>
 
-          <Card label="Members" className="flex flex-col gap-4 p-5">
+          <Card label="Team" className="flex flex-wrap items-center justify-between gap-4 p-5">
             <div className="flex flex-col gap-1">
-              <H2>Team</H2>
+              <H2>Team and departments</H2>
               <span className="text-[13px] text-muted">
-                Everyone here sees the same contracts. Invite a teammate by email, then ask them to create an account with that
-                email at this app&apos;s sign-in page. They join this workspace automatically.
+                {members.length} member{members.length === 1 ? "" : "s"}
+                {invites.length ? ` · ${invites.length} invited` : ""}. Invite department owners and set roles on the Team page.
               </span>
             </div>
-            <ul className="m-0 flex list-none flex-col divide-y divide-line-soft p-0">
-              {members.map((m) => (
-                <li key={m.user_id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <span>
-                    {m.email}
-                    {m.user_id === currentUserId && <span className="text-muted"> (you)</span>}
-                  </span>
-                  <span className="rounded-full bg-chip px-2.5 py-0.5 text-xs font-semibold text-ink-2 capitalize">{m.role}</span>
-                </li>
-              ))}
-              {invites.map((i) => (
-                <li key={i.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <span className="text-muted">{i.email}</span>
-                  <span className="flex items-center gap-2">
-                    <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-semibold text-warn-text">Invited</span>
-                    <button
-                      type="button"
-                      className="min-h-9 px-2 text-xs font-semibold text-brand"
-                      onClick={() => call(`/api/invites?id=${i.id}`, { method: "DELETE" }, "Invite cancelled.")}
-                    >
-                      Cancel
-                    </button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <form
-              className="flex flex-wrap gap-2.5"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (await call("/api/invites", { method: "POST", body: JSON.stringify({ email }) }, `Invited ${email}. Ask them to create an account with that email.`)) setEmail("");
-              }}
-            >
-              <label htmlFor="invite" className="sr-only">Teammate email</label>
-              <input
-                id="invite"
-                type="email"
-                required
-                placeholder="partner@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="min-h-11 min-w-[240px] flex-1 rounded-[10px] border border-[#D0D5DD] px-3 text-sm"
-              />
-              <button type="submit" className={btnPrimary} disabled={busy}>Invite</button>
-            </form>
+            <Link href="/team" className={btnPrimary}>Open Team</Link>
           </Card>
         </>
       )}

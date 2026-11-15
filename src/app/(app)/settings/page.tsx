@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   }
   return (
     <>
-      <PageHeader eyebrow="Who can see this workspace, and what it shows" title="Workspace & team" />
+      <PageHeader eyebrow="Who can see this workspace, and what it shows" title="Workspace" />
       <TeamSettings members={members} invites={invites} currentUserId={session?.userId ?? null} />
     </>
   );

@@ -67,3 +67,12 @@ export const Logo = ({ size = 28 }: { size?: number }) => (
     <circle cx="14" cy="14" r="2" fill="#FFFFFF" />
   </svg>
 );
+export const IconChart = ({ size = 18, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
+);
+export const IconList = ({ size = 18, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M9 6h12M9 12h12M9 18h12" /><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>
+);
+export const IconTeam = ({ size = 18, className }: P) => (
+  <svg {...base(size)} className={className}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M17.5 14v7M14 17.5h7" /></svg>
+);

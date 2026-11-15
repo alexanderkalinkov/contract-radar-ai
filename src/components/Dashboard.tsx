@@ -14,6 +14,7 @@ import type { LeverKey, Opportunity } from "@/lib/types";
 import { IconClock, IconMail, IconMore, IconUpload } from "./icons";
 import { btnGhost, btnPrimary, btnSoft, Card, cx, DaysBadge, H2, PageHeader, Segmented, urgencyClassFor, VendorLogo } from "./ui";
 import { DigestModal } from "./DigestModal";
+import { TeamSetupBanner } from "./team/TeamSetupBanner";
 
 type Filter = "all" | LeverKey;
 
@@ -106,6 +107,7 @@ export function Dashboard() {
       </PageHeader>
 
       <SampleDataNote />
+      <TeamSetupBanner />
 
       <section aria-label="Key numbers" className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
         <button

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { AuthHashForwarder } from "@/components/AuthHashForwarder";
 import { WorkspaceProvider } from "@/components/WorkspaceProvider";
 import { getSession } from "@/lib/server/workspace";
 
@@ -25,11 +26,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         workspaceId: session.workspace.id,
         workspaceName: session.workspace.name,
         showSample: session.workspace.show_sample_data,
+        onboarded: Boolean(session.workspace.onboarded_at),
       }
     : null;
   return (
     <html lang="en">
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
+        <AuthHashForwarder />
         <WorkspaceProvider cloud={cloud}>{children}</WorkspaceProvider>
       </body>
     </html>

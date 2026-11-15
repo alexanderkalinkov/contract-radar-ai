@@ -44,7 +44,9 @@ saved in the database.
 1. **Create a project** at https://supabase.com/dashboard (any region near you; the free plan is fine).
 2. **Create the tables.** Open *SQL Editor → New query*, paste the whole of
    [`supabase/migrations/20261115000000_workspaces_and_contracts.sql`](supabase/migrations/20261115000000_workspaces_and_contracts.sql)
-   and click *Run*. It creates the tables, the security rules and a private `contracts` storage bucket. It is safe to run again.
+   and click *Run*. It creates the tables, the security rules and a private `contracts` storage bucket. Then do the same with
+   [`supabase/migrations/20261115120000_team_onboarding.sql`](supabase/migrations/20261115120000_team_onboarding.sql)
+   (departments, tool list and survey). Both are safe to run again.
 3. **Copy the keys.** *Project Settings → API*: copy the Project URL and the publishable key into `.env.local`:
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
@@ -54,21 +56,27 @@ saved in the database.
    accounts can sign in straight away. Leave it on for real use; the confirmation link returns to `/auth/callback`.
    If you deploy the app, add its URL under *Authentication → URL Configuration*.
 5. Restart `npm run dev`. You'll be sent to `/login`. Create an account: a workspace is created for you.
-6. **Invite your partner:** *Workspace & team* in the sidebar → enter their email → ask them to create an account with
-   that email. They land in your workspace and see the same contracts.
+6. **Set up your team:** *Team* in the sidebar (or the "Start team setup" banner) → add departments and invite their
+   owners. They get an email link that signs them in to your workspace and department. Supabase's built-in email only
+   sends a few messages an hour, so set up custom SMTP for real use, and add `<your-url>/auth/confirm` to the redirect
+   URLs. The full flow is in [docs/onboarding-spec.md](docs/onboarding-spec.md).
 
 How it fits together:
 
 | Table | What it holds |
 |---|---|
 | `workspaces` | One per team. Includes the "show sample data" switch |
-| `workspace_members` | Who belongs to which workspace (`owner` or `member`) |
-| `workspace_invites` | Pending invites by email, accepted automatically on sign-in |
+| `workspace_members` | Who belongs to which workspace: `owner` = admin (C-level), `member` = department owner; plus their department |
+| `workspace_invites` | Pending invites by email with role and department, accepted automatically on sign-in |
+| `departments` | Sales, Marketing, Engineering… per workspace |
+| `tools` | Every tool the company pays for: department, cost, seats, renewal, linked contract |
+| `tool_surveys` | Each department's answers to the 4 questions, kept as history |
 | `contracts` | Each uploaded contract: the full Claude extraction (quotes, pages, confidence) plus key columns (vendor, term end, notice deadline, cap, fee, seats) |
 | Storage bucket `contracts` | The original PDFs, one folder per workspace |
 
-Row-level security means people only ever see their own workspace's rows and files. Only the publishable key is used;
-no service-role key is needed.
+Row-level security means people only ever see their own workspace's rows and files, and department owners can only
+change their own department's tools. Only the publishable key is needed; an optional `SUPABASE_SERVICE_ROLE_KEY` (server
+only) makes invites use Supabase's invite email.
 
 ## What to click
 
@@ -78,7 +86,11 @@ no service-role key is needed.
 | Contract renewal detail | `/contracts/salesforce` (and every other vendor) | Renewal math with "What to ask for" toggle, extracted clauses with page and confidence, seat usage, pushback email with Firm/Friendly tone, open in email, copy, mark as sent |
 | Contracts | `/contracts` | Your uploaded contracts and the sample ones, sorted by notice deadline, with risk flags |
 | Uploaded contract page | `/contracts/<id>` | Savings found, a Claude-drafted pushback email (goal and tone), every extracted term with the clause and page it came from, risk flags, open the original PDF, delete |
-| Workspace & team | `/settings` | Show or hide sample data, rename the workspace, invite teammates |
+| Team setup | `/setup` | Admin wizard: company, connect (coming soon), departments, invite one owner each, first tools |
+| Team | `/team` | Departments and their owners, invite by email, set each person's department and role |
+| Tools & survey | `/tools`, `/tools/<id>` | Every tool by department; owners confirm theirs and answer 4 questions (purpose, criticality 1–5, replacement, seats) |
+| Leadership view | `/insights` | For admins: overlapping tools across teams, high-cost low-value tools, spend by department, a keep / cut seats / consolidate / renegotiate / cancel call for every tool |
+| Workspace | `/settings` | Show or hide sample data, rename the workspace |
 | Upload contract | `/upload` | Real Claude extraction from a PDF. Click "Try the sample Acme Analytics MSA" if you have no contract handy |
 | Onboarding | `/welcome` | First-login flow: free 3-contract audit, connect logins and spend (simulated), "Found so far" counter |
 | Renewal calendar, Seats & usage, Price changes, Sources | sidebar | Read-only views over the same sample data |
