@@ -6,8 +6,8 @@ import { authenticate, type AuthState } from "./actions";
 import { btnPrimary, cx } from "@/components/ui";
 import { FormAlert } from "./AuthShell";
 
-export function LoginForm({ next }: { next: string }) {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+export function LoginForm({ next, initialMode = "signin" }: { next: string; initialMode?: "signin" | "signup" }) {
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
   const [state, action, pending] = useActionState<AuthState, FormData>(authenticate, {});
 
   return (
