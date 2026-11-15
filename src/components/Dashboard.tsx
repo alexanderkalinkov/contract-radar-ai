@@ -49,10 +49,11 @@ export function Dashboard() {
 
   const rows = useMemo(() => {
     const list = visible.filter((o) => filter === "all" || o.lever === filter);
+    const when = (o: Opportunity) => o.actBy || "9999-12-31"; // date not found in the contract: list last
     return list.slice().sort((a, b) =>
       sort === "deadline"
-        ? a.actBy.localeCompare(b.actBy) || b.annualSavings - a.annualSavings
-        : b.annualSavings - a.annualSavings || a.actBy.localeCompare(b.actBy),
+        ? when(a).localeCompare(when(b)) || b.annualSavings - a.annualSavings
+        : b.annualSavings - a.annualSavings || when(a).localeCompare(when(b)),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, sort, visible.length]);
@@ -81,7 +82,8 @@ export function Dashboard() {
     if (!c.uploaded) continue;
     const date = noticeDeadline(c);
     const d = date ? daysUntil(date) : -1;
-    if (d >= 0 && d <= 90) deadlines.push({ contractId: c.id, vendor: c.vendor, actBy: date, amount: 0 });
+    if (d >= 0 && d <= 90 && !deadlines.some((x) => x.contractId === c.id && x.actBy === date))
+      deadlines.push({ contractId: c.id, vendor: c.vendor, actBy: date, amount: 0 });
   }
   deadlines.sort((a, b) => a.actBy.localeCompare(b.actBy));
   deadlines.splice(5);
@@ -242,7 +244,7 @@ export function Dashboard() {
                     <td colSpan={5} className="px-5 py-10 text-center text-muted">
                       {showSample
                         ? "No open opportunities in this view. Next renewal is Gong on Dec 28. We'll flag anything new in Monday's digest."
-                        : "No savings opportunities yet. They appear once logins and spend are connected; uploaded contracts already show their deadlines on the right."}
+                        : "No savings opportunities yet. Upload a contract that auto-renews and its savings show up here."}
                     </td>
                   </tr>
                 )}
@@ -253,6 +255,7 @@ export function Dashboard() {
             <span>
               Showing {rows.length} of {PORTFOLIO.opportunityCount} · savings are annualized, based on your current
               contract terms
+              {saved.length > 0 && " · amounts for uploaded contracts are estimates from the contract alone (hover for the basis)"}
             </span>
             <button type="button" onClick={reset} className="font-semibold text-brand hover:text-brand-dark">
               Reset demo
@@ -401,15 +404,25 @@ function OppRow({
           {LEVERS[o.lever].label}
         </span>
       </td>
-      <td className="px-3 py-3.5 text-right font-display text-base font-semibold whitespace-nowrap text-good">
-        {o.estimate ? "up to " : ""}
-        {usd(o.annualSavings)}
+      <td className="px-3 py-3.5 text-right whitespace-nowrap">
+        {o.annualSavings > 0 ? (
+          <span className="font-display text-base font-semibold text-good" title={"basis" in o ? String(o.basis) : undefined}>
+            {o.estimate ? "up to " : ""}
+            {usd(o.annualSavings)}
+          </span>
+        ) : (
+          <span className="text-[13px] text-muted" title={"basis" in o ? String(o.basis) : undefined}>Fee not in contract</span>
+        )}
       </td>
       <td className="px-3 py-3.5 whitespace-nowrap">
-        <div className="flex flex-col gap-1">
-          <span className="font-medium">{shortDate(o.actBy)}</span>
-          <DaysBadge days={days} />
-        </div>
+        {o.actBy ? (
+          <div className="flex flex-col gap-1">
+            <span className="font-medium">{shortDate(o.actBy)}</span>
+            <DaysBadge days={days} />
+          </div>
+        ) : (
+          <span className="text-[13px] text-muted">Date not found</span>
+        )}
       </td>
       <td className="relative px-5 py-3.5 text-right whitespace-nowrap">
         <div className="inline-flex items-center gap-1">

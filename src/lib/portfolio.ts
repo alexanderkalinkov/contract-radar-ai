@@ -2,6 +2,7 @@
 
 // One place for "what contracts and findings does this workspace have":
 // the sample portfolio (when shown) plus the contracts the team uploaded.
+import { opportunitiesFromSaved } from "./opportunities";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "@/components/WorkspaceProvider";
 import { CONTRACTS, OPPORTUNITIES, PORTFOLIO } from "./seed";
@@ -101,16 +102,23 @@ export function usePortfolio(): Portfolio {
   const { saved, loading } = useSavedContracts();
   return useMemo(() => {
     const uploaded = saved.map(savedToContract);
+    const found = saved.flatMap(opportunitiesFromSaved);
+    const foundTotal = found.reduce((sum, o) => sum + o.annualSavings, 0);
     const showSample = ws.showSample;
     return {
       contracts: [...uploaded, ...(showSample ? CONTRACTS : [])],
-      opportunities: showSample ? OPPORTUNITIES : [],
+      opportunities: [...found, ...(showSample ? OPPORTUNITIES : [])],
       saved,
       showSample,
       loading,
       totals: showSample
-        ? { ...PORTFOLIO, contractsTracked: PORTFOLIO.contractsTracked + uploaded.length }
-        : { identifiedSavings: 0, opportunityCount: 0, capturedThisYear: 0, wins: 0, contractsTracked: uploaded.length },
+        ? {
+            ...PORTFOLIO,
+            identifiedSavings: PORTFOLIO.identifiedSavings + foundTotal,
+            opportunityCount: PORTFOLIO.opportunityCount + found.length,
+            contractsTracked: PORTFOLIO.contractsTracked + uploaded.length,
+          }
+        : { identifiedSavings: foundTotal, opportunityCount: found.length, capturedThisYear: 0, wins: 0, contractsTracked: uploaded.length },
     };
   }, [saved, loading, ws.showSample]);
 }
