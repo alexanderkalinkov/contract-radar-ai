@@ -201,9 +201,9 @@ grant select, insert, update, delete on public.contracts to authenticated;
 -- (object name = "<workspace_id>/<contract_id>.pdf").
 -- ---------------------------------------------------------------------------
 
-insert into storage.buckets (id, name, public)
-values ('contracts', 'contracts', false)
-on conflict (id) do nothing;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('contracts', 'contracts', false, 20971520, array['application/pdf'])
+on conflict (id) do update set file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "members read contract files" on storage.objects;
 create policy "members read contract files" on storage.objects

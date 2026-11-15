@@ -30,11 +30,11 @@ function deadline(d: Extraction): string | null {
   return addDays(end, -days);
 }
 
-async function extract(file: File, bytes: Buffer): Promise<ExtractionResult | NextResponse> {
+async function extract(fileName: string, bytes: Buffer): Promise<ExtractionResult | NextResponse> {
   // No key configured: return sample results so the flow still works in a demo.
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
     await new Promise((r) => setTimeout(r, 1500));
-    return { fileName: file.name, extractedAt: new Date().toISOString(), demo: true, data: DEMO_EXTRACTION, noticeDeadline: deadline(DEMO_EXTRACTION) };
+    return { fileName, extractedAt: new Date().toISOString(), demo: true, data: DEMO_EXTRACTION, noticeDeadline: deadline(DEMO_EXTRACTION) };
   }
 
   const client = new Anthropic();
@@ -51,7 +51,7 @@ async function extract(file: File, bytes: Buffer): Promise<ExtractionResult | Ne
         {
           role: "user",
           content: [
-            { type: "document", source: { type: "base64", media_type: "application/pdf", data: bytes.toString("base64") }, title: file.name },
+            { type: "document", source: { type: "base64", media_type: "application/pdf", data: bytes.toString("base64") }, title: fileName },
             { type: "text", text: "Extract the renewal terms from this contract." },
           ],
         },
@@ -65,7 +65,7 @@ async function extract(file: File, bytes: Buffer): Promise<ExtractionResult | Ne
       return NextResponse.json({ error: "Could not read structured terms from this contract. Try another file." }, { status: 502 });
     }
     return {
-      fileName: file.name,
+      fileName,
       extractedAt: new Date().toISOString(),
       demo: false,
       model: response.model,
@@ -90,12 +90,18 @@ async function extract(file: File, bytes: Buffer): Promise<ExtractionResult | Ne
   }
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(req: Request) {
   const session = isSupabaseConfigured ? await getSession() : null;
   if (isSupabaseConfigured && !session) {
     return NextResponse.json({ error: "Sign in to upload contracts." }, { status: 401 });
   }
+  return session ? extractFromStorage(req, session) : extractFromForm(req);
+}
 
+// Demo mode: the PDF comes in the request and the browser keeps the result.
+async function extractFromForm(req: Request) {
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   if (!(file instanceof File)) {
@@ -107,25 +113,43 @@ export async function POST(req: Request) {
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: "PDF is larger than 20 MB." }, { status: 400 });
   }
-
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const result = await extract(file, bytes);
+  const result = await extract(file.name, Buffer.from(await file.arrayBuffer()));
   if (result instanceof NextResponse) return result;
+  const saved: SavedContract = { ...result, id: `local-${crypto.randomUUID()}`, hasFile: false, uploadedByEmail: null };
+  return NextResponse.json(saved);
+}
 
-  // Demo mode: the browser keeps the result.
-  if (!session) {
-    const saved: SavedContract = { ...result, id: `local-${crypto.randomUUID()}`, hasFile: false, uploadedByEmail: null };
-    return NextResponse.json(saved);
+// Signed in: the browser has already uploaded the PDF to <workspace_id>/<id>.pdf in the private bucket.
+// Read it from there (as the user, so storage RLS applies), extract, and save the row under the same id.
+async function extractFromStorage(req: Request, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
+  const body = (await req.json().catch(() => null)) as { id?: unknown; fileName?: unknown } | null;
+  const id = typeof body?.id === "string" ? body.id : "";
+  const fileName = typeof body?.fileName === "string" && body.fileName.trim() ? body.fileName.trim().slice(0, 200) : "contract.pdf";
+  if (!UUID.test(id)) return NextResponse.json({ error: "Missing upload id." }, { status: 400 });
+
+  const supabase = await createClient();
+  const filePath = `${session.workspace.id}/${id}.pdf`;
+  const discard = () => supabase.storage.from(CONTRACTS_BUCKET).remove([filePath]);
+
+  const { data: blob, error: dlError } = await supabase.storage.from(CONTRACTS_BUCKET).download(filePath);
+  if (dlError || !blob) {
+    return NextResponse.json({ error: "Could not find the uploaded PDF. Try uploading it again." }, { status: 400 });
+  }
+  if (blob.size > MAX_BYTES) {
+    await discard();
+    return NextResponse.json({ error: "PDF is larger than 20 MB." }, { status: 400 });
+  }
+  const bytes = Buffer.from(await blob.arrayBuffer());
+  if (bytes.subarray(0, 5).toString("latin1") !== "%PDF-") {
+    await discard();
+    return NextResponse.json({ error: "That file isn't a PDF. Only PDF contracts are supported in this version." }, { status: 400 });
   }
 
-  // Signed in: store the PDF and the extracted terms in the workspace.
-  const supabase = await createClient();
-  const id = crypto.randomUUID();
-  const filePath = `${session.workspace.id}/${id}.pdf`;
-  const { error: uploadError } = await supabase.storage
-    .from(CONTRACTS_BUCKET)
-    .upload(filePath, bytes, { contentType: "application/pdf", upsert: false });
-  if (uploadError) console.error("Storage upload failed", uploadError.message);
+  const result = await extract(fileName, bytes);
+  if (result instanceof NextResponse) {
+    await discard();
+    return result;
+  }
 
   const { data: row, error } = await supabase
     .from("contracts")
@@ -133,8 +157,8 @@ export async function POST(req: Request) {
       id,
       workspace_id: session.workspace.id,
       uploaded_by_email: session.email,
-      file_name: file.name,
-      file_path: uploadError ? null : filePath,
+      file_name: fileName,
+      file_path: filePath,
       extraction: result.data,
       model: result.model ?? null,
       demo: result.demo,
@@ -143,6 +167,7 @@ export async function POST(req: Request) {
     .select("*")
     .single();
   if (error || !row) {
+    await discard();
     return NextResponse.json({ error: `Read the contract but could not save it: ${error?.message ?? "unknown error"}` }, { status: 500 });
   }
   return NextResponse.json(rowToSaved(row as ContractRow));

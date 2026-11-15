@@ -8,24 +8,47 @@ import { useSavedContracts } from "@/lib/portfolio";
 import { daysUntil } from "@/lib/engine";
 import { longDate, usd } from "@/lib/format";
 import { useWorkspace } from "./WorkspaceProvider";
+import { createClient } from "@/lib/supabase/client";
+import { CONTRACTS_BUCKET } from "@/lib/supabase/config";
 import { ConfidenceTag, cx } from "./ui";
 import { IconUpload } from "./icons";
+
+const MAX_BYTES = 20 * 1024 * 1024;
 
 type Job = { id: string; name: string; status: "reading" | "done" | "error"; error?: string; result?: SavedContract };
 
 export function Uploader({ compact = false }: { compact?: boolean }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const { add } = useSavedContracts();
+  const ws = useWorkspace();
   const [drag, setDrag] = useState(false);
 
   async function handle(files: FileList | File[]) {
     for (const file of Array.from(files)) {
       const id = Math.random().toString(36).slice(2);
       setJobs((j) => [{ id, name: file.name, status: "reading" }, ...j]);
-      const body = new FormData();
-      body.append("file", file);
       try {
-        const res = await fetch("/api/extract", { method: "POST", body });
+        if (file.size > MAX_BYTES) throw new Error("PDF is larger than 20 MB.");
+        let res: Response;
+        if (ws.mode === "cloud" && ws.workspaceId) {
+          // Signed in: the PDF goes straight from the browser to the workspace's private storage folder, then the
+          // server reads it from there. This keeps large files clear of hosting request-size limits (4.5 MB on Vercel).
+          const contractId = crypto.randomUUID();
+          const path = `${ws.workspaceId}/${contractId}.pdf`;
+          const { error: upErr } = await createClient()
+            .storage.from(CONTRACTS_BUCKET)
+            .upload(path, file, { contentType: "application/pdf", upsert: false });
+          if (upErr) throw new Error(`Could not upload the PDF: ${upErr.message}`);
+          res = await fetch("/api/extract", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ id: contractId, fileName: file.name }),
+          });
+        } else {
+          const body = new FormData();
+          body.append("file", file);
+          res = await fetch("/api/extract", { method: "POST", body });
+        }
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? `Upload failed (${res.status})`);
         const result = json as SavedContract;

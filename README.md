@@ -142,7 +142,20 @@ npm run start   # serve the production build
 npm run lint    # eslint
 ```
 
-## Deploying a preview
+## Put it online (Vercel)
 
-The app deploys to [Vercel](https://vercel.com/new) as-is: import the GitHub repo, add `ANTHROPIC_API_KEY` as an
-environment variable if you want real extraction, and every pull request gets its own preview URL.
+The app runs on [Vercel](https://vercel.com/) as-is. PDFs go straight from the browser to Supabase storage, so
+Vercel's 4.5 MB request limit doesn't apply to uploads (the limit is 20 MB per PDF).
+
+1. **Import the repo.** At https://vercel.com/new, sign in with GitHub, pick `contract-radar-ai` and click *Import*.
+   Framework preset: Next.js (detected). Leave the build settings alone.
+2. **Add environment variables** (same values as your `.env.local`) before the first deploy:
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `ANTHROPIC_API_KEY`. Then click *Deploy*.
+3. **Tell Supabase about the new address.** In Supabase, *Authentication → URL Configuration*:
+   - *Site URL*: your production address, e.g. `https://contract-radar-ai.vercel.app`
+   - *Redirect URLs*: add `https://contract-radar-ai.vercel.app/**`, `https://*-<your-vercel-team>.vercel.app/**`
+     (so pull-request previews can confirm emails too) and keep `http://localhost:3000/**` for local work.
+4. Open the address, create an account (or sign in with your existing one: it's the same Supabase project, so your
+   workspace and contracts are already there), and share the link with your partner.
+
+Vercel deploys `main` to the production address and gives every pull request its own preview link.
