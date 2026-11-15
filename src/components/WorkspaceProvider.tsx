@@ -10,6 +10,8 @@ export interface WorkspaceCtx {
   workspaceId?: string;
   workspaceName: string;
   showSample: boolean;
+  /** Admin finished the setup wizard (cloud only; demo uses its own flag). */
+  onboarded?: boolean;
   setShowSample: (v: boolean) => void;
 }
 
@@ -19,7 +21,7 @@ export function WorkspaceProvider({
   cloud,
   children,
 }: {
-  cloud: { email: string; role: "owner" | "member"; workspaceId: string; workspaceName: string; showSample: boolean } | null;
+  cloud: { email: string; role: "owner" | "member"; workspaceId: string; workspaceName: string; showSample: boolean; onboarded?: boolean } | null;
   children: React.ReactNode;
 }) {
   const [demoSample, setDemoSample] = useStored<boolean>("cr-show-sample", true);
@@ -36,6 +38,7 @@ export function WorkspaceProvider({
       role: cloud.role,
       workspaceId: cloud.workspaceId,
       workspaceName: cloud.workspaceName,
+      onboarded: cloud.onboarded,
       showSample,
       setShowSample: (v: boolean) => {
         setCloudSampleLocal(v);

@@ -7,6 +7,7 @@ export interface Workspace {
   id: string;
   name: string;
   show_sample_data: boolean;
+  onboarded_at?: string | null;
 }
 
 export interface SessionInfo {
@@ -44,7 +45,12 @@ export const getSession = cache(async (): Promise<SessionInfo | null> => {
   return {
     userId,
     email: String(claims.claims.email ?? ""),
-    workspace: { id: workspace.id, name: workspace.name, show_sample_data: workspace.show_sample_data },
+    workspace: {
+      id: workspace.id,
+      name: workspace.name,
+      show_sample_data: workspace.show_sample_data,
+      onboarded_at: workspace.onboarded_at ?? null,
+    },
     role: (member?.role as "owner" | "member") ?? "member",
   };
 });

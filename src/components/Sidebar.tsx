@@ -5,18 +5,21 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
-import { IconCal, IconDoc, IconGear, IconHome, IconMenu, IconPlug, IconTrend, IconUsers, IconX, Logo } from "./icons";
+import { IconCal, IconChart, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
 import { useWorkspace } from "./WorkspaceProvider";
 import { cx } from "./ui";
 
 const NAV = [
   { href: "/", label: "Savings", Icon: IconHome },
+  { href: "/insights", label: "Leadership view", Icon: IconChart, adminOnly: true },
+  { href: "/tools", label: "Tools & survey", Icon: IconList },
   { href: "/contracts", label: "Contracts", Icon: IconDoc },
   { href: "/calendar", label: "Renewal calendar", Icon: IconCal },
   { href: "/seats", label: "Seats & usage", Icon: IconUsers },
   { href: "/price-changes", label: "Price changes", Icon: IconTrend },
   { href: "/sources", label: "Sources", Icon: IconPlug },
-  { href: "/settings", label: "Workspace & team", Icon: IconGear },
+  { href: "/team", label: "Team", Icon: IconTeam },
+  { href: "/settings", label: "Workspace", Icon: IconGear },
 ];
 
 export function Sidebar() {
@@ -47,7 +50,7 @@ export function Sidebar() {
         </button>
       </div>
       <div className={cx("flex-col gap-1 text-sm font-medium lg:flex", open ? "flex" : "hidden")}>
-        {NAV.map(({ href, label, Icon }) => (
+        {NAV.filter((n) => !n.adminOnly || ws.mode === "demo" || ws.role === "owner").map(({ href, label, Icon }) => (
           <Link
             key={href}
             href={href}
