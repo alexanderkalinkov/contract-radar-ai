@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { readSelection, startImport } from "@/lib/import-client";
 import { REVIEW_FIELDS, type Extraction, type ExtractionResult, type FieldKey } from "@/lib/extraction";
 import { FIELD_INPUT, FIELD_LABELS, parseCorrection, quickConfirmable, reviewProgress, type ReviewAction, type ReviewValue } from "@/lib/review";
 import type { SavedContract } from "@/lib/saved";
@@ -22,13 +24,35 @@ export function Uploader({ compact = false }: { compact?: boolean }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const { add } = useSavedContracts();
   const ws = useWorkspace();
+  const router = useRouter();
   const [drag, setDrag] = useState(false);
 
   async function handle(files: FileList | File[]) {
-    for (const file of Array.from(files)) {
+    const list = Array.from(files);
+    // A ZIP (or a whole batch of files) is a bulk import: hand it over and open its review page.
+    const zips = list.filter((f) => /\.zip$/i.test(f.name) || /zip/.test(f.type));
+    if (zips.length || list.length > 10) {
+      const id = Math.random().toString(36).slice(2);
+      const name = zips.length === 1 ? zips[0].name : `${list.length} files`;
+      setJobs((j) => [{ id, name, status: "reading" }, ...j]);
+      try {
+        if (ws.mode !== "cloud" || !ws.workspaceId) throw new Error("ZIP files go through bulk import, which needs sign-in. Unzip it and drop the PDFs here instead.");
+        const sel = await readSelection(list);
+        if (!sel.entries.length) throw new Error("No PDF or Word (.docx) files in there.");
+        const jobId = await startImport(sel, ws.workspaceId);
+        router.push(`/import/${jobId}`);
+      } catch (e) {
+        setJobs((j) => j.map((x) => (x.id === id ? { ...x, status: "error", error: (e as Error).message } : x)));
+      }
+      return;
+    }
+    for (const file of list) {
       const id = Math.random().toString(36).slice(2);
       setJobs((j) => [{ id, name: file.name, status: "reading" }, ...j]);
       try {
+        if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
+          throw new Error(/\.docx$/i.test(file.name) ? "Word files go through bulk import or the email inbox. Here, drop a PDF." : "Only PDF contracts can be dropped here.");
+        }
         if (file.size > MAX_BYTES) throw new Error("PDF is larger than 20 MB.");
         let res: Response;
         if (ws.mode === "cloud" && ws.workspaceId) {
@@ -88,10 +112,10 @@ export function Uploader({ compact = false }: { compact?: boolean }) {
       >
         <IconUpload size={compact ? 20 : 28} className="text-brand" />
         <span className="text-sm font-semibold text-brand">Drop a contract PDF here</span>
-        <span className="text-xs text-muted">or click to browse · MSA, order form or renewal quote · up to 20 MB</span>
+        <span className="text-xs text-muted">or click to browse · MSA, order form or renewal quote · up to 20 MB · a ZIP of many starts a bulk import</span>
         <input
           type="file"
-          accept="application/pdf,.pdf"
+          accept="application/pdf,.pdf,.zip,application/zip"
           multiple
           className="sr-only"
           onChange={(e) => {

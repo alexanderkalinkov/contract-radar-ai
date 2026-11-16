@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { readSelection, startUpload, type Selection } from "@/lib/import-client";
+import { readSelection, startImport, type Selection } from "@/lib/import-client";
 import { DRIVE_NAMES, pendingCount, SOURCE_NAMES, totalCount, type DriveProvider, type JobSummary } from "@/lib/imports";
 import { useWorkspace } from "../WorkspaceProvider";
 import { useCanWrite } from "../WriteOnly";
@@ -72,17 +72,8 @@ export function BulkImport() {
     setStarting(true);
     setError(null);
     try {
-      const res = await fetch("/api/imports", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ source: selection.source, name: selection.name, files: selection.entries.map((e) => ({ path: e.path, size: e.size })) }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? `Server answered ${res.status}`);
-      const byPath = new Map(selection.entries.map((e) => [e.path, e]));
-      const files = (json.items as { id: string; path: string }[]).flatMap((it) => (byPath.has(it.path) ? [{ id: it.id, entry: byPath.get(it.path)! }] : []));
-      void startUpload(json.jobId, ws.workspaceId, files);
-      router.push(`/import/${json.jobId}`);
+      const jobId = await startImport(selection, ws.workspaceId);
+      router.push(`/import/${jobId}`);
     } catch (e) {
       setError((e as Error).message);
       setStarting(false);

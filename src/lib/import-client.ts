@@ -175,3 +175,18 @@ export async function startUpload(jobId: string, workspaceId: string, files: { i
     patch(jobId, { done: true, error: (e as Error).message });
   }
 }
+
+/** Creates an import job for a selection and starts uploading it. Returns the job id. */
+export async function startImport(sel: Selection, workspaceId: string): Promise<string> {
+  const res = await fetch("/api/imports", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ source: sel.source, name: sel.name, files: sel.entries.map((e) => ({ path: e.path, size: e.size })) }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? `Server answered ${res.status}`);
+  const byPath = new Map(sel.entries.map((e) => [e.path, e]));
+  const files = (json.items as { id: string; path: string }[]).flatMap((it) => (byPath.has(it.path) ? [{ id: it.id, entry: byPath.get(it.path)! }] : []));
+  void startUpload(json.jobId, workspaceId, files);
+  return json.jobId as string;
+}
