@@ -2,7 +2,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { addDays } from "@/lib/engine";
-import { DEMO_EXTRACTION, ExtractionSchema, type Extraction, type ExtractionResult } from "@/lib/extraction";
+import { DEMO_EXTRACTION, DEMO_RENEWAL_QUOTE, ExtractionSchema, type Extraction, type ExtractionResult } from "@/lib/extraction";
 
 // Claude reads one contract and returns its renewal terms. Shared by uploads (/api/extract)
 // and contracts emailed to a workspace inbox (/api/inbound/resend).
@@ -17,6 +17,8 @@ Rules:
 - Quote the exact contract text that supports each value, and give its 1-based page number.
 - Dates must be YYYY-MM-DD. If the term end is only given as a start date plus a length, compute it.
 - "confidence" is high when the text states the value directly, medium when you had to interpret or combine clauses, low when it is a guess.
+- document_kind: a renewal quote or proposal the vendor sent for the next term is "renewal_quote", even if it repeats contract terms. Its annual fee is the quoted renewal fee.
+- price_escalators: list every clause that raises the price automatically (fixed annual uplift, CPI-linked increase, year-2/year-3 step-ups, renewal at then-current list price). The renewal-increase cap is not an escalator; it goes in uplift_cap_percent.
 - Risks: at most 3 short, plain-English notes about clauses that could cost the customer money.`;
 
 export type ContractInput = { kind: "pdf"; bytes: Buffer } | { kind: "text"; text: string };
@@ -51,7 +53,9 @@ export async function extractContract(fileName: string, input: ContractInput): P
   // No key configured: return sample results so the flow still works in a demo.
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
     await new Promise((r) => setTimeout(r, 1500));
-    return { fileName, extractedAt: new Date().toISOString(), demo: true, data: DEMO_EXTRACTION, noticeDeadline: noticeDeadline(DEMO_EXTRACTION) };
+    // A file named like a quote gets the demo renewal quote, so price-hike tracking can be tried too.
+    const data = /quote|proposal|renewal/i.test(fileName) ? DEMO_RENEWAL_QUOTE : DEMO_EXTRACTION;
+    return { fileName, extractedAt: new Date().toISOString(), demo: true, data, noticeDeadline: noticeDeadline(data) };
   }
 
   const document =

@@ -38,7 +38,7 @@ Word files are converted to text first, so their extracted clauses have no page 
 ### 1. Run the SQL
 
 Open the Supabase SQL editor and run the whole of
-[`supabase/migrations/20261116200000_email_inbox.sql`](../supabase/migrations/20261116200000_email_inbox.sql).
+[`supabase/migrations/20261116210000_email_inbox.sql`](../supabase/migrations/20261116210000_email_inbox.sql).
 It adds the inbox token to every workspace, the `inbound_emails` log, `contracts.source`, and lets the bucket hold
 .docx files. Safe to run again.
 

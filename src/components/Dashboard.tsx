@@ -14,6 +14,7 @@ import type { LeverKey, Opportunity } from "@/lib/types";
 import { IconClock, IconMail, IconMore, IconUpload } from "./icons";
 import { btnGhost, btnPrimary, btnSoft, Card, cx, DaysBadge, H2, PageHeader, Segmented, urgencyClassFor, VendorLogo } from "./ui";
 import { DigestModal } from "./DigestModal";
+import { PriceHikesCard } from "./PriceHikes";
 import { TeamSetupBanner } from "./team/TeamSetupBanner";
 
 type Filter = "all" | LeverKey;
@@ -299,6 +300,8 @@ export function Dashboard() {
               Open renewal calendar
             </Link>
           </Card>
+
+          <PriceHikesCard contracts={CONTRACTS} />
 
           {showSample && (
           <Card label="Savings by lever" className="flex flex-col gap-3.5 p-5">

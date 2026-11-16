@@ -18,6 +18,7 @@ export function sampleAlertItems(today: string): AlertItem[] {
       noticeDays: 60,
       upliftCapPct: 5,
       department: "Sales",
+      priceChange: { source: "quote", previousFee: 186000, newFee: 202740, deltaAbs: 16740, deltaPct: 9, capPct: 5, overCap: 7440 },
     },
     {
       contractId: "monday",
@@ -33,6 +34,7 @@ export function sampleAlertItems(today: string): AlertItem[] {
       noticeDays: 30,
       upliftCapPct: null,
       department: "Operations",
+      escalator: "Renews at the then-current list price",
     },
     {
       contractId: "zoom",

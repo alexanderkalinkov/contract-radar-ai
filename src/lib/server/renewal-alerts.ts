@@ -3,6 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, daysUntil, toISO } from "@/lib/engine";
 import { alertDays, brand } from "@/lib/email/brand";
 import { renewalAlertEmail, type AlertItem, type AlertKind } from "@/lib/email/templates";
+import { escalatorsOf } from "@/lib/extraction";
+import { buildPriceHistory } from "@/lib/price-history";
+import { rowToSaved, type ContractRow as SavedRow } from "@/lib/saved";
 import { isBillingConfigured, summarize, type BillingRow } from "./billing";
 import { adminClient } from "./admin";
 import { isEmailConfigured, sendEmail } from "./mailer";
@@ -115,7 +118,7 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
   const [c, t, d, m] = await Promise.all([
     db
       .from("contracts")
-      .select("id, workspace_id, vendor, agreement_name, term_end, auto_renew, renewal_term_months, notice_days, notice_deadline, annual_fee, currency, uplift_cap_pct")
+      .select("*") // includes extraction (and supersedes_id once that migration has run) for price-hike tracking
       .in("workspace_id", wsIds)
       .eq("demo", false),
     db.from("tools").select("contract_id, department_id").in("workspace_id", wsIds).not("contract_id", "is", null),
@@ -129,11 +132,19 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
   const deptName = new Map((d.data ?? []).map((x) => [x.id as string, x.name as string]));
   const members = (m.data ?? []) as { workspace_id: string; email: string; role: string; department_id: string | null }[];
 
+  // Older terms and renewal quotes fold into the contract they belong to: no reminders of their own, and the
+  // contract's reminder says how the new price compares with the current one.
+  const rows = (c.data ?? []) as (ContractRow & SavedRow)[];
+  const history = buildPriceHistory(rows.filter((r) => r.extraction).map(rowToSaved));
+
   // Due reminders per contract.
   type Due = AlertItem & { workspaceId: string; departmentId: string | null };
   const due: Due[] = [];
-  for (const row of (c.data ?? []) as ContractRow[]) {
+  for (const row of rows) {
+    if (history.hidden.has(row.id)) continue;
     report.contractsChecked++;
+    const change = history.changes.get(row.id);
+    const escalator = row.extraction ? escalatorsOf(row.extraction)[0]?.description ?? null : null;
     for (const ev of contractEvents(row)) {
       const days = daysUntil(ev.date, today);
       if (days > maxDays) continue;
@@ -156,6 +167,19 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
         noticeDays: row.notice_days,
         upliftCapPct: num(row.uplift_cap_pct),
         department: departmentId ? (deptName.get(departmentId) ?? null) : null,
+        priceChange:
+          change && change.deltaAbs > 0
+            ? {
+                source: change.source,
+                previousFee: change.previousFee,
+                newFee: change.newFee,
+                deltaAbs: change.deltaAbs,
+                deltaPct: change.deltaPct,
+                capPct: change.capPct,
+                overCap: change.overCap,
+              }
+            : null,
+        escalator,
       });
     }
   }

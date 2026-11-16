@@ -88,7 +88,7 @@ export function EmailInboxCard() {
         <div className="rounded-[10px] border border-warn-line bg-warn-soft px-4 py-3 text-[13px] text-warn-text">
           <strong>Setup needed before the inbox works:</strong>
           <ul className="m-0 mt-1 list-disc pl-5">
-            {!info.ready && <li>Run supabase/migrations/20261116200000_email_inbox.sql in the Supabase SQL editor.</li>}
+            {!info.ready && <li>Run supabase/migrations/20261116210000_email_inbox.sql in the Supabase SQL editor.</li>}
             {!info.configured && <li>Turn on receiving in Resend, then add INBOUND_EMAIL_DOMAIN and RESEND_WEBHOOK_SECRET to the environment.</li>}
           </ul>
           <span className="mt-1 block">Step by step: docs/email-inbox-setup.md.</span>
