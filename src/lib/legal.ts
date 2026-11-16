@@ -95,6 +95,22 @@ export const INTEGRATIONS: Subprocessor[] = [
     url: "https://www.microsoft.com/licensing/docs/view/Microsoft-Products-and-Services-Data-Protection-Addendum-DPA",
   },
   {
+    name: "Google Drive",
+    purpose: "Optional: read contract files from a folder a user picks, for bulk import",
+    data: "Contract documents (PDF, Word, Google Docs) in the chosen folder",
+    location: "Per the Customer's Google Workspace settings",
+    safeguard: "Read-only Drive scope, used only for imports the user starts; Google API Services User Data Policy (Limited Use)",
+    url: "https://workspace.google.com/terms/dpa_terms.html",
+  },
+  {
+    name: "Microsoft (SharePoint / OneDrive)",
+    purpose: "Optional: read contract files from a folder a user picks, for bulk import",
+    data: "Contract documents (PDF, Word) in the chosen folder",
+    location: "Per the Customer's Microsoft tenant",
+    safeguard: "Read-only Graph permissions (Files.Read.All, Sites.Read.All); Microsoft Products and Services DPA",
+    url: "https://www.microsoft.com/licensing/docs/view/Microsoft-Products-and-Services-Data-Protection-Addendum-DPA",
+  },
+  {
     name: "Intuit (QuickBooks Online)",
     purpose: "Optional: read bills and expenses to find software vendors",
     data: "Vendor names, amounts, dates",

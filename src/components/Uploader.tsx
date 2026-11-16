@@ -155,7 +155,7 @@ export function ExtractionSummary({ r }: { r: SavedContract }) {
   );
 }
 
-export function ExtractionCard({ r, hideHeader = false }: { r: ExtractionResult; hideHeader?: boolean }) {
+export function ExtractionCard({ r, hideHeader = false, savedNote }: { r: ExtractionResult; hideHeader?: boolean; savedNote?: string }) {
   const ws = useWorkspace();
   const d = r.data;
   const days = r.noticeDeadline ? daysUntil(r.noticeDeadline) : null;
@@ -225,7 +225,7 @@ export function ExtractionCard({ r, hideHeader = false }: { r: ExtractionResult;
         </div>
       )}
       <span className="text-xs text-muted">
-        {r.demo ? "Sample data" : `Read by ${r.model}`} · {new Date(r.extractedAt).toLocaleString("en-US")} · {ws.mode === "cloud" ? `saved to ${ws.workspaceName}` : "saved in this browser (demo mode)"}
+        {r.demo ? "Sample data" : `Read by ${r.model}`} · {new Date(r.extractedAt).toLocaleString("en-US")} · {savedNote ?? (ws.mode === "cloud" ? `saved to ${ws.workspaceName}` : "saved in this browser (demo mode)")}
       </span>
     </div>
   );

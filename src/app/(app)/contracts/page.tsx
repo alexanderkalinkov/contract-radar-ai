@@ -6,7 +6,7 @@ import { daysUntil, noticeDeadline } from "@/lib/engine";
 import { shortDate, usd } from "@/lib/format";
 import { usePortfolio } from "@/lib/portfolio";
 import { isRisky } from "@/lib/saved";
-import { btnPrimary, Card, DaysBadge, PageHeader, VendorLogo } from "@/components/ui";
+import { btnGhost, btnPrimary, Card, DaysBadge, PageHeader, VendorLogo } from "@/components/ui";
 import { IconUpload } from "@/components/icons";
 import { SampleDataNote } from "@/components/SampleDataNote";
 
@@ -31,6 +31,9 @@ export default function ContractsPage() {
       >
         <Link href="/upload" className={btnPrimary}>
           <IconUpload /> Upload contract
+        </Link>
+        <Link href="/import" className={btnGhost}>
+          Bulk import
         </Link>
       </PageHeader>
 

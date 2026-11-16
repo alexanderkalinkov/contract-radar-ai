@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { InboxHint } from "@/components/EmailInboxCard";
 import { PageHeader } from "@/components/ui";
 import { Uploader } from "@/components/Uploader";
@@ -10,6 +11,10 @@ export default function UploadPage() {
         <div className="flex min-w-0 flex-[999_1_520px] flex-col gap-3">
           <Uploader />
           <InboxHint />
+          <p className="m-0 text-[13px] text-muted">
+            Hundreds of contracts in a folder, a ZIP, Google Drive or SharePoint?{" "}
+            <Link href="/import" className="font-semibold text-brand hover:underline">Bulk import them</Link>.
+          </p>
         </div>
         <aside className="flex flex-[1_1_280px] flex-col gap-3 rounded-[14px] border border-line bg-white p-5 text-sm text-ink-2">
           <h2 className="m-0 font-display text-base font-semibold text-ink">What we pull out</h2>
