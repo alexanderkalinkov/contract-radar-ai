@@ -16,14 +16,25 @@ const GOALS: { value: EmailGoal; label: string }[] = [
 
 type Draft = { subject: string; body: string; demo: boolean };
 
+/** Sign-in facts for a seat-cut email: paid seats, how many were used, and the count to ask for. */
+export interface SeatFacts {
+  paid: number;
+  active: number;
+  target: number | null;
+  source: string;
+  days: number;
+}
+
 export function EmailDrafter({
   contract,
   defaultGoal,
   priceChange,
+  seats,
 }: {
   contract: SavedContract;
   defaultGoal: EmailGoal;
   priceChange?: PriceChange | null;
+  seats?: SeatFacts;
 }) {
   const [goal, setGoal] = useState<EmailGoal>(defaultGoal);
   const [tone, setTone] = useState<"firm" | "friendly">("friendly");
@@ -46,6 +57,7 @@ export function EmailDrafter({
           goal,
           tone,
           priceChange: priceChange ?? null,
+          seats: seats ?? null,
         }),
       });
       const json = await res.json();

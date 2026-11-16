@@ -6,6 +6,7 @@ import { useState } from "react";
 import { btnGhost, Card, H2, PageHeader } from "@/components/ui";
 import { ActionChip, DepartmentSelect, labelCls, Notice, SurveyForm, ToolForm } from "@/components/team/forms";
 import { TeamError } from "@/components/team/TeamError";
+import { SeatUsageCard } from "@/components/SeatUsage";
 import { longDate, usd } from "@/lib/format";
 import { latestSurveys } from "@/lib/team/insights";
 import { useTeam } from "@/lib/team/useTeam";
@@ -191,6 +192,7 @@ export default function ToolPage() {
               <Link href={`/contracts/${tool.contract_id}`} className="font-semibold text-brand">Open the contract →</Link>
             )}
           </Card>
+          {row?.usage && <SeatUsageCard u={row.usage} />}
           {isAdmin && row && (
             <Card label="Recommendation" className="flex flex-col gap-2 p-5 text-sm">
               <H2>Recommendation</H2>

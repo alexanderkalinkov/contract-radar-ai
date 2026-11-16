@@ -40,7 +40,25 @@ const Body = z.object({
   priceChange: PriceChangeFacts.nullable().optional(),
   tone: z.enum(["firm", "friendly"]),
   company: z.string().max(120).nullable().optional(),
+  /** Sign-in facts from Google Workspace / Microsoft, for seat-cut emails. */
+  seats: z
+    .object({
+      paid: z.number().int().min(0).max(1_000_000),
+      active: z.number().int().min(0).max(1_000_000),
+      target: z.number().int().min(0).max(1_000_000).nullable(),
+      source: z.string().max(60),
+      days: z.number().int().min(1).max(365),
+    })
+    .nullable()
+    .optional(),
 });
+
+type SeatFacts = NonNullable<z.infer<typeof Body>["seats"]>;
+
+const seatLine = (s: SeatFacts) =>
+  `Seat usage (${s.source} sign-ins): ${s.active} of ${s.paid} paid seats were used in the last ${s.days} days.${
+    s.target != null ? ` Seat count to ask for at renewal: ${s.target}.` : ""
+  }`;
 
 const EmailSchema = z.object({
   subject: z.string().describe("Email subject line, under 80 characters"),
@@ -50,7 +68,7 @@ const EmailSchema = z.object({
 const GOALS: Record<EmailGoal, string> = {
   hike: `The vendor's renewal price is higher than the current term. State the increase in percent and in money, comparing the two documents by name. If the contract caps renewal increases and the new price is over the cap, quote the cap clause and ask for the price to be brought down to the capped amount (and, for an already-signed renewal, for a credit of the difference). If there is no cap, ask to keep the price flat or hold the increase to ${TARGET_CAP_PCT}% at most, and ask what justifies the increase. If the per-seat price rose more than the total, point that out.`,
   cap: `The contract renews automatically and does not limit price increases. Ask the vendor to agree in writing that the renewal price will rise by no more than ${TARGET_CAP_PCT}% (or stay flat), and to send renewal pricing before the notice deadline so there is time to decide.`,
-  seats: "Tell the vendor the customer will reduce its seat count at renewal under the seat-reduction clause, and ask for a revised order form. Leave the new seat number as [new seat count] for the customer to fill in.",
+  seats: "Tell the vendor the customer will reduce its seat count at renewal under the seat-reduction clause (or, if the contract has none, ask for it), and ask for a revised order form. If a seat count to ask for is given, use it and mention how many seats were actually used; otherwise leave the new seat number as [new seat count] for the customer to fill in.",
   cancel: "Give formal written notice of non-renewal under the notice clause, and ask the vendor to confirm in writing that the subscription will not auto-renew.",
   review: "Say the customer wants to review renewal pricing and terms before the notice deadline, and ask for the renewal quote and a call.",
 };
@@ -100,7 +118,7 @@ function facts(d: Extraction, noticeDeadline: string | null, change?: PriceChang
 }
 
 /** Used when no API key is configured, so the screen still works in a demo. */
-function templateEmail(d: Extraction, noticeDeadline: string | null, goal: EmailGoal, company: string | null, p?: PriceChangeFacts | null) {
+function templateEmail(d: Extraction, noticeDeadline: string | null, goal: EmailGoal, company: string | null, p?: PriceChangeFacts | null, seats: SeatFacts | null = null) {
   const replyBy = noticeDeadline ? addDays(noticeDeadline, -5) : null;
   const cur = d.currency;
   const hike = !p
@@ -114,7 +132,9 @@ function templateEmail(d: Extraction, noticeDeadline: string | null, goal: Email
   const ask: Record<EmailGoal, string> = {
     hike,
     cap: `Our ${d.agreement_name} renews automatically and doesn't limit renewal price increases. Before it renews, we'd like your written confirmation that the renewal price will rise by no more than ${TARGET_CAP_PCT}%, along with the renewal pricing.`,
-    seats: `We'll be reducing our seat count at renewal of the ${d.agreement_name}. Please send a revised order form for [new seat count] seats.`,
+    seats: seats
+      ? `Only ${seats.active} of our ${seats.paid} seats were used in the last ${seats.days} days, so we'll be reducing our seat count at renewal of the ${d.agreement_name}. Please send a revised order form for ${seats.target ?? "[new seat count]"} seats.`
+      : `We'll be reducing our seat count at renewal of the ${d.agreement_name}. Please send a revised order form for [new seat count] seats.`,
     cancel: `Please treat this email as our written notice of non-renewal of the ${d.agreement_name}, and confirm that the subscription will not auto-renew.`,
     review: `We'd like to review pricing and terms for the ${d.agreement_name} before it renews. Could you send the renewal quote and suggest a time to talk?`,
   };
@@ -138,10 +158,11 @@ export async function POST(req: Request) {
   const { noticeDeadline, goal, tone } = parsed.data;
   const data = { price_escalators: [], document_kind: "contract", ...parsed.data.data } as Extraction;
   const change = parsed.data.priceChange ?? null;
+  const seats = goal === "seats" ? parsed.data.seats ?? null : null;
   const company = parsed.data.company ?? data.customer ?? null;
 
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
-    return NextResponse.json({ ...templateEmail(data, noticeDeadline, goal, company, change), demo: true });
+    return NextResponse.json({ ...templateEmail(data, noticeDeadline, goal, company, change, seats), demo: true });
   }
 
   const client = new Anthropic();
@@ -156,7 +177,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "user",
-          content: `Contract facts:\n${facts(data, noticeDeadline, change)}\n\nCompany name for the sign-off: ${company ?? "not given"}\nTone: ${tone}\n\nWhat the email must do: ${GOALS[goal]}`,
+          content: `Contract facts:\n${facts(data, noticeDeadline, change)}${seats ? `\n${seatLine(seats)}` : ""}\n\nCompany name for the sign-off: ${company ?? "not given"}\nTone: ${tone}\n\nWhat the email must do: ${GOALS[goal]}`,
         },
       ],
     });

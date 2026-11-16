@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildItems, importDescription, importSeats } from "@/lib/discovery/build";
-import { PROVIDERS, type DiscoveryData, type DiscoveryOp, type DiscoveryState, type ProviderId, type Signal } from "@/lib/discovery/types";
+import { isMissingUsageColumn, PROVIDERS, type DiscoveryData, type DiscoveryOp, type DiscoveryState, type ProviderId, type Signal } from "@/lib/discovery/types";
 import { requireSession } from "@/lib/server/api";
 import { encryptionBlocker, isConfigured } from "@/lib/server/connectors/config";
 import { canClassify } from "@/lib/server/connectors/classify";
@@ -12,12 +12,20 @@ type Ctx = Exclude<Awaited<ReturnType<typeof requireSession>>, NextResponse>;
 
 const SIGNAL_COLS =
   "provider, vendor_key, name, category, dept_hint, kind, annual_spend, payment_count, last_seen, cadence, currency, users, licensed, dept_counts, evidence";
+const LOGIN_COLS = ", active_users, last_login, window_days, idle_people";
+
+/** Signals with login activity; without it until 20261116213000_seat_usage.sql has been run. */
+async function loadSignals(supabase: Ctx["supabase"], ws: string) {
+  const full = await supabase.from("discovery_signals").select(SIGNAL_COLS + LOGIN_COLS).eq("workspace_id", ws);
+  if (full.error && isMissingUsageColumn(full.error.message)) return supabase.from("discovery_signals").select(SIGNAL_COLS).eq("workspace_id", ws);
+  return full;
+}
 
 async function load({ supabase, session }: Ctx): Promise<DiscoveryData> {
   const ws = session.workspace.id;
   const [c, s, st] = await Promise.all([
     supabase.from("connections").select("provider, status, account_name, last_synced_at, last_error, summary").eq("workspace_id", ws),
-    supabase.from("discovery_signals").select(SIGNAL_COLS).eq("workspace_id", ws),
+    loadSignals(supabase, ws),
     supabase.from("discovered_tools").select("vendor_key, status, department_id, department_set, tool_id").eq("workspace_id", ws),
   ]);
   const err = [c, s, st].find((r) => r.error)?.error;

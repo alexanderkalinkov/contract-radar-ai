@@ -6,9 +6,10 @@ import { useState } from "react";
 import { daysUntil, TODAY } from "@/lib/engine";
 import { longDate, usd } from "@/lib/format";
 import { documentKind } from "@/lib/extraction";
-import { usePortfolio, useSavedContracts } from "@/lib/portfolio";
+import { useContractUsage, usePortfolio, useSavedContracts } from "@/lib/portfolio";
 import { hueFor, initialsFor, isRisky } from "@/lib/saved";
 import { opportunitiesFromSaved } from "@/lib/opportunities";
+import { SeatUsageCard } from "./SeatUsage";
 import { EmailDrafter } from "./EmailDrafter";
 import { PriceChangePanel } from "./PriceHikes";
 import { ExtractionCard } from "./Uploader";
@@ -21,6 +22,7 @@ export function SavedContractPage({ id }: { id: string }) {
   const { saved, loading, remove, link } = useSavedContracts();
   const { history, contracts } = usePortfolio();
   const [busy, setBusy] = useState<"pdf" | "delete" | "link" | null>(null);
+  const usageOf = useContractUsage();
   const [err, setErr] = useState<string | null>(null);
   const s = saved.find((x) => x.id === id);
 
@@ -41,7 +43,9 @@ export function SavedContractPage({ id }: { id: string }) {
   const days = s.noticeDeadline ? daysUntil(s.noticeDeadline, TODAY) : null;
   const flags = isRisky(s);
   const change = history.changes.get(s.id) ?? null;
-  const found = opportunitiesFromSaved(s, change);
+  const usage = usageOf(s);
+  const found = opportunitiesFromSaved(s, change, usage);
+  const seatOpp = found.find((o) => o.lever === "seats");
   const shownOnId = history.shownOn.get(s.id);
   const shownOn = shownOnId ? saved.find((x) => x.id === shownOnId) : undefined;
   const asContract = contracts.find((c) => c.id === s.id);
@@ -168,7 +172,11 @@ export function SavedContractPage({ id }: { id: string }) {
         <Card label="Savings found" className="flex flex-col gap-3 p-5">
           <div className="flex flex-col gap-1">
             <h2 className="m-0 font-display text-[19px] font-semibold">Savings found</h2>
-            <span className="text-[13px] text-muted">From this contract and the documents compared with it. <span className="text-[13px] text-muted">Estimates from this contract alone. Connecting logins and spend will firm them up.</span>quot;Up to<span className="text-[13px] text-muted">Estimates from this contract alone. Connecting logins and spend will firm them up.</span>quot; amounts are estimates; connecting logins and spend will firm them up.</span>
+            <span className="text-[13px] text-muted">
+              {usage
+                ? `From this contract, the documents compared with it and ${usage.source} sign-ins. "Up to" amounts need the vendor to agree.`
+                : `From this contract and the documents compared with it. "Up to" amounts are estimates; connecting Google Workspace or Microsoft sign-ins will firm up seat savings.`}
+            </span>
           </div>
           <ul className="m-0 flex list-none flex-col divide-y divide-line-soft p-0">
             {found.map((o) => (
@@ -185,6 +193,8 @@ export function SavedContractPage({ id }: { id: string }) {
           </ul>
         </Card>
       )}
+
+      {usage && <SeatUsageCard u={usage} />}
 
       <PriceChangePanel change={change} escalators={asContract?.escalators ?? []} timeline={timeline} />
 
@@ -209,7 +219,12 @@ export function SavedContractPage({ id }: { id: string }) {
         </label>
       )}
 
-      <EmailDrafter contract={s} priceChange={change} defaultGoal={found[0]?.goal ?? (change && change.deltaAbs > 0 ? "hike" : "review")} />
+      <EmailDrafter
+        contract={s}
+        priceChange={change}
+        defaultGoal={[...found].sort((a, b) => b.annualSavings - a.annualSavings)[0]?.goal ?? (change && change.deltaAbs > 0 ? "hike" : "review")}
+        seats={usage ? { paid: usage.paid, active: usage.active, target: seatOpp?.targetSeats ?? null, source: usage.source, days: usage.activeDays ?? 30 } : undefined}
+      />
 
       <div className="flex flex-col gap-2">
         <h2 className="m-0 font-display text-[19px] font-semibold">Extracted terms</h2>

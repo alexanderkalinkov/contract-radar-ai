@@ -1,9 +1,10 @@
 // Savings opportunities found in a contract the team uploaded, using only what the contract itself says.
-// Sample opportunities (seed.ts) also use seat logins and quotes; uploaded contracts don't have those yet,
-// so these amounts are "up to" estimates and the assumptions are spelled out where they're shown.
+// With sign-in data from Google Workspace or Microsoft, the seat finding uses real unused seats; without it,
+// amounts are "up to" estimates and the assumptions are spelled out where they're shown.
 import type { SavedContract } from "./saved";
 import { hueFor, initialsFor } from "./saved";
-import type { Opportunity, PriceChange } from "./types";
+import type { Opportunity, PriceChange, SeatUsage } from "./types";
+import { activeLabel, unusedSeats, worthCutting } from "./usage";
 
 /** A typical list-price increase at renewal when nothing in the contract limits it. */
 export const ASSUMED_UPLIFT_PCT = 7;
@@ -59,9 +60,17 @@ export interface UploadedOpportunity extends Opportunity {
   goal: EmailGoal;
   /** Plain-English basis for the amount, shown next to it. */
   basis: string;
+  /** For seat cuts backed by sign-ins: the seat count to ask for at renewal. */
+  targetSeats?: number;
 }
 
-export function opportunitiesFromSaved(s: SavedContract, change?: PriceChange | null): UploadedOpportunity[] {
+/** Seats you can drop at renewal: the unused ones, limited by the contract's seat-reduction clause when it has one. */
+export function removableSeats(u: SeatUsage, seatReductionPct: number | null): number {
+  const unused = unusedSeats(u);
+  return seatReductionPct != null ? Math.min(unused, Math.floor((u.paid * seatReductionPct) / 100)) : unused;
+}
+
+export function opportunitiesFromSaved(s: SavedContract, change?: PriceChange | null, usage?: SeatUsage): UploadedOpportunity[] {
   const d = s.data;
   const hike = change ? hikeOpportunity(s, change) : null;
   if (!d.auto_renewal.value) return hike ? [hike] : [];
@@ -93,7 +102,27 @@ export function opportunitiesFromSaved(s: SavedContract, change?: PriceChange | 
   }
 
   const pct = d.seat_reduction_percent.value;
-  if (pct != null && pct > 0) {
+  if (usage && worthCutting(usage) && (pct == null || pct > 0)) {
+    const unused = unusedSeats(usage);
+    const cut = removableSeats(usage, pct);
+    const perSeat = fee ? fee / usage.paid : 0;
+    const limit = pct != null && cut < unused ? `; the contract allows cutting ${pct}% (${cut} seats)` : "";
+    out.push({
+      ...base,
+      id: `up-${s.id}-seats`,
+      lever: "seats",
+      goal: "seats",
+      finding: `${unused} of ${usage.paid} seats had no sign-in in ${activeLabel(usage)}`,
+      annualSavings: Math.round(perSeat * cut),
+      // Without a seat-reduction clause the vendor has to agree to the cut.
+      estimate: pct == null,
+      action: "Right-size",
+      targetSeats: usage.paid - cut,
+      basis: `${usage.source} sign-ins: ${usage.active} of ${usage.paid} paid seats used in the last ${activeLabel(usage)}${limit}${
+        pct == null ? ". No seat-reduction clause found, so ask the vendor at renewal" : ""
+      }${fee ? `, at $${Math.round(perSeat).toLocaleString("en-US")} a seat` : ""}`,
+    });
+  } else if (!usage && pct != null && pct > 0) {
     out.push({
       ...base,
       id: `up-${s.id}-seats`,

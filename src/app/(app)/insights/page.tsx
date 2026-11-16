@@ -8,6 +8,8 @@ import { SampleTeamNote, TeamError } from "@/components/team/TeamError";
 import { shortDate, usd, usdShort } from "@/lib/format";
 import { ACTION_LABEL, type Action } from "@/lib/team/insights";
 import { useTeam } from "@/lib/team/useTeam";
+import { activeLabel, sinceLabel } from "@/lib/usage";
+import { UsageBar } from "@/components/SeatUsage";
 
 type Filter = "all" | Action;
 
@@ -180,7 +182,9 @@ export default function InsightsPage() {
       <Card label="Recommendations" className="flex flex-col gap-4 p-5">
         <div className="flex flex-col gap-1">
           <H2>Recommendation for every tool</H2>
-          <span className="text-[13px] text-muted">Based on the contract, seats and the owning team&apos;s answers. Savings are estimates.</span>
+          <span className="text-[13px] text-muted">
+            Based on the contract, seats, sign-ins from Google Workspace or Microsoft, and the owning team&apos;s answers. Savings are estimates.
+          </span>
         </div>
         <div className="overflow-x-auto">
           <Segmented<Filter>
@@ -193,10 +197,11 @@ export default function InsightsPage() {
           />
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] border-collapse text-sm">
+          <table className="w-full min-w-[940px] border-collapse text-sm">
             <thead>
               <tr className="text-left text-xs tracking-wide text-muted uppercase">
                 <th scope="col" className="py-2 pr-3 font-semibold">Tool</th>
+                <th scope="col" className="px-3 py-2 font-semibold">Seats used</th>
                 <th scope="col" className="px-3 py-2 font-semibold">Do this</th>
                 <th scope="col" className="px-3 py-2 font-semibold">Why</th>
                 <th scope="col" className="px-3 py-2 text-right font-semibold">Cost</th>
@@ -212,6 +217,19 @@ export default function InsightsPage() {
                       <span className="font-semibold">{r.tool.name}</span>
                       <span className="text-[13px] text-muted">{r.department}</span>
                     </Link>
+                  </td>
+                  <td className="w-[130px] px-3 py-3">
+                    {r.usage ? (
+                      <div className="flex flex-col gap-1" title={`${r.usage.source} sign-ins, last ${activeLabel(r.usage)}${r.usage.lastLogin ? ` · latest ${sinceLabel(r.usage.lastLogin)}` : ""}`}>
+                        <span className="font-semibold">
+                          {r.usage.active}
+                          <span className="font-normal text-muted"> / {r.usage.paid}</span>
+                        </span>
+                        <UsageBar u={r.usage} />
+                      </div>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-3"><ActionChip action={r.recommendation.action} /></td>
                   <td className="max-w-[360px] px-3 py-3 text-ink-2">{r.recommendation.reason}</td>

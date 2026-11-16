@@ -1,7 +1,7 @@
 import "server-only";
 import { aggregateSpend, maybeSoftware, obviousSoftware, spendSignal, usageSignal } from "@/lib/discovery/build";
 import { matchVendor } from "@/lib/discovery/catalog";
-import type { ConnectionInfo, ProviderId, Signal } from "@/lib/discovery/types";
+import { isMissingUsageColumn, withoutLoginFields, type ConnectionInfo, type ProviderId, type Signal } from "@/lib/discovery/types";
 import type { createClient } from "@/lib/supabase/server";
 import { classifyVendors } from "./classify";
 import { decrypt, encrypt } from "./config";
@@ -16,6 +16,7 @@ const missingTables = (msg: string) =>
     : msg;
 
 export { missingTables };
+
 
 /** Save a fresh connection after the OAuth callback. */
 export async function saveConnection(supabase: Supabase, ws: string, provider: ProviderId, tokens: Tokens, externalId: string | null) {
@@ -88,7 +89,11 @@ export async function syncProvider(supabase: Supabase, ws: string, provider: Pro
     const del = await supabase.from("discovery_signals").delete().eq("workspace_id", ws).eq("provider", provider);
     if (del.error) throw new Error(missingTables(del.error.message));
     if (signals.length) {
-      const ins = await supabase.from("discovery_signals").insert(signals.map((s) => ({ ...s, workspace_id: ws })));
+      let ins = await supabase.from("discovery_signals").insert(signals.map((s) => ({ ...s, workspace_id: ws })));
+      // Before 20261116213000_seat_usage.sql runs, the login columns don't exist: save the rest.
+      if (ins.error && isMissingUsageColumn(ins.error.message)) {
+        ins = await supabase.from("discovery_signals").insert(signals.map((s) => ({ ...withoutLoginFields(s), workspace_id: ws })));
+      }
       if (ins.error) throw new Error(missingTables(ins.error.message));
     }
     const summary = {
@@ -174,6 +179,10 @@ async function toSignals(provider: ProviderId, result: Awaited<ReturnType<typeof
         users: Math.max(prev.users ?? 0, s.users ?? 0) || null,
         licensed: Math.max(prev.licensed ?? 0, s.licensed ?? 0) || null,
         last_seen: [prev.last_seen, s.last_seen].filter(Boolean).sort().at(-1) ?? null,
+        active_users: prev.active_users != null || s.active_users != null ? Math.max(prev.active_users ?? 0, s.active_users ?? 0) : null,
+        last_login: [prev.last_login, s.last_login].filter(Boolean).sort().at(-1) ?? null,
+        window_days: prev.window_days ?? s.window_days ?? null,
+        idle_people: prev.idle_people ?? s.idle_people ?? null,
       });
   }
   return [...merged.values()];
