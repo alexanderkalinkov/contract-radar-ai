@@ -188,9 +188,12 @@ export function ExtractionCard({
   hideHeader = false,
   onReview,
   onOpenPage,
+  savedNote,
 }: {
   r: ExtractionResult;
   hideHeader?: boolean;
+  /** Replaces the "saved to …" footer, e.g. for an import result that isn't in Contracts yet. */
+  savedNote?: string;
   onReview?: ReviewFn;
   onOpenPage?: (page: number) => void;
 }) {
@@ -274,7 +277,7 @@ export function ExtractionCard({
         </div>
       )}
       <span className="text-xs text-muted">
-        {r.demo ? "Sample data" : `Read by ${r.model}`} · {new Date(r.extractedAt).toLocaleString("en-US")} · {ws.mode === "cloud" ? `saved to ${ws.workspaceName}` : "saved in this browser (demo mode)"}
+        {r.demo ? "Sample data" : `Read by ${r.model}`} · {new Date(r.extractedAt).toLocaleString("en-US")} · {savedNote ?? (ws.mode === "cloud" ? `saved to ${ws.workspaceName}` : "saved in this browser (demo mode)")}
       </span>
     </div>
   );
