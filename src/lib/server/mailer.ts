@@ -9,7 +9,7 @@ export const isEmailConfigured = () => Boolean(process.env.RESEND_API_KEY);
 
 export type SendResult = { ok: true; id: string | null } | { ok: false; error: string };
 
-export async function sendEmail(to: string | string[], email: RenderedEmail, opts: { tags?: Record<string, string>; replyTo?: string } = {}): Promise<SendResult> {
+export async function sendEmail(to: string | string[], email: RenderedEmail, opts: { tags?: Record<string, string>; replyTo?: string; attachments?: { filename: string; content: string }[] } = {}): Promise<SendResult> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, error: "RESEND_API_KEY is not set, so the app can't send email yet." };
   const b = brand();
@@ -24,6 +24,7 @@ export async function sendEmail(to: string | string[], email: RenderedEmail, opt
         subject: email.subject,
         html: email.html,
         text: email.text,
+        ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
         tags: Object.entries(opts.tags ?? {}).map(([name, value]) => ({ name, value: value.replace(/[^A-Za-z0-9_-]/g, "_") })),
       }),
     });

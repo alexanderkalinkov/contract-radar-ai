@@ -34,6 +34,11 @@ export interface SessionInfo {
   ssoRequired?: boolean;
   /** This session signed in through SAML SSO. */
   viaSso?: boolean;
+  /** Profile basics kept in Supabase Auth user metadata (Account page). */
+  name: string;
+  jobTitle: string;
+  /** They've watched or dismissed the onboarding tour, so it doesn't open by itself again. */
+  tourSeen: boolean;
 }
 
 /** True when the token says the person signed in through SAML SSO. */
@@ -90,11 +95,17 @@ export const getSession = cache(async (): Promise<SessionInfo | null> => {
     ssoRequired = required === true;
   }
 
+  const meta = (claims.claims.user_metadata ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+
   return {
     userId,
     email,
     ssoRequired,
     viaSso,
+    name: str(meta.full_name) || str(meta.name),
+    jobTitle: str(meta.job_title),
+    tourSeen: Boolean(meta.tour_seen_at),
     workspace: {
       id: workspace.id,
       name: workspace.name,
