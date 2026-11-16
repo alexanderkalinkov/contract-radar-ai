@@ -1,6 +1,8 @@
 // Turns the tool list and survey answers into what leadership needs: overlaps across
 // departments, low-value tools and a recommendation for each tool.
 import { daysUntil, TODAY } from "@/lib/engine";
+import type { SeatUsage } from "@/lib/types";
+import { activeLabel, worthCutting } from "@/lib/usage";
 import type { Department, Survey, Tool } from "./types";
 
 export type Action = "keep" | "cut_seats" | "consolidate" | "renegotiate" | "cancel" | "needs_survey";
@@ -45,6 +47,8 @@ export interface ToolInsight {
   survey: Survey | null;
   department: string;
   recommendation: Recommendation;
+  /** Sign-ins against paid seats, when Google Workspace or Microsoft is connected. */
+  usage: SeatUsage | null;
   lowValue: boolean;
   surveyDue: boolean;
 }
@@ -89,7 +93,13 @@ function perSeat(t: Tool) {
   return t.annual_cost && t.seats ? t.annual_cost / t.seats : null;
 }
 
-export function buildInsights(tools: Tool[], surveys: Survey[], departments: Department[], today?: string): Insights {
+export function buildInsights(
+  tools: Tool[],
+  surveys: Survey[],
+  departments: Department[],
+  today?: string,
+  usageByTool: Map<string, SeatUsage> = new Map(),
+): Insights {
   const latest = latestSurveys(surveys);
   const deptName = new Map(departments.map((d) => [d.id, d.name]));
   const nameOf = (t: Tool) => (t.department_id ? deptName.get(t.department_id) ?? "Unassigned" : "Unassigned");
@@ -174,11 +184,20 @@ export function buildInsights(tools: Tool[], surveys: Survey[], departments: Dep
     const surveyDue = days != null && days >= 0 && days <= SURVEY_DUE_DAYS && (!s || (surveyAgeDays ?? 0) > SURVEY_STALE_DAYS);
 
     let rec: Recommendation;
+    const u = usageByTool.get(t.id) ?? null;
+    // Seats to cut from sign-ins: never below what the team says it needs.
+    const surveyNeeds = s?.seats_needed === "some" && s.seats_needed_count != null ? s.seats_needed_count : 0;
+    const loginCut = u && t.seats && worthCutting(u) ? Math.max(0, t.seats - Math.max(u.active, surveyNeeds)) : 0;
+    const loginReason = u
+      ? `Only ${u.active} of ${u.paid} seats signed in during the last ${activeLabel(u)} (${u.source}).`
+      : "";
     const cons = consolidateInto.get(t.id);
     const replacementTool =
       s?.replacement &&
       active.find((o) => o.id !== t.id && mentions(s.replacement!, o.name));
-    if (!s) {
+    if (!s && loginCut > 0) {
+      rec = { action: "cut_seats", reason: `${loginReason} Drop ${loginCut} at renewal. Survey not answered yet.`, savings: Math.round((perSeat(t) ?? 0) * loginCut) };
+    } else if (!s) {
       rec = { action: "needs_survey", reason: `Ask ${nameOf(t) === "Unassigned" ? "the owning team" : nameOf(t)} to answer the 4 questions.`, savings: 0 };
     } else if (s.criticality <= 2 && s.no_replacement_needed) {
       rec = { action: "cancel", reason: `Rated ${s.criticality}/5 and the team says they wouldn't need a replacement.`, savings: cost };
@@ -187,7 +206,15 @@ export function buildInsights(tools: Tool[], surveys: Survey[], departments: Dep
     } else if (s.criticality <= 2 && replacementTool) {
       const est = Math.round(cost * 0.7);
       rec = { action: "consolidate", reason: `Rated ${s.criticality}/5, and the team would use ${replacementTool.name}, which you already pay for.`, savings: est, into: replacementTool.name };
-    } else if (s.seats_needed === "some" && s.seats_needed_count != null && t.seats && s.seats_needed_count < t.seats) {
+    } else if (loginCut > 0) {
+      const said =
+        s.seats_needed === "some" && s.seats_needed_count != null
+          ? ` The team says it needs ${s.seats_needed_count}.`
+          : s.seats_needed === "all"
+            ? " The team says it needs all of them, so check before cutting."
+            : "";
+      rec = { action: "cut_seats", reason: `${loginReason}${said} Drop ${loginCut} at renewal.`, savings: Math.round((perSeat(t) ?? 0) * loginCut) };
+    } else if (s.seats_needed === "some" && s.seats_needed_count != null && t.seats && s.seats_needed_count < t.seats && !(u && u.active > s.seats_needed_count)) {
       const cut = t.seats - s.seats_needed_count;
       rec = { action: "cut_seats", reason: `The team needs ${s.seats_needed_count} of ${t.seats} seats. Drop ${cut} at renewal.`, savings: Math.round((perSeat(t) ?? 0) * cut) };
     } else if (s.criticality <= 2 && cost >= LOW_VALUE_MIN_COST) {
@@ -195,9 +222,13 @@ export function buildInsights(tools: Tool[], surveys: Survey[], departments: Dep
     } else if (days != null && days >= 0 && days <= RENEGOTIATE_WINDOW_DAYS && cost >= 10_000) {
       rec = { action: "renegotiate", reason: `Renews in ${days} days. A must-keep tool is the best time to ask for a multi-year discount.`, savings: Math.round(cost * 0.08) };
     } else {
-      rec = { action: "keep", reason: `Rated ${s.criticality}/5 and all seats are in use.`, savings: 0 };
+      rec = {
+        action: "keep",
+        reason: u ? `Rated ${s.criticality}/5, and ${u.active} of ${u.paid} seats signed in during the last ${activeLabel(u)}.` : `Rated ${s.criticality}/5 and all seats are in use.`,
+        savings: 0,
+      };
     }
-    return { tool: t, survey: s, department: nameOf(t), recommendation: rec, lowValue, surveyDue };
+    return { tool: t, survey: s, department: nameOf(t), recommendation: rec, usage: u, lowValue, surveyDue };
   });
 
   const order: Action[] = ["cancel", "consolidate", "cut_seats", "renegotiate", "needs_survey", "keep"];

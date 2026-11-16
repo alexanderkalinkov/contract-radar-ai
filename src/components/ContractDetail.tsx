@@ -9,6 +9,7 @@ import { useOppStatus } from "@/lib/store";
 import type { Contract } from "@/lib/types";
 import { IconCheck } from "./icons";
 import { btnGhost, btnPrimary, Card, ConfidenceTag, cx, H2, Segmented, VendorLogo } from "./ui";
+import { SeatUsageCard } from "./SeatUsage";
 
 export function ContractDetail({ contract: c }: { contract: Contract }) {
   const m = renewalMath(c);
@@ -199,28 +200,7 @@ export function ContractDetail({ contract: c }: { contract: Contract }) {
             ))}
           </Card>
 
-          {c.usage && (
-            <Card label="Seat usage" className="flex flex-col gap-3 p-5">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <H2>Seat usage</H2>
-                <span className="text-[13px] text-muted">From {c.usage.source} sign-ins, last 60 days</span>
-              </div>
-              <div
-                className="flex h-3.5 overflow-hidden rounded-[7px]"
-                role="img"
-                aria-label={`${c.usage.active} active seats, ${c.usage.inactive} inactive, ${c.usage.neverSignedIn} never signed in`}
-              >
-                <div className="bg-brand" style={{ width: `${(c.usage.active / c.usage.paid) * 100}%` }} />
-                <div className="bg-[#F79009]" style={{ width: `${(c.usage.inactive / c.usage.paid) * 100}%` }} />
-                <div className="bg-[#7A2E0B]" style={{ width: `${(c.usage.neverSignedIn / c.usage.paid) * 100}%` }} />
-              </div>
-              <div className="flex flex-wrap gap-[18px] text-[13px] text-ink-2">
-                <Legend color="bg-brand" label={`${c.usage.active} active`} />
-                <Legend color="bg-[#F79009]" label={`${c.usage.inactive} inactive 60+ days`} />
-                <Legend color="bg-[#7A2E0B]" label={`${c.usage.neverSignedIn} never signed in`} />
-              </div>
-            </Card>
-          )}
+          {c.usage && <SeatUsageCard u={c.usage} />}
         </div>
 
         <Card label="Pushback email draft" className="flex min-w-0 flex-[1_1_440px] flex-col">
@@ -310,15 +290,6 @@ function MathRow({ label, value }: { label: React.ReactNode; value: string }) {
       <span>{label}</span>
       <span className="font-semibold">{value}</span>
     </div>
-  );
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className={cx("h-2.5 w-2.5 rounded-[3px]", color)} />
-      {label}
-    </span>
   );
 }
 

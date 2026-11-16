@@ -6,6 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "@/components/WorkspaceProvider";
 import { useSavedContracts } from "@/lib/portfolio";
 import { useStored } from "@/lib/store";
+import type { SeatUsage } from "@/lib/types";
+import { usageForTools } from "@/lib/usage";
+import { useUsage } from "@/lib/useUsage";
 import { buildInsights } from "./insights";
 import { SAMPLE_DEPARTMENTS, SAMPLE_SURVEYS, SAMPLE_TOOLS } from "./sample";
 import { guessCategory, type OpResult, type TeamData, type TeamOp } from "./types";
@@ -218,7 +221,16 @@ export function useTeam() {
     };
   }, [raw, ws.showSample]);
 
-  const insights = useMemo(() => (data ? buildInsights(data.tools, data.surveys, data.departments) : null), [data]);
+  const { live, sample } = useUsage();
+  /** Sign-ins per tool: the workspace's own data for its tools, sample data only for the sample team. */
+  const usage = useMemo(() => {
+    if (!data) return new Map<string, SeatUsage>();
+    const deptName = (id: string | null) => data.departments.find((d) => d.id === id)?.name ?? null;
+    const own = usageForTools(data.tools.filter((t) => !t.sample), deptName, live);
+    const demo = usageForTools(data.tools.filter((t) => t.sample), deptName, sample);
+    return new Map([...own, ...demo]);
+  }, [data, live, sample]);
+  const insights = useMemo(() => (data ? buildInsights(data.tools, data.surveys, data.departments, undefined, usage) : null), [data, usage]);
 
   const me = raw?.me ?? null;
   const isAdmin = me?.role === "owner";
@@ -233,6 +245,7 @@ export function useTeam() {
     data,
     raw,
     insights,
+    usage,
     me,
     isAdmin,
     canEdit,

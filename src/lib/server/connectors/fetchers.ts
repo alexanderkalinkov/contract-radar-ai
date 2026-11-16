@@ -176,6 +176,7 @@ interface GUser {
   organizations?: { department?: string; primary?: boolean }[];
 }
 interface GActivity {
+  id?: { time?: string };
   actor?: { email?: string };
   events?: { name?: string; parameters?: { name: string; value?: string }[] }[];
 }
@@ -206,12 +207,15 @@ export async function fetchGoogle(token: string): Promise<FetchResult> {
   }
 
   const start = daysAgo(WINDOW_GOOGLE).toISOString();
-  const apps = new Map<string, Set<string>>();
-  const add = (name: string | undefined, email: string | undefined) => {
+  const apps = new Map<string, Map<string, string>>(); // app → email → latest sign-in time
+  const add = (name: string | undefined, email: string | undefined, time: string | undefined) => {
     if (!name || !email || isPlatformApp(name)) return;
     const key = name.trim();
-    if (!apps.has(key)) apps.set(key, new Set());
-    apps.get(key)!.add(email.toLowerCase());
+    if (!apps.has(key)) apps.set(key, new Map());
+    const people = apps.get(key)!;
+    const e = email.toLowerCase();
+    const t = time ?? start;
+    if ((people.get(e) ?? "") < t) people.set(e, t);
   };
   const activities = async (application: "token" | "saml", onEvent: (a: GActivity, e: NonNullable<GActivity["events"]>[number]) => void) => {
     let pt = "";
@@ -228,22 +232,25 @@ export async function fetchGoogle(token: string): Promise<FetchResult> {
   };
   const param = (e: NonNullable<GActivity["events"]>[number], n: string) => e.parameters?.find((p) => p.name === n)?.value;
   await activities("token", (a, e) => {
-    if (e.name !== "revoke") add(param(e, "app_name"), a.actor?.email);
+    if (e.name !== "revoke") add(param(e, "app_name"), a.actor?.email, a.id?.time);
   });
   // SAML is only logged when Google is the identity provider for an app; an empty or missing log is normal.
   await activities("saml", (a, e) => {
-    if (e.name === "login_success") add(param(e, "application_name"), a.actor?.email);
+    if (e.name === "login_success") add(param(e, "application_name"), a.actor?.email, a.id?.time);
   }).catch(() => undefined);
 
   const active = users.filter((u) => !u.suspended && !u.archived);
   const cutoff = daysAgo(WINDOW_GOOGLE).toISOString();
-  const recent = new Set(active.filter((u) => u.lastLoginTime && u.lastLoginTime >= cutoff).map((u) => u.primaryEmail.toLowerCase()));
-  const list: UsageApp[] = [...apps].map(([name, set]) => ({ name, users: set }));
+  const recentUsers = active.filter((u) => u.lastLoginTime && u.lastLoginTime >= cutoff);
+  const recent = new Set(recentUsers.map((u) => u.primaryEmail.toLowerCase()));
+  const list: UsageApp[] = [...apps].map(([name, people]) => ({ name, users: new Set(people.keys()), last: people }));
   list.push({
     name: "Google Workspace",
     users: recent,
     licensed: active.length,
     note: `${recent.size} of ${active.length} active accounts signed in, last ${WINDOW_GOOGLE} days`,
+    last: new Map(recentUsers.map((u) => [u.primaryEmail.toLowerCase(), u.lastLoginTime!])),
+    neverIn: active.filter((u) => !recent.has(u.primaryEmail.toLowerCase())).map((u) => u.primaryEmail.toLowerCase()),
   });
   const domain = users[0]?.primaryEmail.split("@")[1] ?? null;
   return { account_name: domain, usage: { apps: list, deptOf, windowDays: WINDOW_GOOGLE } };
@@ -312,21 +319,28 @@ export async function fetchMicrosoft(token: string): Promise<FetchResult> {
   }
 
   const apps = new Map<string, Set<string>>();
-  const add = (name: string | undefined, email: string | undefined) => {
+  const lastSeen = new Map<string, Map<string, string>>(); // app → email → latest sign-in (sign-in logs only)
+  const add = (name: string | undefined, email: string | undefined, time?: string) => {
     if (!name || !email || isPlatformApp(name) || MS_FIRST_PARTY.test(name)) return;
     if (!apps.has(name)) apps.set(name, new Set());
-    apps.get(name)!.add(email.toLowerCase());
+    const e = email.toLowerCase();
+    apps.get(name)!.add(e);
+    if (time) {
+      if (!lastSeen.has(name)) lastSeen.set(name, new Map());
+      const m = lastSeen.get(name)!;
+      if ((m.get(e) ?? "") < time) m.set(e, time);
+    }
   };
 
   let note: string | undefined;
   try {
     const since = daysAgo(WINDOW_MS).toISOString().replace(/\.\d+Z$/, "Z");
-    const signIns = await graphAll<{ appDisplayName?: string; userPrincipalName?: string; status?: { errorCode?: number } }>(
+    const signIns = await graphAll<{ appDisplayName?: string; userPrincipalName?: string; createdDateTime?: string; status?: { errorCode?: number } }>(
       `${GRAPH}/auditLogs/signIns?$filter=${encodeURIComponent(`createdDateTime ge ${since}`)}&$top=1000`,
       token,
       15,
     );
-    for (const s of signIns) if (!s.status?.errorCode) add(s.appDisplayName, s.userPrincipalName);
+    for (const s of signIns) if (!s.status?.errorCode) add(s.appDisplayName, s.userPrincipalName, s.createdDateTime ?? since);
   } catch (e) {
     if (!(e instanceof ProviderError) || (e.status !== 403 && e.status !== 400)) throw e;
     // No Entra ID P1/P2 (or no Reports Reader role): count who is assigned to each enterprise app instead.
@@ -350,6 +364,7 @@ export async function fetchMicrosoft(token: string): Promise<FetchResult> {
     name,
     users: set,
     note: note ? `${set.size} ${set.size === 1 ? "person" : "people"} assigned in Entra ID` : undefined,
+    last: note ? undefined : lastSeen.get(name),
   }));
 
   // Licences: what you pay Microsoft for, and how many are assigned.

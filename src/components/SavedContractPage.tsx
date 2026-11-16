@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { daysUntil, TODAY } from "@/lib/engine";
 import { longDate, usd } from "@/lib/format";
-import { useSavedContracts } from "@/lib/portfolio";
+import { useContractUsage, useSavedContracts } from "@/lib/portfolio";
 import { hueFor, initialsFor, isRisky } from "@/lib/saved";
 import { opportunitiesFromSaved } from "@/lib/opportunities";
+import { SeatUsageCard } from "./SeatUsage";
 import { EmailDrafter } from "./EmailDrafter";
 import { ExtractionCard } from "./Uploader";
 import { btnGhost, Card, cx, VendorLogo } from "./ui";
@@ -17,6 +18,7 @@ export function SavedContractPage({ id }: { id: string }) {
   const ws = useWorkspace();
   const router = useRouter();
   const { saved, loading, remove } = useSavedContracts();
+  const usageOf = useContractUsage();
   const [busy, setBusy] = useState<"pdf" | "delete" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const s = saved.find((x) => x.id === id);
@@ -37,7 +39,9 @@ export function SavedContractPage({ id }: { id: string }) {
   const d = s.data;
   const days = s.noticeDeadline ? daysUntil(s.noticeDeadline, TODAY) : null;
   const flags = isRisky(s);
-  const found = opportunitiesFromSaved(s);
+  const usage = usageOf(s);
+  const found = opportunitiesFromSaved(s, usage);
+  const seatOpp = found.find((o) => o.lever === "seats");
 
   async function openPdf() {
     setBusy("pdf");
@@ -121,7 +125,11 @@ export function SavedContractPage({ id }: { id: string }) {
         <Card label="Savings found" className="flex flex-col gap-3 p-5">
           <div className="flex flex-col gap-1">
             <h2 className="m-0 font-display text-[19px] font-semibold">Savings found</h2>
-            <span className="text-[13px] text-muted">Estimates from this contract alone. Connecting logins and spend will firm them up.</span>
+            <span className="text-[13px] text-muted">
+              {usage
+                ? `From this contract and ${usage.source} sign-ins. "Up to" amounts need the vendor to agree.`
+                : "Estimates from this contract alone. Connecting Google Workspace or Microsoft sign-ins will firm up seat savings."}
+            </span>
           </div>
           <ul className="m-0 flex list-none flex-col divide-y divide-line-soft p-0">
             {found.map((o) => (
@@ -131,7 +139,7 @@ export function SavedContractPage({ id }: { id: string }) {
                   <span className="text-[13px] text-muted">{o.basis}</span>
                 </div>
                 <span className={cx("font-display text-lg font-semibold whitespace-nowrap", o.annualSavings > 0 ? "text-good" : "text-muted")}>
-                  {o.annualSavings > 0 ? `up to ${usd(o.annualSavings)}/yr` : "Not sized yet"}
+                  {o.annualSavings > 0 ? `${o.estimate ? "up to " : ""}${usd(o.annualSavings)}/yr` : "Not sized yet"}
                 </span>
               </li>
             ))}
@@ -139,7 +147,13 @@ export function SavedContractPage({ id }: { id: string }) {
         </Card>
       )}
 
-      <EmailDrafter contract={s} defaultGoal={found[0]?.goal ?? "review"} />
+      {usage && <SeatUsageCard u={usage} />}
+
+      <EmailDrafter
+        contract={s}
+        defaultGoal={[...found].sort((a, b) => b.annualSavings - a.annualSavings)[0]?.goal ?? "review"}
+        seats={usage ? { paid: usage.paid, active: usage.active, target: seatOpp?.targetSeats ?? null, source: usage.source, days: usage.activeDays ?? 30 } : undefined}
+      />
 
       <div className="flex flex-col gap-2">
         <h2 className="m-0 font-display text-[19px] font-semibold">Extracted terms</h2>
