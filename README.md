@@ -46,7 +46,9 @@ saved in the database.
    [`supabase/migrations/20261115000000_workspaces_and_contracts.sql`](supabase/migrations/20261115000000_workspaces_and_contracts.sql)
    and click *Run*. It creates the tables, the security rules and a private `contracts` storage bucket. Then do the same with
    [`supabase/migrations/20261115120000_team_onboarding.sql`](supabase/migrations/20261115120000_team_onboarding.sql)
-   (departments, tool list and survey). Both are safe to run again.
+   (departments, tool list and survey), then
+   [`supabase/migrations/20261116000000_auto_discovery.sql`](supabase/migrations/20261116000000_auto_discovery.sql)
+   (connected sources and discovered tools). All are safe to run again.
 3. **Copy the keys.** *Project Settings → API*: copy the Project URL and the publishable key into `.env.local`:
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
@@ -71,12 +73,23 @@ How it fits together:
 | `departments` | Sales, Marketing, Engineering… per workspace |
 | `tools` | Every tool the company pays for: department, cost, seats, renewal, linked contract |
 | `tool_surveys` | Each department's answers to the 4 questions, kept as history |
+| `connections`, `connection_secrets` | Connected QuickBooks / Xero / Google / Microsoft accounts; tokens encrypted, admins only |
+| `discovery_signals`, `discovered_tools` | What each source found (spend, people, departments) and the admin's review decisions |
 | `contracts` | Each uploaded contract: the full Claude extraction (quotes, pages, confidence) plus key columns (vendor, term end, notice deadline, cap, fee, seats) |
 | Storage bucket `contracts` | The original PDFs, one folder per workspace |
 
 Row-level security means people only ever see their own workspace's rows and files, and department owners can only
 change their own department's tools. Only the publishable key is needed; an optional `SUPABASE_SERVICE_ROLE_KEY` (server
 only) makes invites use Supabase's invite email.
+
+## Turn on auto-discovery (QuickBooks, Xero, Google Workspace, Microsoft)
+
+Radar can find the tools you pay for and who uses them, then file each one under the right department for its owner
+to confirm. It needs one OAuth app per provider (client ID and secret) and an encryption key in `.env.local` and
+Vercel. Step-by-step: [docs/auto-discovery-setup.md](docs/auto-discovery-setup.md). Without the keys, the
+Discovered tools page shows "Needs setup" (or sample results in demo mode).
+
+![Discovered tools](docs/screenshots/discovered-tools.png)
 
 ## What to click
 
@@ -86,7 +99,8 @@ only) makes invites use Supabase's invite email.
 | Contract renewal detail | `/contracts/salesforce` (and every other vendor) | Renewal math with "What to ask for" toggle, extracted clauses with page and confidence, seat usage, pushback email with Firm/Friendly tone, open in email, copy, mark as sent |
 | Contracts | `/contracts` | Your uploaded contracts and the sample ones, sorted by notice deadline, with risk flags |
 | Uploaded contract page | `/contracts/<id>` | Savings found, a Claude-drafted pushback email (goal and tone), every extracted term with the clause and page it came from, risk flags, open the original PDF, delete |
-| Team setup | `/setup` | Admin wizard: company, connect (coming soon), departments, invite one owner each, first tools |
+| Team setup | `/setup` | Admin wizard: company, connect accounting and sign-in, departments, invite one owner each, review discovered tools |
+| Discovered tools | `/discover` | Connect QuickBooks, Xero, Google Workspace or Microsoft; review every tool found with spend, people and a suggested department; add them to Tools & survey for owners to confirm. Sample results in demo mode |
 | Team | `/team` | Departments and their owners, invite by email, set each person's department and role |
 | Tools & survey | `/tools`, `/tools/<id>` | Every tool by department; owners confirm theirs and answer 4 questions (purpose, criticality 1–5, replacement, seats) |
 | Leadership view | `/insights` | For admins: overlapping tools across teams, high-cost low-value tools, spend by department, a keep / cut seats / consolidate / renegotiate / cancel call for every tool |

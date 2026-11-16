@@ -62,7 +62,9 @@ export default function ToolPage() {
         <Card label="Confirm" className="flex flex-col gap-3 border-warn-line bg-warn-soft p-5">
           <H2>Is this one of your team&apos;s tools?</H2>
           <p className="m-0 text-sm text-ink-2">
-            We found it in an uploaded contract. Pick the department that pays for it, or answer the survey below to confirm it.
+            {tool.source === "import"
+              ? "Radar found it in your accounting or sign-in data and filed it under this department. If it's yours, answer the survey below to confirm it; if not, pick the department that uses it."
+              : "We found it in an uploaded contract. Pick the department that pays for it, or answer the survey below to confirm it."}
           </p>
           <div className="flex max-w-[360px] flex-col gap-1.5">
             <label htmlFor="confirm-dept" className={labelCls}>Department</label>

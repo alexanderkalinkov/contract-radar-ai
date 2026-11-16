@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
-import { IconCal, IconChart, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
+import { IconCal, IconChart, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
 import { useWorkspace } from "./WorkspaceProvider";
 import { cx } from "./ui";
 
@@ -13,6 +13,7 @@ const NAV = [
   { href: "/", label: "Savings", Icon: IconHome },
   { href: "/insights", label: "Leadership view", Icon: IconChart, adminOnly: true },
   { href: "/tools", label: "Tools & survey", Icon: IconList },
+  { href: "/discover", label: "Discovered tools", Icon: IconSpark },
   { href: "/contracts", label: "Contracts", Icon: IconDoc },
   { href: "/calendar", label: "Renewal calendar", Icon: IconCal },
   { href: "/seats", label: "Seats & usage", Icon: IconUsers },

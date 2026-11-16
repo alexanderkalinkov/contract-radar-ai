@@ -91,6 +91,24 @@ function applyDemo(d: TeamData, op: TeamOp): [TeamData, OpResult] {
       });
       return [next, { ok: true, id }];
     }
+    case "importTools":
+      for (const t of op.tools) {
+        next.tools.push({
+          id: t.id,
+          name: t.name,
+          category: t.category || guessCategory(t.name),
+          description: t.description ?? null,
+          department_id: t.department_id ?? null,
+          contract_id: null,
+          annual_cost: t.annual_cost ?? null,
+          seats: t.seats ?? null,
+          renewal_date: null,
+          source: "import",
+          confirmed: false,
+          created_at: now,
+        });
+      }
+      break;
     case "updateTool":
       next.tools = next.tools.map((t) => (t.id === op.id ? { ...t, ...op.tool } : t));
       break;

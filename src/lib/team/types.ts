@@ -80,6 +80,8 @@ export type TeamOp =
   | { op: "invite"; email: string; department_id: string | null; role: Role }
   | { op: "cancelInvite"; id: string }
   | { op: "addTool"; tool: ToolInput & { name: string } }
+  /** Demo mode only: tools found by auto-discovery (the cloud uses POST /api/discovery). */
+  | { op: "importTools"; tools: (ToolInput & { name: string; id: string })[] }
   | { op: "updateTool"; id: string; tool: ToolInput }
   | { op: "deleteTool"; id: string }
   | { op: "answerSurvey"; tool_id: string; answers: SurveyInput };

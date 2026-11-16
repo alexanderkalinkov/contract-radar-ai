@@ -46,6 +46,11 @@ export default function ToolsPage() {
         eyebrow={`${insights.totals.tools} tools · ${usd(insights.totals.spend)} a year · ${insights.totals.answered} of ${insights.totals.tools} surveys answered`}
         title="Tools & survey"
       >
+        {isAdmin && (
+          <Link href="/discover" className={btnGhost}>
+            Find tools automatically
+          </Link>
+        )}
         <Link href="/upload" className={btnGhost}>
           <IconUpload /> Upload contract
         </Link>
@@ -90,7 +95,7 @@ export default function ToolsPage() {
           <div className="flex flex-col gap-1">
             <H2>Add a tool by hand</H2>
             <span className="text-[13px] text-muted">
-              No contract handy? Add the basics now and upload the contract later. Accounting and SSO imports are coming soon.
+              No contract handy? Add the basics now and upload the contract later, or let Radar find tools in your accounting and sign-in data.
             </span>
           </div>
           <ToolForm
@@ -155,7 +160,9 @@ export default function ToolsPage() {
                         {t.name}
                         {t.sample && <span className="ml-2 rounded-full bg-chip px-2 py-0.5 text-xs font-medium text-muted">Sample</span>}
                         {!t.confirmed && !t.sample && (
-                          <span className="ml-2 rounded-full bg-warn-soft px-2 py-0.5 text-xs font-semibold text-warn-text">From upload: confirm</span>
+                          <span className="ml-2 rounded-full bg-warn-soft px-2 py-0.5 text-xs font-semibold text-warn-text">
+                            {t.source === "import" ? "Found: confirm" : "From upload: confirm"}
+                          </span>
                         )}
                       </span>
                       <span className="text-[13px] text-muted">{t.category}</span>
