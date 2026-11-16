@@ -24,7 +24,7 @@ import { canWrite } from "@/lib/roles";
 export function SavedContractPage({ id }: { id: string }) {
   const ws = useWorkspace();
   const router = useRouter();
-  const { saved, loading, remove, link } = useSavedContracts();
+  const { saved, loading, remove, link, review: reviewTerms } = useSavedContracts();
   const { history, contracts } = usePortfolio();
   const [busy, setBusy] = useState<"pdf" | "delete" | "link" | null>(null);
   const usageOf = useContractUsage();
@@ -88,15 +88,21 @@ export function SavedContractPage({ id }: { id: string }) {
     }
   }
 
-  async function openPdf() {
+  async function openPdf(page?: number) {
     setBusy("pdf");
     setErr(null);
+    // Open the tab now, while the click still counts as a user action, so pop-up blockers allow it.
+    const tab = page != null ? window.open("about:blank", "_blank") : null;
     try {
       const res = await fetch(`/api/contracts/${id}`);
       const json = await res.json();
       if (!res.ok || !json.url) throw new Error(json.error ?? "The original PDF is not available.");
-      window.open(json.url, "_blank", "noopener");
+      // Browser PDF viewers jump to the page in the #page fragment.
+      const url = page != null ? `${json.url}#page=${page}` : json.url;
+      if (tab) tab.location.href = url;
+      else window.open(url, "_blank", "noopener");
     } catch (e) {
+      tab?.close();
       setErr((e as Error).message);
     } finally {
       setBusy(null);
@@ -166,7 +172,7 @@ export function SavedContractPage({ id }: { id: string }) {
 
       <div className="flex flex-wrap gap-2.5">
         {s.hasFile && (
-          <button type="button" className={btnGhost} onClick={openPdf} disabled={busy !== null}>
+          <button type="button" className={btnGhost} onClick={() => openPdf()} disabled={busy !== null}>
             {busy === "pdf" ? "Opening…" : "Open original file"}
           </button>
         )}
@@ -254,9 +260,11 @@ export function SavedContractPage({ id }: { id: string }) {
 
       <div className="flex flex-col gap-2">
         <h2 className="m-0 font-display text-[19px] font-semibold">Extracted terms</h2>
-        <span className="text-[13px] text-muted">{d.agreement_name} · every value links back to the clause and page it came from</span>
+        <span className="text-[13px] text-muted">
+          {d.agreement_name} · every value shows the passage and page it came from{s.hasFile ? "; click a page number to open the original there" : ""}
+        </span>
       </div>
-      <ExtractionCard r={s} hideHeader />
+      <ExtractionCard r={s} hideHeader onReview={ws.mode === "demo" || canWrite(ws.role) ? (a) => reviewTerms(id, a) : undefined} onOpenPage={s.hasFile ? (p) => openPdf(p) : undefined} />
     </>
   );
 }
