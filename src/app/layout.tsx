@@ -5,6 +5,7 @@ import { AuthHashForwarder } from "@/components/AuthHashForwarder";
 import { WorkspaceProvider } from "@/components/WorkspaceProvider";
 import { getBilling } from "@/lib/server/billing";
 import { getSession } from "@/lib/server/workspace";
+import { helpVideoUrl } from "@/lib/server/help";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const spaceGrotesk = Space_Grotesk({
@@ -23,6 +24,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const billing = session ? await getBilling(session.workspace.id) : null;
   const cloud = session
     ? {
+        userId: session.userId,
+        name: session.name,
+        tourSeen: session.tourSeen,
+        viaSso: Boolean(session.viaSso),
         email: session.email,
         role: session.role,
         workspaceId: session.workspace.id,
@@ -38,7 +43,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="en">
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
         <AuthHashForwarder />
-        <WorkspaceProvider cloud={cloud}>{children}</WorkspaceProvider>
+        <WorkspaceProvider cloud={cloud} helpVideoUrl={helpVideoUrl()}>{children}</WorkspaceProvider>
       </body>
     </html>
   );

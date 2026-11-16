@@ -7,7 +7,16 @@ import type { Role } from "@/lib/roles";
 
 export interface WorkspaceCtx {
   mode: "demo" | "cloud";
+  userId?: string;
   email?: string;
+  /** Their name from the Account page, if they set one. */
+  name?: string;
+  /** Watched or dismissed the onboarding tour already (cloud only). */
+  tourSeen?: boolean;
+  /** Signed in through SAML SSO: no password to change here. */
+  viaSso?: boolean;
+  /** The onboarding video, or null when it isn't hosted anywhere yet. */
+  helpVideoUrl: string | null;
   role?: Role;
   workspaceId?: string;
   workspaceName: string;
@@ -27,9 +36,15 @@ const Ctx = createContext<WorkspaceCtx | null>(null);
 
 export function WorkspaceProvider({
   cloud,
+  helpVideoUrl = null,
   children,
 }: {
+  helpVideoUrl?: string | null;
   cloud: {
+    userId?: string;
+    name?: string;
+    tourSeen?: boolean;
+    viaSso?: boolean;
     email: string;
     role: Role;
     workspaceId: string;
@@ -47,11 +62,16 @@ export function WorkspaceProvider({
 
   let value: WorkspaceCtx;
   if (!cloud) {
-    value = { mode: "demo", workspaceName: "Demo workspace", showSample: demoSample, setShowSample: setDemoSample };
+    value = { mode: "demo", helpVideoUrl, workspaceName: "Demo workspace", showSample: demoSample, setShowSample: setDemoSample };
   } else {
     const showSample = cloudSample ?? cloud.showSample;
     value = {
       mode: "cloud",
+      helpVideoUrl,
+      userId: cloud.userId,
+      name: cloud.name,
+      tourSeen: cloud.tourSeen,
+      viaSso: cloud.viaSso,
       email: cloud.email,
       role: cloud.role,
       workspaceId: cloud.workspaceId,

@@ -478,3 +478,91 @@ export function approvalDecisionEmail(
   );
   return { subject, html, text };
 }
+
+// ---------- contact support ----------
+
+export interface SupportRequestInput {
+  /** e.g. "Something isn't working" */
+  topic: string;
+  message: string;
+  from: { email: string; name?: string | null; userId?: string | null };
+  workspace?: { id: string; name: string; role: string; isDemo?: boolean } | null;
+  plan?: string | null;
+  page?: string | null;
+  browser?: string | null;
+  errors?: string[];
+  attachment?: string | null;
+  sentAt: string; // ISO
+}
+
+/** Goes to the support inbox. Reply-to is the person, so hitting Reply answers them. */
+export function supportRequestEmail(b: EmailBrand, i: SupportRequestInput): RenderedEmail {
+  const who = i.from.name ? `${i.from.name} (${i.from.email})` : i.from.email;
+  const pageUrl = i.page ? `${b.appUrl}${i.page.startsWith("/") ? i.page : `/${i.page}`}` : null;
+  const firstLine = i.message.split("\n").find((l) => l.trim())?.trim() ?? "";
+  const subject = `[Support] ${i.topic}: ${firstLine.length > 60 ? firstLine.slice(0, 57) + "…" : firstLine}`;
+  const rows: [string, string][] = [
+    ["From", esc(who)],
+    ["Workspace", i.workspace ? `${esc(i.workspace.name)}${i.workspace.isDemo ? " (demo)" : ""} · ${esc(i.workspace.role)}<br><span style="color:${C.faint};">${esc(i.workspace.id)}</span>` : "Not signed in"],
+    ...(i.plan ? ([["Plan", esc(i.plan)]] as [string, string][]) : []),
+    ["Page", pageUrl ? link(pageUrl, esc(i.page)) : "Not known"],
+    ["Browser", esc(i.browser || "Not known")],
+    ...(i.from.userId ? ([["User id", esc(i.from.userId)]] as [string, string][]) : []),
+    ["Sent", esc(new Date(i.sentAt).toUTCString())],
+    ...(i.attachment ? ([["Attachment", esc(i.attachment)]] as [string, string][]) : []),
+  ];
+  const table = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;border-top:1px solid ${C.lineSoft};">
+${rows
+  .map(
+    ([k, v]) => `  <tr>
+    <td valign="top" style="padding:8px 12px 8px 0;border-bottom:1px solid ${C.lineSoft};font-family:${FONT};font-size:13px;line-height:20px;color:${C.faint};white-space:nowrap;">${k}</td>
+    <td valign="top" style="padding:8px 0;border-bottom:1px solid ${C.lineSoft};font-family:${FONT};font-size:13px;line-height:20px;color:${C.ink2};word-break:break-word;">${v}</td>
+  </tr>`,
+  )
+  .join("\n")}
+</table>`;
+  const errors = i.errors?.length
+    ? callout(`<strong>Recent errors on their tab</strong><br>${i.errors.map((e) => esc(e)).join("<br>")}`, "urgent")
+    : "";
+  const html = renderEmail(b, {
+    preheader: `${who}: ${firstLine}`,
+    eyebrow: i.topic,
+    heading: "New support message",
+    body:
+      callout(esc(i.message).replace(/\n/g, "<br>"), "info") +
+      errors +
+      table +
+      small("Reply to this email to answer them directly."),
+    footer: `Sent from the Contact support form in ${esc(b.name)}.`,
+  });
+  const text = renderText(
+    b,
+    [
+      `New support message: ${i.topic}`,
+      "",
+      i.message,
+      "",
+      ...rows.map(([k, v]) => `${k}: ${v.replace(/<br>/g, " ").replace(/<[^>]+>/g, "")}`),
+      i.errors?.length ? `\nRecent errors:\n${i.errors.join("\n")}` : null,
+    ],
+    "Reply to this email to answer them directly.",
+  );
+  return { subject, html, text };
+}
+
+/** "We got your message" copy for the person who wrote in. */
+export function supportReceiptEmail(b: EmailBrand, i: { topic: string; message: string; name?: string | null }): RenderedEmail {
+  const hi = i.name ? `Hi ${esc(i.name.split(" ")[0])},` : "Hi,";
+  const html = renderEmail(b, {
+    preheader: "Thanks for writing in. We usually reply within one business day.",
+    eyebrow: "Support",
+    heading: "We got your message",
+    body:
+      p(`${hi} thanks for telling us. A real person reads every message, and we usually reply within one business day. If you have more to add, just reply to this email.`) +
+      callout(`<strong>${esc(i.topic)}</strong><br>${esc(i.message).replace(/\n/g, "<br>")}`, "info"),
+    cta: { label: "Open Help", url: `${b.appUrl}/help` },
+    footer: `You sent this from the Contact support form in ${esc(b.name)}.`,
+  });
+  const text = renderText(b, [`${hi.replace(/<[^>]+>/g, "")} thanks for telling us. We usually reply within one business day.`, "", `${i.topic}:`, i.message], `You sent this from the Contact support form in ${b.name}.`);
+  return { subject: `We got your message: ${i.topic}`, html, text };
+}

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
-import { IconCal, IconCard, IconChart, IconCheck, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
+import { IconCal, IconCard, IconChart, IconCheck, IconDoc, IconGear, IconHelp, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUser, IconUsers, IconX, Logo } from "./icons";
 import { switchWorkspace } from "./DemoWorkspaceCard";
 import { useWorkspace } from "./WorkspaceProvider";
 import { useRenewalQueue } from "@/lib/useRenewalQueue";
@@ -88,6 +88,26 @@ export function Sidebar() {
         </span>
         </div>}
         <BillingChip />
+        <div className="flex flex-col gap-1 text-sm font-medium">
+          {[
+            { href: `/help${path.startsWith("/help") ? "" : `?from=${encodeURIComponent(path)}`}`, match: "/help", label: "Help & support", Icon: IconHelp },
+            { href: "/account", match: "/account", label: "My account", Icon: IconUser },
+          ].map(({ href, match, label, Icon }) => (
+            <Link
+              key={match}
+              href={href}
+              onClick={() => setOpen(false)}
+              aria-current={path.startsWith(match) ? "page" : undefined}
+              className={cx(
+                "flex min-h-10 items-center gap-2.5 rounded-lg px-3",
+                path.startsWith(match) ? "bg-navy-active text-white" : "text-navy-text hover:bg-navy-hover hover:text-white",
+              )}
+            >
+              <Icon />
+              {label}
+            </Link>
+          ))}
+        </div>
         <div className="flex flex-col gap-1 px-2 text-xs text-navy-muted">
           {ws.workspaces && ws.workspaces.length > 1 ? (
             <label className="flex flex-col gap-1">
@@ -114,7 +134,9 @@ export function Sidebar() {
           )}
           {ws.mode === "cloud" ? (
             <form action="/auth/signout" method="post" className="flex items-center justify-between gap-2">
-              <span className="truncate">{ws.email}</span>
+              <Link href="/account" onClick={() => setOpen(false)} className="min-h-8 truncate leading-8 hover:text-white hover:underline" title="My account">
+                {ws.name || ws.email}
+              </Link>
               <button type="submit" className="min-h-8 flex-none rounded px-1 font-semibold text-navy-text hover:text-white">
                 Sign out
               </button>
