@@ -6,6 +6,7 @@ import { DEMO_EXTRACTION, ExtractionSchema, type Extraction, type ExtractionResu
 import { extractionColumns, rowToSaved, type ContractRow, type SavedContract } from "@/lib/saved";
 import { CONTRACTS_BUCKET, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
+import { limitReason } from "@/lib/server/billing";
 import { getSession } from "@/lib/server/workspace";
 
 export const runtime = "nodejs";
@@ -130,6 +131,13 @@ async function extractFromStorage(req: Request, session: NonNullable<Awaited<Ret
   const supabase = await createClient();
   const filePath = `${session.workspace.id}/${id}.pdf`;
   const discard = () => supabase.storage.from(CONTRACTS_BUCKET).remove([filePath]);
+
+  const { count } = await supabase.from("contracts").select("id", { count: "exact", head: true }).eq("workspace_id", session.workspace.id).eq("demo", false);
+  const overLimit = await limitReason(session.workspace.id, "contracts", count ?? 0);
+  if (overLimit) {
+    await discard();
+    return NextResponse.json({ error: overLimit }, { status: 402 });
+  }
 
   const { data: blob, error: dlError } = await supabase.storage.from(CONTRACTS_BUCKET).download(filePath);
   if (dlError || !blob) {

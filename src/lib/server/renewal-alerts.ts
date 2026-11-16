@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, daysUntil, toISO } from "@/lib/engine";
 import { alertDays, brand } from "@/lib/email/brand";
 import { renewalAlertEmail, type AlertItem, type AlertKind } from "@/lib/email/templates";
+import { isBillingConfigured, summarize, type BillingRow } from "./billing";
 import { adminClient } from "./admin";
 import { isEmailConfigured, sendEmail } from "./mailer";
 
@@ -95,7 +96,17 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
     if (/renewal_alerts/.test(ws.error.message)) throw new Error("Run supabase/migrations/20261116120000_renewal_alerts.sql in the Supabase SQL editor first.");
     throw new Error(ws.error.message);
   }
-  const workspaces = (ws.data ?? []).filter((w) => w.renewal_alerts !== false);
+  let workspaces = (ws.data ?? []).filter((w) => w.renewal_alerts !== false);
+  // No reminders for workspaces whose free trial or subscription has ended.
+  if (isBillingConfigured() && workspaces.length) {
+    const billing = await db.from("workspace_billing").select("*").in("workspace_id", workspaces.map((w) => w.id as string));
+    if (!billing.error) {
+      const rows = new Map((billing.data ?? []).map((r) => [r.workspace_id as string, r as BillingRow]));
+      const locked = workspaces.filter((w) => !summarize(rows.get(w.id as string) ?? null).access);
+      if (locked.length) report.notes.push(`Skipped ${locked.length} workspace(s) without an active plan or trial.`);
+      workspaces = workspaces.filter((w) => !locked.includes(w));
+    }
+  }
   report.workspaces = workspaces.length;
   if (!workspaces.length) return report;
   const wsIds = workspaces.map((w) => w.id as string);
