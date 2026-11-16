@@ -278,6 +278,15 @@ export const CONTRACTS: Contract[] = [
     annualFee: 43_200,
     seats: 12,
     deadlineLabel: "New contact pricing takes effect",
+    escalators: [
+      {
+        description: "Pricing can be reset at each renewal from HubSpot's catalog",
+        percent: null,
+        frequency: "at_renewal",
+        quote: "We may change our pricing for any renewal term by updating our Product and Services Catalog.",
+        page: 6,
+      },
+    ],
     clauses: [
       {
         ref: "§3.2",

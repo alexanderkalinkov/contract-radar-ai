@@ -1,12 +1,15 @@
 // A contract the user uploaded, as stored in Supabase (or in the browser in demo mode),
 // and the adapter that lets uploaded contracts flow through the same views as the sample data.
-import type { Extraction, ExtractionResult } from "./extraction";
+import { escalatorsOf, type Extraction, type ExtractionResult } from "./extraction";
+import { escalatorsFromSaved } from "./price-history";
 import type { Clause, Confidence, Contract } from "./types";
 
 export interface SavedContract extends ExtractionResult {
   id: string;
   hasFile: boolean;
   uploadedByEmail?: string | null;
+  /** The earlier document this one is compared with for price changes; its own id means "compare with nothing". Unset: matched automatically. */
+  supersedesId?: string | null;
 }
 
 /** Row shape of public.contracts. */
@@ -21,6 +24,8 @@ export interface ContractRow {
   model: string | null;
   demo: boolean;
   created_at: string;
+  /** Arrives with supabase/migrations/20261116200000_price_history.sql. */
+  supersedes_id?: string | null;
 }
 
 export function rowToSaved(r: ContractRow): SavedContract {
@@ -34,6 +39,7 @@ export function rowToSaved(r: ContractRow): SavedContract {
     noticeDeadline: r.notice_deadline,
     hasFile: Boolean(r.file_path),
     uploadedByEmail: r.uploaded_by_email,
+    supersedesId: r.supersedes_id ?? null,
   };
 }
 
@@ -107,6 +113,7 @@ export function savedToContract(s: SavedContract): Contract {
     deadlineLabel: d.auto_renewal.value ? "Notice deadline before auto-renewal" : "Term ends",
     uploaded: true,
     noticeDeadlineOverride: s.noticeDeadline,
+    escalators: escalatorsFromSaved(s),
   };
 }
 
@@ -115,6 +122,7 @@ export function isRisky(s: SavedContract): string[] {
   const flags: string[] = [];
   if (d.auto_renewal.value && d.uplift_cap_percent.value == null) flags.push("Auto-renews with no price-increase cap");
   if ((d.notice_period_days.value ?? 0) >= 60) flags.push(`Long notice period (${d.notice_period_days.value} days)`);
+  for (const e of escalatorsOf(d)) flags.push(`Built-in price increase: ${e.description}`);
   if (!s.noticeDeadline) flags.push("Notice deadline not found: check the term and notice clauses");
   return flags;
 }
