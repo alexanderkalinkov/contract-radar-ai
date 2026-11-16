@@ -13,7 +13,7 @@ export default async function LoginPage({
   return (
     <AuthShell title="Welcome" subtitle="Sign in to your team's contract workspace.">
       <FormAlert error={error} message={message} />
-      <LoginForm next={next && next.startsWith("/") ? next : "/"} initialMode={mode === "signup" ? "signup" : "signin"} />
+      <LoginForm next={next && next.startsWith("/") ? next : "/"} initialMode={mode === "signup" ? "signup" : "signin"} ssoEnabled={process.env.SSO_ENABLED === "true"} />
     </AuthShell>
   );
 }

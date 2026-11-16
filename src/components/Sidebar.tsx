@@ -25,6 +25,7 @@ const NAV = [
   { href: "/sources", label: "Sources", Icon: IconPlug },
   { href: "/team", label: "Team", Icon: IconTeam },
   { href: "/settings", label: "Workspace", Icon: IconGear },
+  { href: "/audit", label: "Audit log", Icon: IconList, leadersOnly: true, cloudOnlyAlways: true },
   { href: "/billing", label: "Billing", Icon: IconCard, adminOnly: true, cloudOnly: true },
 ];
 
@@ -57,7 +58,7 @@ export function Sidebar() {
         </button>
       </div>
       <div className={cx("flex-col gap-1 text-sm font-medium lg:flex", open ? "flex" : "hidden")}>
-        {NAV.filter((n) => !("cloudOnly" in n && n.cloudOnly && !ws.billing?.enabled) && (!("adminOnly" in n && n.adminOnly) || ws.mode === "demo" || ws.role === "owner") && (!("leadersOnly" in n && n.leadersOnly) || ws.mode === "demo" || canApproveRenewals(ws.role))).map(({ href, label, Icon }) => (
+        {NAV.filter((n) => !("cloudOnly" in n && n.cloudOnly && !ws.billing?.enabled) && !("cloudOnlyAlways" in n && ws.mode === "demo") && (!("adminOnly" in n && n.adminOnly) || ws.mode === "demo" || ws.role === "owner") && (!("leadersOnly" in n && n.leadersOnly) || ws.mode === "demo" || canApproveRenewals(ws.role))).map(({ href, label, Icon }) => (
           <Link
             key={href}
             href={href}

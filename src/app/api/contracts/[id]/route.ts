@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { CONTRACTS_BUCKET } from "@/lib/supabase/config";
 import { denyViewer, requireSession } from "@/lib/server/api";
+import { logAudit } from "@/lib/server/audit";
 import type { Extraction } from "@/lib/extraction";
 import { applyReview, isFieldKey, noticeDeadlineOf, parseCorrection, type ReviewAction } from "@/lib/review";
 import { extractionColumns } from "@/lib/saved";
@@ -12,9 +13,16 @@ export async function GET(_req: Request, { params }: Params) {
   const ctx = await requireSession();
   if (ctx instanceof NextResponse) return ctx;
   const { id } = await params;
-  const { data: row, error } = await ctx.supabase.from("contracts").select("file_path").eq("id", id).single();
+  const { data: row, error } = await ctx.supabase.from("contracts").select("file_path, file_name, vendor").eq("id", id).single();
   if (error || !row) return NextResponse.json({ error: "Contract not found." }, { status: 404 });
   if (!row.file_path) return NextResponse.json({ url: null });
+  await logAudit(ctx.supabase, ctx.session.workspace.id, {
+    action: "contract.file_opened",
+    targetType: "contract",
+    targetId: id,
+    targetLabel: row.vendor,
+    details: { file: row.file_name },
+  });
   const { data: signed } = await ctx.supabase.storage.from(CONTRACTS_BUCKET).createSignedUrl(row.file_path, 300);
   return NextResponse.json({ url: signed?.signedUrl ?? null });
 }

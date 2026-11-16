@@ -6,7 +6,7 @@ import { authenticate, type AuthState } from "./actions";
 import { btnPrimary, cx } from "@/components/ui";
 import { FormAlert } from "./AuthShell";
 
-export function LoginForm({ next, initialMode = "signin" }: { next: string; initialMode?: "signin" | "signup" }) {
+export function LoginForm({ next, initialMode = "signin", ssoEnabled = false }: { next: string; initialMode?: "signin" | "signup"; ssoEnabled?: boolean }) {
   const [mode, setMode] = useState<"signin" | "signup">(initialMode);
   const [state, action, pending] = useActionState<AuthState, FormData>(authenticate, {});
 
@@ -55,6 +55,11 @@ export function LoginForm({ next, initialMode = "signin" }: { next: string; init
       <button type="submit" disabled={pending} className={btnPrimary}>
         {pending ? "Working…" : mode === "signin" ? "Sign in" : "Create account"}
       </button>
+      {(ssoEnabled || state.sso) && mode === "signin" && (
+        <Link href={`/login/sso?next=${encodeURIComponent(next)}`} className="flex min-h-11 items-center justify-center rounded-[10px] border border-line text-sm font-semibold text-ink hover:bg-chip">
+          Sign in with SSO
+        </Link>
+      )}
       {mode === "signup" && (
         <p className="m-0 text-xs text-muted">
           By creating an account you agree to the{" "}
