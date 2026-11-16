@@ -80,18 +80,12 @@ export type ApprovalOp =
   | { op: "decide"; reviewId: string; decision: "approved" | "rejected"; note?: string | null }
   | { op: "reopen"; reviewId: string; note?: string | null };
 
-/**
- * Who can approve or send back a recommendation. Today that is workspace admins ("owner"); the roles work adds a
- * Finance "approver" role. The SQL twin is public.can_approve_renewals(ws); keep the two in step.
- */
-export function canApproveRenewals(role: string | null | undefined): boolean {
-  return role === "owner" || role === "approver";
-}
+// Who can approve (admins and Finance approvers) lives with the roles, next to public.can_approve_renewals().
+export { canApproveRenewals } from "./roles";
+import { canWrite, type Role } from "./roles";
 
 /** Read-only viewers can see decisions but not make them. */
-export function canRecommendRenewals(role: string | null | undefined): boolean {
-  return role !== "viewer";
-}
+export const canRecommendRenewals = (role: Role | undefined) => canWrite(role);
 
 /** The renewal a contract's decision belongs to. A new term gets a new decision. */
 export function cycleFor(c: Pick<Contract, "termEnd">): string {

@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { canApproveRenewals, RECOMMENDATIONS, reviewSummary, type ApprovalOp, type RenewalReview, type ReviewEvent } from "@/lib/approvals";
 import { brand } from "@/lib/email/brand";
 import { approvalDecisionEmail, approvalRequestEmail } from "@/lib/email/templates";
-import { requireSession } from "@/lib/server/api";
+import { denyViewer, requireSession } from "@/lib/server/api";
 import { sendEmail } from "@/lib/server/mailer";
+import { parseRole } from "@/lib/roles";
 
 // Renewal approvals for the current workspace. Reads come straight from the tables (members can read);
 // every write goes through a SQL function that checks who may do it and logs the step
@@ -97,6 +98,8 @@ const optNum = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v
 export async function POST(req: Request) {
   const ctx = await requireSession();
   if (ctx instanceof NextResponse) return ctx;
+  const denied = denyViewer(ctx.session);
+  if (denied) return denied;
   const body = (await req.json().catch(() => null)) as ApprovalOp | null;
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Bad request." }, { status: 400 });
   const { supabase, session } = ctx;
@@ -166,7 +169,7 @@ export async function POST(req: Request) {
     let to: string[];
     let email;
     if (!decision) {
-      to = ((members ?? []) as { email: string; role: string }[]).filter((m) => canApproveRenewals(m.role)).map((m) => m.email.toLowerCase()).filter((e) => e !== me);
+      to = ((members ?? []) as { email: string; role: string }[]).filter((m) => canApproveRenewals(parseRole(m.role))).map((m) => m.email.toLowerCase()).filter((e) => e !== me);
       email = approvalRequestEmail(b, input);
     } else {
       const rec = r.recommended_by_email?.toLowerCase();
