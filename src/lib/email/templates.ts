@@ -265,3 +265,107 @@ export function testEmail(b: EmailBrand, to: string): RenderedEmail {
   });
   return { subject: `${b.name} email check`, html, text: renderText(b, ["Your email setup works.", `${b.appUrl}/calendar`], "You asked for this test email from Workspace settings.") };
 }
+
+// ---------- contracts emailed to the workspace inbox ----------
+
+export interface InboundAdded {
+  vendor: string;
+  agreement: string | null;
+  file: string;
+  noticeDeadline: string | null;
+  termEnd: string | null;
+  annualFee: number | null;
+  currency: string | null;
+  url: string;
+  demo?: boolean;
+}
+
+export interface InboundSkipped {
+  file: string;
+  reason: string;
+}
+
+export interface InboundReceiptInput {
+  workspace: string;
+  address: string;
+  subject: string | null;
+  added: InboundAdded[];
+  skipped: InboundSkipped[];
+  /** Why nothing was added, when nothing was. */
+  problem: "unverified" | "no_files" | "none_read" | null;
+}
+
+/** The reply to someone who emailed contracts in: what was added, what was skipped and why. */
+export function inboundReceiptEmail(b: EmailBrand, i: InboundReceiptInput): RenderedEmail {
+  const n = i.added.length;
+  const re = i.subject ? `Re: ${i.subject}` : null;
+  const subject =
+    re ??
+    (n ? `${n === 1 ? i.added[0].vendor : `${n} contracts`} added to ${i.workspace}` : `We couldn't add your contract to ${i.workspace}`);
+
+  const line = (a: InboundAdded) => {
+    const bits = [
+      a.noticeDeadline ? `notice deadline <strong>${esc(fmtDate(a.noticeDeadline))}</strong>` : a.termEnd ? `term ends ${esc(fmtDate(a.termEnd))}` : "no renewal date found",
+      a.annualFee != null ? esc(fmtMoney(a.annualFee, a.currency)) + " a year" : null,
+    ].filter(Boolean);
+    return `${link(a.url, `<strong>${esc(a.vendor)}</strong>`)}: ${bits.join(" · ")}<br/><span style="color:${C.muted};font-size:13px;">${esc(a.file)}</span>`;
+  };
+  const skippedHtml = i.skipped.length
+    ? p("Not added:", "margin-bottom:8px;") +
+      `<ul style="margin:0 0 20px;padding-left:20px;font-family:${FONT};font-size:14px;line-height:22px;color:${C.ink2};">${i.skipped
+        .map((s) => `<li>${esc(s.file)}: ${esc(s.reason)}</li>`)
+        .join("")}</ul>`
+    : "";
+
+  let heading: string;
+  let body: string;
+  let cta: { label: string; url: string } | undefined;
+  if (i.problem === "unverified") {
+    heading = "We couldn't confirm this email came from you";
+    body =
+      p(`Someone sent contracts to the <strong>${esc(i.workspace)}</strong> inbox from your address, but your email provider didn't confirm the message was really sent by you (no DMARC or DKIM pass), so nothing was added.`) +
+      callout("If it was you, upload the file on the Upload page instead, or ask your IT team to turn on DKIM for your domain. If it wasn't you, nothing was changed and you can ignore this.", "warn");
+    cta = { label: "Upload it instead", url: `${b.appUrl}/upload` };
+  } else if (i.problem === "no_files") {
+    heading = "No contract attached";
+    body =
+      p(`We got your email at <strong>${esc(i.address)}</strong>, but it had no PDF or Word (.docx) attachment to read.`) +
+      skippedHtml +
+      p("Reply with the contract attached, or forward the vendor's email with its attachments.");
+  } else if (n === 0) {
+    heading = "We couldn't read your contract";
+    body = p(`We got your email at <strong>${esc(i.address)}</strong>, but couldn't add anything from it.`) + skippedHtml;
+    cta = { label: "Try the Upload page", url: `${b.appUrl}/upload` };
+  } else {
+    heading = n === 1 ? `${i.added[0].vendor} is now on your radar` : `${n} contracts are now on your radar`;
+    body =
+      p(`Claude read what you sent to <strong>${esc(i.workspace)}</strong> and added ${n === 1 ? "it" : "them"}. Check the dates against the contract, then confirm the tool on the Tools page.`) +
+      bullets(i.added.map(line)) +
+      (i.added.some((a) => a.demo) ? callout("These are sample results: the app has no Claude API key yet.", "warn") : "") +
+      skippedHtml;
+    cta = { label: n === 1 ? `Open ${i.added[0].vendor}` : "Open contracts", url: n === 1 ? i.added[0].url : `${b.appUrl}/contracts` };
+  }
+
+  const html = renderEmail(b, {
+    preheader: n ? `${n} added${i.skipped.length ? `, ${i.skipped.length} skipped` : ""}.` : heading,
+    eyebrow: "Contract inbox",
+    heading,
+    body,
+    cta,
+    footer: `You emailed ${esc(i.address)}, the contract inbox for ${esc(i.workspace)}. Forward any SaaS contract there to add it.`,
+  });
+  const text = renderText(
+    b,
+    [
+      heading,
+      "",
+      ...i.added.map((a) => `• ${a.vendor}: ${a.noticeDeadline ? `notice deadline ${fmtDate(a.noticeDeadline)}` : a.termEnd ? `term ends ${fmtDate(a.termEnd)}` : "no renewal date found"} (${a.url})`),
+      ...(i.skipped.length ? ["", "Not added:", ...i.skipped.map((s) => `• ${s.file}: ${s.reason}`)] : []),
+      i.problem === "unverified" ? "Your email provider didn't confirm the message came from you, so nothing was added. Upload the file instead." : null,
+      i.problem === "no_files" ? "There was no PDF or Word (.docx) attachment to read." : null,
+      cta ? `${cta.label}: ${cta.url}` : null,
+    ],
+    `You emailed ${i.address}, the contract inbox for ${i.workspace}.`,
+  );
+  return { subject, html, text };
+}
