@@ -6,6 +6,7 @@ import { addDays } from "@/lib/engine";
 import { ExtractionSchema, type Extraction } from "@/lib/extraction";
 import { TARGET_CAP_PCT, type EmailGoal } from "@/lib/opportunities";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { lockedReason } from "@/lib/server/billing";
 import { getSession } from "@/lib/server/workspace";
 
 export const runtime = "nodejs";
@@ -81,6 +82,8 @@ export async function POST(req: Request) {
   if (isSupabaseConfigured && !session) {
     return NextResponse.json({ error: "Sign in to draft emails." }, { status: 401 });
   }
+  const locked = session ? await lockedReason(session.workspace.id) : null;
+  if (locked) return NextResponse.json({ error: locked }, { status: 402 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Missing contract details for the email." }, { status: 400 });
   const { data, noticeDeadline, goal, tone } = parsed.data;

@@ -10,7 +10,7 @@ the next six months. Every date is set relative to the day you create or reset i
 
 ## Set up (once)
 
-1. Supabase → SQL editor → paste the whole of `supabase/migrations/20261116180000_demo_workspace.sql` → Run.
+1. Supabase → SQL editor → paste the whole of `supabase/migrations/20261116190000_demo_workspace.sql` → Run.
    It adds an `is_demo` flag to workspaces that only the server can set.
 2. The server needs `SUPABASE_SERVICE_ROLE_KEY` (already in Vercel for the reminder emails; add it to `.env.local` to use
    the demo locally).

@@ -5,9 +5,9 @@ import { buildDemoRows, DEMO_WORKSPACE_NAME } from "@/lib/demo/northwind";
 import { adminClient } from "./admin";
 
 // Creates and resets the demo workspace. Runs with the service role key, because ordinary users can't
-// create workspaces or mark one as a demo (see supabase/migrations/20261116180000_demo_workspace.sql).
+// create workspaces or mark one as a demo (see supabase/migrations/20261116190000_demo_workspace.sql).
 
-const NEEDS_MIGRATION = "Run supabase/migrations/20261116180000_demo_workspace.sql in the Supabase SQL editor first.";
+const NEEDS_MIGRATION = "Run supabase/migrations/20261116190000_demo_workspace.sql in the Supabase SQL editor first.";
 const NEEDS_KEY = "The demo workspace needs SUPABASE_SERVICE_ROLE_KEY on the server (it's already set in Vercel for reminders; add it to .env.local to use it locally).";
 
 function db(): SupabaseClient {
@@ -97,6 +97,8 @@ async function wipe(admin: SupabaseClient, ws: string) {
 }
 
 async function seed(admin: SupabaseClient, ws: string) {
+  // The demo never runs out of trial. Ignored if the billing table doesn't exist yet.
+  await admin.from("workspace_billing").upsert({ workspace_id: ws, complimentary: true }, { onConflict: "workspace_id" });
   const today = new Date().toISOString().slice(0, 10);
   const rows = buildDemoRows(ws, today, randomUUID);
   const steps: [string, Record<string, unknown>[]][] = [

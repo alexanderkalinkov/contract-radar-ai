@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { limitReason } from "@/lib/server/billing";
 import { requireSession } from "@/lib/server/api";
 
 export async function POST(req: Request) {
@@ -9,6 +10,13 @@ export async function POST(req: Request) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
+  const ws = ctx.session.workspace.id;
+  const [mc, ic] = await Promise.all([
+    ctx.supabase.from("workspace_members").select("user_id", { count: "exact", head: true }).eq("workspace_id", ws),
+    ctx.supabase.from("workspace_invites").select("id", { count: "exact", head: true }).eq("workspace_id", ws).neq("email", clean),
+  ]);
+  const overLimit = await limitReason(ws, "people", (mc.count ?? 0) + (ic.count ?? 0));
+  if (overLimit) return NextResponse.json({ error: overLimit }, { status: 402 });
   const { error } = await ctx.supabase
     .from("workspace_invites")
     .upsert({ workspace_id: ctx.session.workspace.id, email: clean }, { onConflict: "workspace_id,email", ignoreDuplicates: true });

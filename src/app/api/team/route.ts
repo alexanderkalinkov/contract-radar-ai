@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { limitReason } from "@/lib/server/billing";
 import { requireSession } from "@/lib/server/api";
 import { sendInviteEmail } from "@/lib/server/invite-email";
 import { guessCategory, type OpResult, type TeamData, type TeamOp, type ToolInput } from "@/lib/team/types";
@@ -222,6 +223,13 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
         }
         return { ok: true, emailed: false, emailNote: `${email} is already a member, so no email was sent. Their department and role are updated.` };
       }
+
+      const [mc, ic] = await Promise.all([
+        supabase.from("workspace_members").select("user_id", { count: "exact", head: true }).eq("workspace_id", ws),
+        supabase.from("workspace_invites").select("id", { count: "exact", head: true }).eq("workspace_id", ws).neq("email", email),
+      ]);
+      const overLimit = await limitReason(ws, "people", (mc.count ?? 0) + (ic.count ?? 0));
+      if (overLimit) return { ok: false, error: overLimit };
 
       await supabase.from("workspace_invites").delete().eq("workspace_id", ws).eq("email", email);
       const { error } = await supabase.from("workspace_invites").insert({ workspace_id: ws, email, role, department_id });

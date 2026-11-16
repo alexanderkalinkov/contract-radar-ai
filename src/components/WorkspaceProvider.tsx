@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { BillingSummary } from "@/lib/billing/plans";
 import { useStored } from "@/lib/store";
 
 export interface WorkspaceCtx {
@@ -16,6 +17,8 @@ export interface WorkspaceCtx {
   isDemo?: boolean;
   /** Every workspace the person belongs to, for the switcher (cloud only). */
   workspaces?: { id: string; name: string; is_demo: boolean; role: "owner" | "member" }[];
+  /** Plan and trial state (cloud only). Absent or enabled=false means nothing is gated. */
+  billing?: BillingSummary;
   setShowSample: (v: boolean) => void;
 }
 
@@ -34,6 +37,7 @@ export function WorkspaceProvider({
     onboarded?: boolean;
     isDemo?: boolean;
     workspaces?: WorkspaceCtx["workspaces"];
+    billing?: BillingSummary;
   } | null;
   children: React.ReactNode;
 }) {
@@ -54,6 +58,7 @@ export function WorkspaceProvider({
       onboarded: cloud.onboarded,
       isDemo: cloud.isDemo,
       workspaces: cloud.workspaces,
+      billing: cloud.billing,
       showSample,
       setShowSample: (v: boolean) => {
         setCloudSampleLocal(v);

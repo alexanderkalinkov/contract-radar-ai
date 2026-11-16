@@ -63,6 +63,10 @@ saved in the database.
    sends a few messages an hour, so set up custom SMTP for real use, and add `<your-url>/auth/confirm` to the redirect
    URLs. The full flow is in [docs/onboarding-spec.md](docs/onboarding-spec.md).
 
+7. **(Optional) Billing.** Stripe plans and a 14-day free trial: run
+   [`supabase/migrations/20261116180000_billing.sql`](supabase/migrations/20261116180000_billing.sql) and follow
+   [docs/billing-setup.md](docs/billing-setup.md). Without Stripe keys billing stays off.
+
 How it fits together:
 
 | Table | What it holds |
@@ -75,6 +79,7 @@ How it fits together:
 | `tool_surveys` | Each department's answers to the 4 questions, kept as history |
 | `connections`, `connection_secrets` | Connected QuickBooks / Xero / Google / Microsoft accounts; tokens encrypted, admins only |
 | `discovery_signals`, `discovered_tools` | What each source found (spend, people, departments) and the admin's review decisions |
+| `workspace_billing` | Free trial end, Stripe customer and subscription, plan and status (written only by the server) |
 | `contracts` | Each uploaded contract: the full Claude extraction (quotes, pages, confidence) plus key columns (vendor, term end, notice deadline, cap, fee, seats) |
 | Storage bucket `contracts` | The original PDFs, one folder per workspace |
 
