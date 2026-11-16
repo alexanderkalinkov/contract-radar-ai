@@ -57,6 +57,14 @@ export function LoginForm({ next, initialMode = "signin" }: { next: string; init
       </button>
       {mode === "signup" && (
         <p className="m-0 text-xs text-muted">
+          By creating an account you agree to the{" "}
+          <Link href="/legal/terms" target="_blank" className="text-brand underline underline-offset-2">Terms of service</Link> and confirm
+          you have read the{" "}
+          <Link href="/legal/privacy" target="_blank" className="text-brand underline underline-offset-2">Privacy policy</Link>.
+        </p>
+      )}
+      {mode === "signup" && (
+        <p className="m-0 text-xs text-muted">
           Invited by a teammate? Sign up with the email they invited and you&apos;ll join their workspace automatically.
         </p>
       )}

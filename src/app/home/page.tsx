@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { IconCal, IconCheck, IconClock, IconDoc, IconMail, IconPlug, IconSpark, IconTrend, IconUsers, Logo } from "@/components/icons";
+import { SiteFooter } from "@/components/legal/SiteFooter";
 import { btnPrimary, cx } from "@/components/ui";
 import { getSession } from "@/lib/server/workspace";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -31,15 +32,7 @@ export default async function LandingPage() {
         <Extras />
         <FinalCta startHref={startHref} startLabel={startLabel} signedIn={signedIn} />
       </main>
-      <footer className="border-t border-line bg-white">
-        <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-3 px-4 py-6 text-[13px] text-muted sm:px-8">
-          <span className="flex items-center gap-2">
-            <span className="rounded-md bg-navy p-1"><Logo size={18} /></span>
-            Contract Radar
-          </span>
-          <span>SaaS contract and price-hike tracking for finance teams.</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
