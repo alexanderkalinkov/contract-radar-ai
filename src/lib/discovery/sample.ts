@@ -1,5 +1,9 @@
 // What the four sources "find" in demo mode (no Supabase), for the fictional Northwind Logistics.
+import { sampleDate } from "@/lib/engine";
 import { matchVendor } from "./catalog";
+
+const LAST_PAYMENT = sampleDate("2026-11-01");
+const lastPaymentLabel = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(LAST_PAYMENT + "T00:00:00Z"));
 import type { ProviderId, Signal } from "./types";
 
 type Spend = [name: string, annual: number, payments: number, cadence: Signal["cadence"]];
@@ -16,13 +20,13 @@ const spend = (provider: ProviderId, [raw, annual, payments, cadence]: Spend): S
     kind: "spend",
     annual_spend: annual,
     payment_count: payments,
-    last_seen: "2026-11-01",
+    last_seen: LAST_PAYMENT,
     cadence,
     currency: "USD",
     users: null,
     licensed: null,
     dept_counts: null,
-    evidence: `${payments} payment${payments === 1 ? "" : "s"} in 12 months, last on 1 Nov 2026 (${cadence})`,
+    evidence: `${payments} payment${payments === 1 ? "" : "s"} in 12 months, last on ${lastPaymentLabel} (${cadence})`,
   };
 };
 

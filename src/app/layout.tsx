@@ -27,6 +27,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         workspaceName: session.workspace.name,
         showSample: session.workspace.show_sample_data,
         onboarded: Boolean(session.workspace.onboarded_at),
+        isDemo: Boolean(session.workspace.is_demo),
+        workspaces: session.workspaces,
       }
     : null;
   return (

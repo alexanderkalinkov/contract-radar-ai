@@ -1,6 +1,6 @@
 // Turns the tool list and survey answers into what leadership needs: overlaps across
 // departments, low-value tools and a recommendation for each tool.
-import { daysUntil } from "@/lib/engine";
+import { daysUntil, TODAY } from "@/lib/engine";
 import type { Department, Survey, Tool } from "./types";
 
 export type Action = "keep" | "cut_seats" | "consolidate" | "renegotiate" | "cancel" | "needs_survey";
@@ -170,7 +170,7 @@ export function buildInsights(tools: Tool[], surveys: Survey[], departments: Dep
     const cost = t.annual_cost ?? 0;
     const lowValue = Boolean(s && s.criticality <= 2 && cost >= LOW_VALUE_MIN_COST);
     const days = t.renewal_date ? daysUntil(t.renewal_date, today) : null;
-    const surveyAgeDays = s ? Math.round((Date.parse(today ?? "2026-11-15") - Date.parse(s.created_at)) / 86_400_000) : null;
+    const surveyAgeDays = s ? Math.round((Date.parse(today ?? TODAY) - Date.parse(s.created_at)) / 86_400_000) : null;
     const surveyDue = days != null && days >= 0 && days <= SURVEY_DUE_DAYS && (!s || (surveyAgeDays ?? 0) > SURVEY_STALE_DAYS);
 
     let rec: Recommendation;

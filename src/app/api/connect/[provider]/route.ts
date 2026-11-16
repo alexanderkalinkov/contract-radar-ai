@@ -28,6 +28,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     return back(req, ret, { connect_error: "Connecting sources needs Supabase login (the app is in demo mode)." });
   }
   if (ctx.session.role !== "owner") return back(req, ret, { connect_error: "Only admins can connect accounting and sign-in sources." });
+  if (ctx.session.workspace.is_demo) return back(req, ret, { connect_error: "This is the demo workspace: its sources are simulated, so there's nothing to sign in to." });
   const blocker = encryptionBlocker();
   if (blocker) return back(req, ret, { connect_error: blocker });
   if (!isConfigured(provider)) {
@@ -54,6 +55,15 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const ctx = await requireSession();
   if (ctx instanceof NextResponse) return ctx;
   if (ctx.session.role !== "owner") return NextResponse.json({ ok: false, error: "Only admins can sync sources." }, { status: 403 });
+  if (ctx.session.workspace.is_demo) {
+    // Demo sources have no real sign-in behind them: "sync" just reports what the demo already holds.
+    const { count } = await ctx.supabase
+      .from("discovery_signals")
+      .select("vendor_key", { count: "exact", head: true })
+      .eq("workspace_id", ctx.session.workspace.id)
+      .eq("provider", provider);
+    return NextResponse.json({ ok: true, summary: { tools: count ?? 0 } });
+  }
   try {
     const r = await syncProvider(ctx.supabase, ctx.session.workspace.id, provider);
     return NextResponse.json(r, { status: r.ok ? 200 : 400 });

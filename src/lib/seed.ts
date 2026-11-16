@@ -1,5 +1,6 @@
 // Seeded sample data for the fictional company "Northwind Logistics".
 // Everything here will later come from AI extraction, identity and spend connectors.
+import { sampleDate } from "./engine";
 import type { Contract, Opportunity, Source, LeverKey } from "./types";
 
 export const COMPANY = {
@@ -49,7 +50,7 @@ export const CONTRACTS: Contract[] = [
     owner: "RevOps · Dana K.",
     documents: ["MSA", "Order Form #00417"],
     pages: 41,
-    termEnd: "2026-12-31",
+    termEnd: sampleDate("2026-12-31"),
     autoRenew: true,
     renewalTermMonths: 12,
     noticeDays: 30,
@@ -57,7 +58,7 @@ export const CONTRACTS: Contract[] = [
     seatReductionPct: 20,
     annualFee: 319_200,
     seats: 200,
-    quote: { receivedOn: "2026-11-10", annualFee: 357_504 },
+    quote: { receivedOn: sampleDate("2026-11-10"), annualFee: 357_504 },
     usage: { paid: 200, active: 166, inactive: 21, neverSignedIn: 13, source: "Okta" },
     deadlineLabel: "Notice window closes",
     clauses: [
@@ -103,7 +104,7 @@ export const CONTRACTS: Contract[] = [
     owner: "IT · Marco P.",
     documents: ["Order Form #SL-2291"],
     pages: 9,
-    termEnd: "2026-12-20",
+    termEnd: sampleDate("2026-12-20"),
     autoRenew: true,
     renewalTermMonths: 12,
     noticeDays: 30,
@@ -136,7 +137,7 @@ export const CONTRACTS: Contract[] = [
     owner: "IT · Marco P.",
     documents: ["Zoom_Order_Form.pdf"],
     pages: 14,
-    termEnd: "2027-01-12",
+    termEnd: sampleDate("2027-01-12"),
     autoRenew: true,
     renewalTermMonths: 12,
     noticeDays: 30,
@@ -169,7 +170,7 @@ export const CONTRACTS: Contract[] = [
     owner: "RevOps · Dana K.",
     documents: ["Gong MSA", "Order Form #G-118"],
     pages: 22,
-    termEnd: "2027-01-27",
+    termEnd: sampleDate("2027-01-27"),
     autoRenew: true,
     renewalTermMonths: 12,
     noticeDays: 30,
@@ -177,7 +178,7 @@ export const CONTRACTS: Contract[] = [
     seatReductionPct: 10,
     annualFee: 324_000,
     seats: 120,
-    quote: { receivedOn: "2026-11-06", annualFee: 353_160 },
+    quote: { receivedOn: sampleDate("2026-11-06"), annualFee: 353_160 },
     usage: { paid: 120, active: 117, inactive: 2, neverSignedIn: 1, source: "Okta" },
     deadlineLabel: "Renewal price lock",
     clauses: [
@@ -202,7 +203,7 @@ export const CONTRACTS: Contract[] = [
     owner: "Ops · Priya S.",
     documents: ["Monday.com Terms", "Invoice MD-7781"],
     pages: 12,
-    termEnd: "2027-03-02",
+    termEnd: sampleDate("2027-03-02"),
     autoRenew: true,
     renewalTermMonths: 12,
     noticeDays: 30,
@@ -236,7 +237,7 @@ export const CONTRACTS: Contract[] = [
     owner: "Marketing · Lee W.",
     documents: ["Adobe VIP Agreement"],
     pages: 18,
-    termEnd: "2027-03-16",
+    termEnd: sampleDate("2027-03-16"),
     autoRenew: true,
     renewalTermMonths: 12,
     noticeDays: 30,
@@ -268,7 +269,7 @@ export const CONTRACTS: Contract[] = [
     owner: "Marketing · Lee W.",
     documents: ["HubSpot Customer Terms", "Quote Q-55120"],
     pages: 16,
-    termEnd: "2027-05-31",
+    termEnd: sampleDate("2027-05-31"),
     autoRenew: true,
     renewalTermMonths: 12,
     noticeDays: 45,
@@ -299,7 +300,7 @@ export const CONTRACTS: Contract[] = [
     owner: "Ops · Priya S.",
     documents: ["Asana Order Form #A-903"],
     pages: 7,
-    termEnd: "2027-08-31",
+    termEnd: sampleDate("2027-08-31"),
     autoRenew: true,
     renewalTermMonths: 12,
     noticeDays: 60,
@@ -314,14 +315,14 @@ export const CONTRACTS: Contract[] = [
 ];
 
 export const OPPORTUNITIES: Opportunity[] = [
-  { id: "op-slack-seats", contractId: "slack", vendor: "Slack Business+", initials: "Sl", hue: "#4A154B", lever: "seats", finding: "96 of 410 seats inactive for 60+ days", annualSavings: 14_976, actBy: "2026-11-20", action: "Reduce seats" },
-  { id: "op-sf-price", contractId: "salesforce", vendor: "Salesforce Sales Cloud", initials: "Sf", hue: "#0B5CAB", lever: "price", finding: "Renewal quote +12%, contract caps uplift at 5% (§8.2)", annualSavings: 22_344, actBy: "2026-12-01", action: "Send pushback" },
-  { id: "op-sf-seats", contractId: "salesforce", vendor: "Salesforce Sales Cloud", initials: "Sf", hue: "#0B5CAB", lever: "seats", finding: "34 of 200 seats unused, §4.3 allows a 20% cut at renewal", annualSavings: 56_977, actBy: "2026-12-01", action: "Right-size" },
-  { id: "op-zoom-seats", contractId: "zoom", vendor: "Zoom Workplace", initials: "Zm", hue: "#1F5CD6", lever: "seats", finding: "142 of 380 licences idle, Teams already covers calls", annualSavings: 25_560, actBy: "2026-12-13", action: "Reduce seats" },
-  { id: "op-gong-price", contractId: "gong", vendor: "Gong", initials: "Go", hue: "#6B2BD9", lever: "price", finding: "Renewal quote +9%, contract caps uplift at 7%", annualSavings: 6_480, actBy: "2026-12-28", action: "Send pushback" },
-  { id: "op-pm-dup", contractId: "monday", vendor: "Asana + Monday.com", initials: "As", hue: "#C2410C", lever: "dup", finding: "Two project tools, 61 people pay for both", annualSavings: 41_800, actBy: "2027-01-31", action: "Plan consolidation" },
-  { id: "op-adobe-seats", contractId: "adobe", vendor: "Adobe Creative Cloud", initials: "Ad", hue: "#B42318", lever: "seats", finding: "31 licences with no app launch in 90 days", annualSavings: 26_040, actBy: "2027-02-14", action: "Reduce seats" },
-  { id: "op-hubspot-terms", contractId: "hubspot", vendor: "HubSpot Marketing Hub", initials: "Hs", hue: "#C4320A", lever: "terms", finding: "Pricing page changed Nov 4: contact tiers now billed monthly", annualSavings: 18_000, estimate: true, actBy: "2027-03-01", action: "See change" },
+  { id: "op-slack-seats", contractId: "slack", vendor: "Slack Business+", initials: "Sl", hue: "#4A154B", lever: "seats", finding: "96 of 410 seats inactive for 60+ days", annualSavings: 14_976, actBy: sampleDate("2026-11-20"), action: "Reduce seats" },
+  { id: "op-sf-price", contractId: "salesforce", vendor: "Salesforce Sales Cloud", initials: "Sf", hue: "#0B5CAB", lever: "price", finding: "Renewal quote +12%, contract caps uplift at 5% (§8.2)", annualSavings: 22_344, actBy: sampleDate("2026-12-01"), action: "Send pushback" },
+  { id: "op-sf-seats", contractId: "salesforce", vendor: "Salesforce Sales Cloud", initials: "Sf", hue: "#0B5CAB", lever: "seats", finding: "34 of 200 seats unused, §4.3 allows a 20% cut at renewal", annualSavings: 56_977, actBy: sampleDate("2026-12-01"), action: "Right-size" },
+  { id: "op-zoom-seats", contractId: "zoom", vendor: "Zoom Workplace", initials: "Zm", hue: "#1F5CD6", lever: "seats", finding: "142 of 380 licences idle, Teams already covers calls", annualSavings: 25_560, actBy: sampleDate("2026-12-13"), action: "Reduce seats" },
+  { id: "op-gong-price", contractId: "gong", vendor: "Gong", initials: "Go", hue: "#6B2BD9", lever: "price", finding: "Renewal quote +9%, contract caps uplift at 7%", annualSavings: 6_480, actBy: sampleDate("2026-12-28"), action: "Send pushback" },
+  { id: "op-pm-dup", contractId: "monday", vendor: "Asana + Monday.com", initials: "As", hue: "#C2410C", lever: "dup", finding: "Two project tools, 61 people pay for both", annualSavings: 41_800, actBy: sampleDate("2027-01-31"), action: "Plan consolidation" },
+  { id: "op-adobe-seats", contractId: "adobe", vendor: "Adobe Creative Cloud", initials: "Ad", hue: "#B42318", lever: "seats", finding: "31 licences with no app launch in 90 days", annualSavings: 26_040, actBy: sampleDate("2027-02-14"), action: "Reduce seats" },
+  { id: "op-hubspot-terms", contractId: "hubspot", vendor: "HubSpot Marketing Hub", initials: "Hs", hue: "#C4320A", lever: "terms", finding: "Pricing page changed Nov 4: contact tiers now billed monthly", annualSavings: 18_000, estimate: true, actBy: sampleDate("2027-03-01"), action: "See change" },
 ];
 
 export const SOURCES: Source[] = [

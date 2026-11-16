@@ -36,7 +36,7 @@ export function TeamSettings({ members, invites }: { members: Member[]; invites:
 
   return (
     <div className="flex max-w-[760px] flex-col gap-6">
-      <Card label="Sample data" className="flex flex-wrap items-center justify-between gap-4 p-5">
+      {!ws.isDemo && <Card label="Sample data" className="flex flex-wrap items-center justify-between gap-4 p-5">
         <div className="flex flex-col gap-1">
           <H2>Sample data</H2>
           <span className="text-[13px] text-muted">
@@ -53,7 +53,7 @@ export function TeamSettings({ members, invites }: { members: Member[]; invites:
           />
           {ws.showSample ? "Shown" : "Hidden"}
         </label>
-      </Card>
+      </Card>}
 
       {ws.mode === "demo" ? (
         <Card label="Team" className="flex flex-col gap-3 p-5">

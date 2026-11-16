@@ -239,6 +239,28 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
     }
     case "cancelInvite":
       return fail((await supabase.from("workspace_invites").delete().eq("id", body.id).eq("workspace_id", ws)).error);
+    case "resendInvite": {
+      // Invite links expire, so people need a fresh one. Department owners can resend invites to their own department.
+      const { data: inv, error } = await supabase
+        .from("workspace_invites")
+        .select("email, role, department_id")
+        .eq("id", body.id)
+        .eq("workspace_id", ws)
+        .maybeSingle();
+      if (error) return fail(error);
+      if (!inv) return { ok: false, error: "That invite was cancelled or already accepted." };
+      if (!isAdmin && inv.department_id !== (await myDepartment(ctx))) return { ok: false, error: "Only admins can resend this invite." };
+      const dept = inv.department_id
+        ? (await supabase.from("departments").select("name").eq("id", inv.department_id).maybeSingle()).data?.name ?? null
+        : null;
+      const sent = await sendInviteEmail(inv.email, origin, {
+        workspace: session.workspace.name,
+        inviter: session.email || null,
+        department: dept,
+        role: inv.role === "owner" ? "owner" : "member",
+      });
+      return { ok: true, emailed: sent.emailed, emailNote: sent.note };
+    }
     case "addTool": {
       const clean = cleanTool(body.tool ?? {}, false);
       if (typeof clean === "string") return { ok: false, error: clean };

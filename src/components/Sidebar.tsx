@@ -6,6 +6,7 @@ import { useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
 import { IconCal, IconChart, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
+import { switchWorkspace } from "./DemoWorkspaceCard";
 import { useWorkspace } from "./WorkspaceProvider";
 import { cx } from "./ui";
 
@@ -76,7 +77,29 @@ export function Sidebar() {
         </span>
         </div>}
         <div className="flex flex-col gap-1 px-2 text-xs text-navy-muted">
-          <span className="truncate font-semibold text-white">{ws.workspaceName}</span>
+          {ws.workspaces && ws.workspaces.length > 1 ? (
+            <label className="flex flex-col gap-1">
+              <span className="sr-only">Workspace</span>
+              <select
+                value={ws.workspaceId}
+                onChange={(e) => switchWorkspace(e.target.value)}
+                className="min-h-10 w-full truncate rounded-lg border border-navy-active bg-navy-2 px-2 text-[13px] font-semibold text-white"
+              >
+                {ws.workspaces.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <span className="truncate font-semibold text-white">{ws.workspaceName}</span>
+          )}
+          {ws.isDemo && (
+            <Link href="/settings" className="w-fit rounded-full bg-[#FFB27A] px-2 py-0.5 text-[11px] font-bold text-navy">
+              Demo data · reset in Workspace
+            </Link>
+          )}
           {ws.mode === "cloud" ? (
             <form action="/auth/signout" method="post" className="flex items-center justify-between gap-2">
               <span className="truncate">{ws.email}</span>

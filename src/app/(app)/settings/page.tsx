@@ -1,3 +1,4 @@
+import { DemoWorkspaceCard } from "@/components/DemoWorkspaceCard";
 import { PageHeader } from "@/components/ui";
 import { RenewalAlertSettings } from "@/components/RenewalAlertSettings";
 import { TeamSettings, type Invite, type Member } from "@/components/TeamSettings";
@@ -22,8 +23,9 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader eyebrow="Who can see this workspace, and what it shows" title="Workspace" />
-      <div className="max-w-[760px]">
+      <div className="flex max-w-[760px] flex-col gap-6">
         <RenewalAlertSettings />
+        <DemoWorkspaceCard />
       </div>
       <TeamSettings members={members} invites={invites} currentUserId={session?.userId ?? null} />
     </>

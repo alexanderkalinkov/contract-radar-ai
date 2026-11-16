@@ -79,6 +79,7 @@ export type TeamOp =
   | { op: "updateMember"; user_id: string; department_id?: string | null; role?: Role }
   | { op: "invite"; email: string; department_id: string | null; role: Role }
   | { op: "cancelInvite"; id: string }
+  | { op: "resendInvite"; id: string }
   | { op: "addTool"; tool: ToolInput & { name: string } }
   /** Demo mode only: tools found by auto-discovery (the cloud uses POST /api/discovery). */
   | { op: "importTools"; tools: (ToolInput & { name: string; id: string })[] }
