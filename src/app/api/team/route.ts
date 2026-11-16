@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { limitReason } from "@/lib/server/billing";
 import { requireSession } from "@/lib/server/api";
 import { sendInviteEmail } from "@/lib/server/invite-email";
+import { canInviteRole, canWrite, isRole, parseRole, roleRank } from "@/lib/roles";
 import { guessCategory, type OpResult, type TeamData, type TeamOp, type ToolInput } from "@/lib/team/types";
 
 type Ctx = Exclude<Awaited<ReturnType<typeof requireSession>>, NextResponse>;
@@ -66,6 +67,7 @@ async function load({ supabase, session }: Ctx): Promise<TeamData> {
 
 /** Every uploaded contract becomes a suggested tool, in the uploader's department when we know it. */
 async function syncUploads({ supabase, session }: Ctx) {
+  if (!canWrite(session.role)) return; // viewers are read only; someone else's visit files the tools
   const ws = session.workspace.id;
   const [c, t, m] = await Promise.all([
     supabase.from("contracts").select("id, vendor, agreement_name, annual_fee, seats, term_end, uploaded_by").eq("workspace_id", ws),
@@ -146,6 +148,7 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
   const isAdmin = session.role === "owner";
   const adminOnly = (): OpResult | null => (isAdmin ? null : { ok: false, error: "Only admins can do that." });
   const fail = (error: { message: string } | null): OpResult => (error ? { ok: false, error: missingTables(error.message) } : { ok: true });
+  if (!canWrite(session.role)) return { ok: false, error: "You have read-only access to this workspace. Ask an admin to change your role." };
 
   switch (body.op) {
     case "setup": {
@@ -197,7 +200,8 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
       if (denied) return denied;
       const patch: Record<string, unknown> = {};
       if (body.department_id !== undefined) patch.department_id = body.department_id || null;
-      if (body.role === "owner" || body.role === "member") {
+      if (body.role !== undefined) {
+        if (!isRole(body.role)) return { ok: false, error: "Unknown role." };
         if (body.user_id === session.userId && body.role !== "owner") return { ok: false, error: "You can't remove your own admin access." };
         patch.role = body.role;
       }
@@ -207,8 +211,10 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
     case "invite": {
       const email = String(body.email ?? "").trim().toLowerCase();
       if (!EMAIL.test(email)) return { ok: false, error: "Enter a valid email address." };
-      const role = body.role === "owner" ? "owner" : "member";
-      if (role === "owner" && !isAdmin) return { ok: false, error: "Only admins can invite another admin." };
+      const role = parseRole(body.role);
+      if (!canInviteRole(session.role, role)) {
+        return { ok: false, error: `Only admins can invite ${role === "owner" ? "another admin" : "an approver"}.` };
+      }
       const department_id = body.department_id || null;
 
       const { data: member } = await supabase.from("workspace_members").select("user_id").eq("workspace_id", ws).eq("email", email).maybeSingle();
@@ -216,7 +222,8 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
         if (!isAdmin) return { ok: false, error: `${email} is already in this workspace.` };
         const patch: Record<string, unknown> = {};
         if (department_id) patch.department_id = department_id;
-        if (role === "owner") patch.role = "owner";
+        const { data: cur } = await supabase.from("workspace_members").select("role").eq("workspace_id", ws).eq("user_id", member.user_id).single();
+        if (roleRank(role) > roleRank(cur?.role)) patch.role = role;
         if (Object.keys(patch).length) {
           const { error } = await supabase.from("workspace_members").update(patch).eq("workspace_id", ws).eq("user_id", member.user_id);
           if (error) return fail(error);
@@ -265,7 +272,7 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
         workspace: session.workspace.name,
         inviter: session.email || null,
         department: dept,
-        role: inv.role === "owner" ? "owner" : "member",
+        role: parseRole(inv.role),
       });
       return { ok: true, emailed: sent.emailed, emailNote: sent.note };
     }

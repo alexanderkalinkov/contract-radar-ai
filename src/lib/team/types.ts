@@ -1,6 +1,8 @@
 // Team onboarding: departments, department owners, the tool inventory and the tool survey.
 
-export type Role = "owner" | "member"; // owner = admin / C-level, member = department owner
+import { roleLabel as label, type Role } from "@/lib/roles";
+
+export type { Role };
 
 export interface Department {
   id: string;
@@ -153,5 +155,4 @@ export function guessCategory(name: string): string {
   return "Other";
 }
 
-export const roleLabel = (m: { role: Role; department_id: string | null }) =>
-  m.role === "owner" ? "Admin" : m.department_id ? "Department owner" : "Member";
+export const roleLabel = (m: { role: Role; department_id: string | null }) => label(m.role, m.department_id);

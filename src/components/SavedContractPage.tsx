@@ -15,6 +15,7 @@ import { PriceChangePanel } from "./PriceHikes";
 import { ExtractionCard } from "./Uploader";
 import { btnGhost, Card, cx, VendorLogo } from "./ui";
 import { useWorkspace } from "./WorkspaceProvider";
+import { canWrite } from "@/lib/roles";
 
 export function SavedContractPage({ id }: { id: string }) {
   const ws = useWorkspace();
@@ -162,9 +163,11 @@ export function SavedContractPage({ id }: { id: string }) {
             {busy === "pdf" ? "Opening…" : "Open original file"}
           </button>
         )}
-        <button type="button" className={cx(btnGhost, "text-[#912018]")} onClick={del} disabled={busy !== null}>
-          {busy === "delete" ? "Deleting…" : "Delete contract"}
-        </button>
+        {(ws.mode === "demo" || canWrite(ws.role)) && (
+          <button type="button" className={cx(btnGhost, "text-[#912018]")} onClick={del} disabled={busy !== null}>
+            {busy === "delete" ? "Deleting…" : "Delete contract"}
+          </button>
+        )}
       </div>
       {err && <p role="alert" className="m-0 text-sm text-[#912018]">{err}</p>}
 

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/server/api";
+import { denyViewer, requireSession } from "@/lib/server/api";
 
 export async function PATCH(req: Request) {
   const ctx = await requireSession();
   if (ctx instanceof NextResponse) return ctx;
+  const readOnly = denyViewer(ctx.session);
+  if (readOnly) return readOnly;
   const body = (await req.json().catch(() => ({}))) as { name?: unknown; show_sample_data?: unknown };
   const patch: Record<string, unknown> = {};
   if (typeof body.name === "string" && body.name.trim()) patch.name = body.name.trim().slice(0, 80);
