@@ -9,10 +9,11 @@ import { TeamError } from "@/components/team/TeamError";
 import { usd } from "@/lib/format";
 import { roleLabel } from "@/lib/team/types";
 import { useTeam } from "@/lib/team/useTeam";
+import { ROLES, type Role } from "@/lib/roles";
 
 export default function TeamPage() {
   const team = useTeam();
-  const { raw, insights, me, isAdmin, run } = team;
+  const { raw, insights, me, isAdmin, canWrite, run } = team;
   const [newDept, setNewDept] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
@@ -41,14 +42,12 @@ export default function TeamPage() {
       )}
 
       <Card label="Roles" className="grid gap-4 p-5 text-sm sm:grid-cols-2">
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold">Admin (C-level)</span>
-          <span className="text-ink-2">Sets up the workspace, invites people, sees the leadership view with recommendations for every tool.</span>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold">Department owner</span>
-          <span className="text-ink-2">Confirms their department&apos;s tools, uploads contracts and answers the 4-question survey for each tool.</span>
-        </div>
+        {ROLES.map((r) => (
+          <div key={r.value} className="flex flex-col gap-1">
+            <span className="font-semibold">{r.label}</span>
+            <span className="text-ink-2">{r.help}</span>
+          </div>
+        ))}
       </Card>
 
       <Card label="Departments" className="flex flex-col gap-4 p-5">
@@ -59,7 +58,7 @@ export default function TeamPage() {
         {departments.length === 0 && <p className="m-0 text-sm text-muted">No departments yet.</p>}
         <ul className="m-0 flex list-none flex-col gap-3 p-0">
           {departments.map((d) => {
-            const owners = members.filter((m) => m.department_id === d.id);
+            const owners = members.filter((m) => m.department_id === d.id && m.role !== "viewer");
             const pending = invites.filter((i) => i.department_id === d.id);
             const s = deptStats.get(d.id);
             return (
@@ -109,7 +108,7 @@ export default function TeamPage() {
                   ))}
                   {owners.length + pending.length === 0 && <span className="font-semibold text-warn">No owner yet</span>}
                 </div>
-                {(isAdmin || me?.department_id === d.id) && (
+                {(isAdmin || (canWrite && me?.department_id === d.id)) && (
                   <InviteForm departments={departments} isAdmin={isAdmin} fixedDepartment={d.id} run={run} compact />
                 )}
               </li>
@@ -174,10 +173,13 @@ export default function TeamPage() {
                         aria-label={`Role for ${m.email}`}
                         className={inputCls}
                         value={m.role}
-                        onChange={async (e) => say(await run({ op: "updateMember", user_id: m.user_id, role: e.target.value as "owner" | "member" }), "Saved.")}
+                        onChange={async (e) => say(await run({ op: "updateMember", user_id: m.user_id, role: e.target.value as Role }), "Saved.")}
                       >
-                        <option value="member">Department owner</option>
-                        <option value="owner">Admin (C-level)</option>
+                        {ROLES.map((r) => (
+                          <option key={r.value} value={r.value}>
+                            {r.label}
+                          </option>
+                        ))}
                       </select>
                     ) : (
                       <span className="rounded-full bg-chip px-2.5 py-0.5 text-xs font-semibold text-ink-2">{roleLabel(m)}</span>
@@ -192,7 +194,7 @@ export default function TeamPage() {
                   <td className="px-3 py-2.5">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-semibold text-warn-text">
-                        Invited · {i.role === "owner" ? "Admin" : "Dept owner"}
+                        Invited · {roleLabel({ role: i.role, department_id: i.department_id ?? "" })}
                       </span>
                       <button
                         type="button"
@@ -229,7 +231,7 @@ export default function TeamPage() {
             </tbody>
           </table>
         </div>
-        <InviteForm departments={departments} isAdmin={isAdmin} run={run} />
+        {canWrite && <InviteForm departments={departments} isAdmin={isAdmin} run={run} />}
       </Card>
     </>
   );

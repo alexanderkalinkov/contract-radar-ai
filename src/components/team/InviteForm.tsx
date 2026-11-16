@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { btnPrimary } from "@/components/ui";
 import type { Department, OpResult, Role, TeamOp } from "@/lib/team/types";
+import { ROLES } from "@/lib/roles";
 import { DepartmentSelect, inputCls, Notice } from "./forms";
 
 /** Invite someone by email into a department (or as an admin). */
@@ -66,8 +67,11 @@ export function InviteForm({
           <div className="min-w-[170px] flex-1">
             <label htmlFor={`${idp}-role`} className="sr-only">Role</label>
             <select id={`${idp}-role`} className={inputCls} value={role} onChange={(e) => setRole(e.target.value as Role)}>
-              <option value="member">Department owner</option>
-              <option value="owner">Admin (C-level)</option>
+              {ROLES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
             </select>
           </div>
         )}

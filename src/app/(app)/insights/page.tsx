@@ -25,18 +25,18 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
 
 export default function InsightsPage() {
   const team = useTeam();
-  const { insights, isAdmin, raw } = team;
+  const { insights, seesLeadership, raw } = team;
   const [filter, setFilter] = useState<Filter>("all");
 
   if (team.error) return <TeamError message={team.error} />;
   if (!insights || !raw) return <p className="text-muted">Loading the leadership view…</p>;
 
-  if (!isAdmin) {
+  if (!seesLeadership) {
     return (
       <>
         <PageHeader title="Leadership view" />
-        <Card label="Admins only" className="p-5 text-sm text-ink-2">
-          This view is for admins. Your part is on <Link href="/tools" className="font-semibold text-brand">Tools &amp; survey</Link>: confirm your
+        <Card label="Admins and approvers only" className="p-5 text-sm text-ink-2">
+          This view is for admins and approvers. Your part is on <Link href="/tools" className="font-semibold text-brand">Tools &amp; survey</Link>: confirm your
           department&apos;s tools and answer the questions.
         </Card>
       </>

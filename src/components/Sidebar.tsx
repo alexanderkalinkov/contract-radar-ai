@@ -10,10 +10,11 @@ import { switchWorkspace } from "./DemoWorkspaceCard";
 import { useWorkspace } from "./WorkspaceProvider";
 import { useRenewalQueue } from "@/lib/useRenewalQueue";
 import { cx } from "./ui";
+import { canApproveRenewals } from "@/lib/roles";
 
 const NAV = [
   { href: "/", label: "Savings", Icon: IconHome },
-  { href: "/insights", label: "Leadership view", Icon: IconChart, adminOnly: true },
+  { href: "/insights", label: "Leadership view", Icon: IconChart, leadersOnly: true },
   { href: "/tools", label: "Tools & survey", Icon: IconList },
   { href: "/discover", label: "Discovered tools", Icon: IconSpark },
   { href: "/contracts", label: "Contracts", Icon: IconDoc },
@@ -56,7 +57,7 @@ export function Sidebar() {
         </button>
       </div>
       <div className={cx("flex-col gap-1 text-sm font-medium lg:flex", open ? "flex" : "hidden")}>
-        {NAV.filter((n) => !("cloudOnly" in n && n.cloudOnly && !ws.billing?.enabled) && (!n.adminOnly || ws.mode === "demo" || ws.role === "owner")).map(({ href, label, Icon }) => (
+        {NAV.filter((n) => !("cloudOnly" in n && n.cloudOnly && !ws.billing?.enabled) && (!("adminOnly" in n && n.adminOnly) || ws.mode === "demo" || ws.role === "owner") && (!("leadersOnly" in n && n.leadersOnly) || ws.mode === "demo" || canApproveRenewals(ws.role))).map(({ href, label, Icon }) => (
           <Link
             key={href}
             href={href}

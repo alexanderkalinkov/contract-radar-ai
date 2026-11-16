@@ -12,6 +12,7 @@ import { useUsage } from "@/lib/useUsage";
 import { buildInsights } from "./insights";
 import { SAMPLE_DEPARTMENTS, SAMPLE_SURVEYS, SAMPLE_TOOLS } from "./sample";
 import { guessCategory, type OpResult, type TeamData, type TeamOp } from "./types";
+import { canApproveRenewals, canWrite } from "@/lib/roles";
 
 const DEMO_KEY = "cr-team-demo";
 const DEMO_ME = { user_id: "demo-user", email: "you (demo)", role: "owner" as const, department_id: null, job_title: null };
@@ -234,11 +235,14 @@ export function useTeam() {
 
   const me = raw?.me ?? null;
   const isAdmin = me?.role === "owner";
-  /** Can this person edit the tool / answer its survey? Mirrors the RLS rules. */
+  const writer = canWrite(me?.role);
+  /** Admins and approvers see the leadership view with recommendations for every tool. */
+  const seesLeadership = canApproveRenewals(me?.role);
+  /** Can this person edit the tool / answer its survey? Mirrors the RLS rules (viewers are read only). */
   const canEdit = useCallback(
     (t: { department_id: string | null; sample?: boolean }) =>
-      !t.sample && Boolean(me) && (isAdmin || t.department_id == null || t.department_id === me?.department_id),
-    [me, isAdmin],
+      !t.sample && Boolean(me) && writer && (isAdmin || t.department_id == null || t.department_id === me?.department_id),
+    [me, isAdmin, writer],
   );
 
   return {
@@ -248,6 +252,8 @@ export function useTeam() {
     usage,
     me,
     isAdmin,
+    canWrite: writer,
+    seesLeadership,
     canEdit,
     loading: ws.mode === "cloud" && !cloud && !error,
     error,
