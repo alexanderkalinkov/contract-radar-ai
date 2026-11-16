@@ -16,6 +16,12 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
         </div>
         {children}
       </div>
+      <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-navy-muted">
+        <Link href="/legal/privacy" className="hover:text-white hover:underline">Privacy</Link>
+        <Link href="/legal/terms" className="hover:text-white hover:underline">Terms</Link>
+        <Link href="/legal/dpa" className="hover:text-white hover:underline">DPA</Link>
+        <Link href="/legal/subprocessors" className="hover:text-white hover:underline">Subprocessors</Link>
+      </nav>
     </div>
   );
 }
