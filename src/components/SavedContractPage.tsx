@@ -23,7 +23,7 @@ import { canWrite } from "@/lib/roles";
 export function SavedContractPage({ id }: { id: string }) {
   const ws = useWorkspace();
   const router = useRouter();
-  const { saved, loading, remove, link, review } = useSavedContracts();
+  const { saved, loading, remove, link, review: reviewTerms } = useSavedContracts();
   const { history, contracts } = usePortfolio();
   const [busy, setBusy] = useState<"pdf" | "delete" | "link" | null>(null);
   const usageOf = useContractUsage();
@@ -262,7 +262,7 @@ export function SavedContractPage({ id }: { id: string }) {
           {d.agreement_name} · every value shows the passage and page it came from{s.hasFile ? "; click a page number to open the original there" : ""}
         </span>
       </div>
-      <ExtractionCard r={s} hideHeader onReview={ws.mode === "demo" || canWrite(ws.role) ? (a) => review(id, a) : undefined} onOpenPage={s.hasFile ? (p) => openPdf(p) : undefined} />
+      <ExtractionCard r={s} hideHeader onReview={ws.mode === "demo" || canWrite(ws.role) ? (a) => reviewTerms(id, a) : undefined} onOpenPage={s.hasFile ? (p) => openPdf(p) : undefined} />
     </>
   );
 }
