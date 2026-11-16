@@ -1,5 +1,7 @@
 import { EmailInboxCard } from "@/components/EmailInboxCard";
 import { DemoWorkspaceCard } from "@/components/DemoWorkspaceCard";
+import { EntitiesCard } from "@/components/enterprise/EntitiesCard";
+import { SsoCard } from "@/components/enterprise/SsoCard";
 import { PageHeader } from "@/components/ui";
 import { RenewalAlertSettings } from "@/components/RenewalAlertSettings";
 import { TeamSettings, type Invite, type Member } from "@/components/TeamSettings";
@@ -27,6 +29,8 @@ export default async function SettingsPage() {
       <div className="flex max-w-[760px] flex-col gap-6">
         <EmailInboxCard />
         <RenewalAlertSettings />
+        <EntitiesCard />
+        <SsoCard />
         <DemoWorkspaceCard />
       </div>
       <TeamSettings members={members} invites={invites} currentUserId={session?.userId ?? null} />

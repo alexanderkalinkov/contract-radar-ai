@@ -10,6 +10,7 @@ import { useContractUsage, usePortfolio, useSavedContracts } from "@/lib/portfol
 import { hueFor, initialsFor, isRisky } from "@/lib/saved";
 import { opportunitiesFromSaved } from "@/lib/opportunities";
 import { SeatUsageCard } from "./SeatUsage";
+import { ContractBooking } from "./enterprise/ContractBooking";
 import { EmailDrafter } from "./EmailDrafter";
 import { PriceChangePanel } from "./PriceHikes";
 import { ExtractionCard } from "./Uploader";
@@ -197,6 +198,7 @@ export function SavedContractPage({ id }: { id: string }) {
         </Card>
       )}
 
+      <ContractBooking contractId={s.id} />
       {usage && <SeatUsageCard u={usage} />}
 
       <PriceChangePanel change={change} escalators={asContract?.escalators ?? []} timeline={timeline} />

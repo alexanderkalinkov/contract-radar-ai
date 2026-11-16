@@ -30,6 +30,16 @@ export interface SessionInfo {
   role: Role;
   /** Every workspace this person belongs to, newest first. */
   workspaces: WorkspaceChoice[];
+  /** Their company requires SSO but this session signed in another way: the app sends them to SSO sign-in. */
+  ssoRequired?: boolean;
+  /** This session signed in through SAML SSO. */
+  viaSso?: boolean;
+}
+
+/** True when the token says the person signed in through SAML SSO. */
+function signedInWithSso(claims: Record<string, unknown>): boolean {
+  const amr = claims.amr;
+  return Array.isArray(amr) && amr.some((a) => typeof a === "object" && a !== null && String((a as { method?: unknown }).method).startsWith("sso"));
 }
 
 type MemberRow = { role: string; created_at: string; workspaces: (Workspace & { created_at?: string }) | null };
@@ -71,9 +81,20 @@ export const getSession = cache(async (): Promise<SessionInfo | null> => {
     memberships[0];
   const workspace = chosen?.workspaces ?? boot;
 
+  const email = String(claims.claims.email ?? "");
+  let ssoRequired = false;
+  const viaSso = signedInWithSso(claims.claims as Record<string, unknown>);
+  if (email && !viaSso) {
+    // Fails quietly before the enterprise migration has run.
+    const { data: required } = await supabase.rpc("sso_required", { email });
+    ssoRequired = required === true;
+  }
+
   return {
     userId,
-    email: String(claims.claims.email ?? ""),
+    email,
+    ssoRequired,
+    viaSso,
     workspace: {
       id: workspace.id,
       name: workspace.name,

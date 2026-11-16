@@ -1,7 +1,11 @@
 import { BillingGate } from "@/components/billing/BillingGate";
+import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
+import { getSession } from "@/lib/server/workspace";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  if (session?.ssoRequired) redirect("/auth/sso-required");
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       <Sidebar />

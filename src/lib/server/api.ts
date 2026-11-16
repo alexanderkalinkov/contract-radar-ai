@@ -14,6 +14,7 @@ export async function requireSession(): Promise<Ok | NextResponse> {
   }
   const session = await getSession().catch(() => null);
   if (!session) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  if (session.ssoRequired) return NextResponse.json({ error: "Your company requires single sign-on. Sign in with SSO." }, { status: 401 });
   return { session, supabase: await createClient() };
 }
 
