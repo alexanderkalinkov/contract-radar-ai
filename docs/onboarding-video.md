@@ -2,7 +2,7 @@
 
 A 6-minute guided tour for new users, recorded from the real app with a test account and the Northwind demo workspace.
 
-- **Video:** `contract-radar-onboarding.mp4` (1440x900, about 27 MB). Kept out of git because of its size. It lives in the project files (`onboarding-video/`) and on Alex's Mac in `Claude Code/onboarding-video/`.
+- **Video:** `contract-radar-onboarding.mp4` (1440x900, about 22 MB). Kept out of git because of its size. It lives in the project files (`onboarding-video/`) and on Alex's Mac in `Claude Code/onboarding-video/`.
 - **Voice:** Kokoro text-to-speech (voice `af_heart`), one clip per scene.
 - **Script:** below. The voiceover follows it word for word.
 
