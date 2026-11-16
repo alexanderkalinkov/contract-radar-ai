@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/ui";
+import { RenewalAlertSettings } from "@/components/RenewalAlertSettings";
 import { TeamSettings, type Invite, type Member } from "@/components/TeamSettings";
 import { getSession } from "@/lib/server/workspace";
 import { createClient } from "@/lib/supabase/server";
@@ -21,6 +22,9 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader eyebrow="Who can see this workspace, and what it shows" title="Workspace" />
+      <div className="max-w-[760px]">
+        <RenewalAlertSettings />
+      </div>
       <TeamSettings members={members} invites={invites} currentUserId={session?.userId ?? null} />
     </>
   );

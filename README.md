@@ -91,6 +91,16 @@ Discovered tools page shows "Needs setup" (or sample results in demo mode).
 
 ![Discovered tools](docs/screenshots/discovered-tools.png)
 
+## Turn on renewal reminders and branded emails
+
+Reminder emails go out 90, 60 and 30 days before each notice deadline and renewal date, to the department owner and
+the workspace admins, from a daily Vercel Cron job. Team invites and all Supabase auth emails (sign-up, magic link,
+password reset) share one branded design. Needs one SQL file, a Resend API key, `EMAIL_FROM`, `CRON_SECRET` and the
+service role key, plus pasting the templates in `supabase/templates` into Supabase. Step-by-step:
+[docs/email-setup.md](docs/email-setup.md).
+
+![Renewal reminder email](docs/screenshots/email-renewal-digest.png)
+
 ## What to click
 
 | Screen | URL | What works |
@@ -157,6 +167,8 @@ The product spec is in `docs/dashboard-spec.md` (PR #1).
 | Google Workspace, Microsoft 365, Okta, QuickBooks, Xero, cards | Simulated connect buttons |
 | Accounts, shared workspace, saved contracts and PDFs | **Real** with Supabase. Browser-only in demo mode |
 | Savings opportunities from uploaded contracts | Estimates from the contract alone: no renewal cap (a typical 7% rise held to 3%) and the seat-reduction allowance. Real usage and quotes come with connectors |
+| Renewal reminder emails (90/60/30 days) | **Real** with Supabase, Resend and `CRON_SECRET` |
+| Renewal calendar | Month grid, list and .ics export with reminders |
 | Weekly digest sending | Not built yet |
 | "Today" | Fixed to Nov 15, 2026 in `src/lib/engine.ts` so the sample deadlines always read the same |
 
@@ -167,6 +179,7 @@ npm run dev     # dev server on :3000
 npm run build   # production build
 npm run start   # serve the production build
 npm run lint    # eslint
+npm run email:templates  # rebuild supabase/templates/*.html after editing the auth emails
 ```
 
 ## Put it online (Vercel)
