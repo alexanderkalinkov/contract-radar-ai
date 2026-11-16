@@ -201,7 +201,7 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
   for (const item of due) {
     const name = wsName.get(item.workspaceId) ?? "your workspace";
     const recipients = members.filter(
-      (x) => x.workspace_id === item.workspaceId && (x.role === "owner" || (item.departmentId && x.department_id === item.departmentId)),
+      (x) => x.workspace_id === item.workspaceId && (x.role === "owner" || x.role === "approver" || (x.role === "member" && item.departmentId && x.department_id === item.departmentId)),
     );
     for (const r of recipients) {
       const to = r.email.toLowerCase();
@@ -210,6 +210,8 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
       const reason =
         r.role === "owner"
           ? `you're an admin of ${name} on ${brand().name}`
+          : r.role === "approver"
+            ? `you approve renewals for ${name} on ${brand().name}`
           : `you own the ${item.department ?? "department"} department in ${name} on ${brand().name}`;
       const box = outbox.get(k) ?? { to, workspaceId: item.workspaceId, reason, items: [] };
       box.items.push(item);

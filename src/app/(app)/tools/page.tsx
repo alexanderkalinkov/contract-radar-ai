@@ -51,12 +51,16 @@ export default function ToolsPage() {
             Find tools automatically
           </Link>
         )}
-        <Link href="/upload" className={btnGhost}>
-          <IconUpload /> Upload contract
-        </Link>
-        <button type="button" className={btnPrimary} onClick={() => setAdding(!adding)} aria-expanded={adding}>
-          + Add tool
-        </button>
+        {team.canWrite && (
+          <>
+            <Link href="/upload" className={btnGhost}>
+              <IconUpload /> Upload contract
+            </Link>
+            <button type="button" className={btnPrimary} onClick={() => setAdding(!adding)} aria-expanded={adding}>
+              + Add tool
+            </button>
+          </>
+        )}
       </PageHeader>
 
       <SampleTeamNote show={team.showingSample} />
@@ -83,7 +87,7 @@ export default function ToolsPage() {
         </Card>
       )}
 
-      {!isAdmin && !myDept && (
+      {!isAdmin && team.canWrite && !myDept && (
         <Card label="No department" className="p-5 text-sm text-ink-2">
           You aren&apos;t in a department yet, so you see every tool. Ask an admin to add you to your team on the{" "}
           <Link href="/team" className="font-semibold text-brand">Team</Link> page.

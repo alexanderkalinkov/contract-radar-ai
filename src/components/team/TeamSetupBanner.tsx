@@ -7,7 +7,7 @@ import { useTeam } from "@/lib/team/useTeam";
 
 /** On the Savings page: nudges admins to run setup, and department owners to answer their surveys. */
 export function TeamSetupBanner() {
-  const { raw, isAdmin, me } = useTeam();
+  const { raw, isAdmin, canWrite, me } = useTeam();
   if (!raw || !me) return null;
 
   if (isAdmin && !raw.workspace.onboarded_at) {
@@ -26,7 +26,7 @@ export function TeamSetupBanner() {
 
   const answered = latestSurveys(raw.surveys);
   const mine = raw.tools.filter((t) => (isAdmin ? !t.department_id : t.department_id === me.department_id) && !answered.has(t.id));
-  if (!isAdmin && me.department_id && mine.length) {
+  if (!isAdmin && canWrite && me.department_id && mine.length) {
     return (
       <Card label="Your tools" className="flex flex-wrap items-center justify-between gap-4 border-brand-line bg-brand-soft p-5">
         <div className="flex flex-col gap-1">

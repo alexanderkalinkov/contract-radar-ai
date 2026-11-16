@@ -1,6 +1,7 @@
 // The emails the app sends itself (renewal alerts, team invites, test email).
 // Supabase's own auth emails live in ./auth-templates.ts and share the same layout.
 import { attr, bullets, C, callout, esc, FONT, link, linkFallback, p, renderEmail, renderText, small, type EmailBrand } from "./layout";
+import type { Role } from "@/lib/roles";
 
 export interface RenderedEmail {
   subject: string;
@@ -206,7 +207,7 @@ export interface InviteEmailInput {
   workspace: string;
   inviter: string | null;
   department: string | null;
-  role: "owner" | "member";
+  role: Role;
   actionUrl: string;
   /** true when the person already has an account and the link just signs them in. */
   existingUser?: boolean;
@@ -215,12 +216,24 @@ export interface InviteEmailInput {
 export function inviteEmail(b: EmailBrand, i: InviteEmailInput): RenderedEmail {
   const who = i.inviter ? esc(i.inviter) : "Your team";
   const as =
-    i.role === "owner" ? " as an admin" : i.department ? ` as the owner of the <strong>${esc(i.department)}</strong> department` : "";
+    i.role === "owner"
+      ? " as an admin"
+      : i.role === "approver"
+        ? " as a renewal approver"
+        : i.role === "viewer"
+          ? " with read-only access"
+          : i.department
+            ? ` as the owner of the <strong>${esc(i.department)}</strong> department`
+            : "";
   const subject = `${i.inviter ?? "Your team"} invited you to ${i.workspace} on ${b.name}`;
   const jobs =
     i.role === "owner"
       ? ["See every software contract, renewal date and price increase in one place", "Get reminders 90, 60 and 30 days before each notice deadline", "Invite department owners and see what each team pays for"]
-      : ["Confirm the tools your department pays for (takes about 2 minutes)", "Answer 4 quick questions per tool so nothing gets cut by mistake", "Get a reminder before any of your tools renews"];
+      : i.role === "approver"
+        ? ["See every software contract, renewal date and price increase in one place", "Approve or send back keep, cut and renegotiate recommendations before each renewal", "Get reminders 90, 60 and 30 days before each notice deadline"]
+        : i.role === "viewer"
+          ? ["See every software contract, renewal date and price increase in one place", "Follow upcoming renewals on the calendar", "Read the savings opportunities the team is working on"]
+          : ["Confirm the tools your department pays for (takes about 2 minutes)", "Answer 4 quick questions per tool so nothing gets cut by mistake", "Get a reminder before any of your tools renews"];
   const html = renderEmail(b, {
     preheader: `${i.inviter ?? "Your team"} added you to ${i.workspace}. Accept to get started.`,
     eyebrow: "You're invited",

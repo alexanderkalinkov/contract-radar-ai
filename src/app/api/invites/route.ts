@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { limitReason } from "@/lib/server/billing";
-import { requireSession } from "@/lib/server/api";
+import { denyViewer, requireSession } from "@/lib/server/api";
 
 export async function POST(req: Request) {
   const ctx = await requireSession();
   if (ctx instanceof NextResponse) return ctx;
+  const readOnly = denyViewer(ctx.session);
+  if (readOnly) return readOnly;
   const { email } = (await req.json().catch(() => ({}))) as { email?: unknown };
   const clean = typeof email === "string" ? email.trim().toLowerCase() : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
@@ -27,6 +29,8 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const ctx = await requireSession();
   if (ctx instanceof NextResponse) return ctx;
+  const readOnly = denyViewer(ctx.session);
+  if (readOnly) return readOnly;
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Missing id." }, { status: 400 });
   const { error } = await ctx.supabase.from("workspace_invites").delete().eq("id", id).eq("workspace_id", ctx.session.workspace.id);

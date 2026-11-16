@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
+import type { Role } from "@/lib/roles";
 
 /** Remembers which workspace a person picked when they belong to more than one (e.g. their own and the demo). */
 export const WORKSPACE_COOKIE = "cr_workspace";
@@ -19,14 +20,14 @@ export interface WorkspaceChoice {
   id: string;
   name: string;
   is_demo: boolean;
-  role: "owner" | "member";
+  role: Role;
 }
 
 export interface SessionInfo {
   userId: string;
   email: string;
   workspace: Workspace;
-  role: "owner" | "member";
+  role: Role;
   /** Every workspace this person belongs to, newest first. */
   workspaces: WorkspaceChoice[];
 }
@@ -80,12 +81,12 @@ export const getSession = cache(async (): Promise<SessionInfo | null> => {
       onboarded_at: workspace.onboarded_at ?? null,
       is_demo: Boolean(workspace.is_demo),
     },
-    role: (chosen?.role as "owner" | "member") ?? "member",
+    role: (chosen?.role as Role) ?? "member",
     workspaces: memberships.map((m) => ({
       id: m.workspaces!.id,
       name: m.workspaces!.name,
       is_demo: Boolean(m.workspaces!.is_demo),
-      role: m.role as "owner" | "member",
+      role: m.role as Role,
     })),
   };
 });
