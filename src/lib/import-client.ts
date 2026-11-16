@@ -157,7 +157,10 @@ export async function startUpload(jobId: string, workspaceId: string, files: { i
         upload.map(async (id) => {
           const f = batch.find((x) => x.id === id)!;
           const kind = f.entry.kind ?? "pdf";
-          const { error } = await storage.upload(`${workspaceId}/${id}.${kind}`, blobs.get(id)!, { contentType: MIME[kind], upsert: false });
+          // Files unpacked from a ZIP have no type, and storage-js sends a Blob's own type (not contentType), which the
+          // bucket rejects as application/octet-stream. Re-wrap every file with the right type.
+          const typed = new Blob([blobs.get(id)!], { type: MIME[kind] });
+          const { error } = await storage.upload(`${workspaceId}/${id}.${kind}`, typed, { contentType: MIME[kind], upsert: false });
           // Already there (a resumed upload whose first try got through): that's fine.
           if (error && !/exists|duplicate/i.test(error.message)) broken.push({ id, error: `Upload failed: ${error.message}` });
           else ok.push(id);
