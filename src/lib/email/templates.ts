@@ -44,6 +44,30 @@ export interface AlertItem {
   noticeDays: number | null;
   upliftCapPct: number | null;
   department: string | null;
+  /** The renewal price compared with the current one, when a renewal quote or signed renewal was uploaded. */
+  priceChange?: {
+    source: "quote" | "renewal";
+    previousFee: number;
+    newFee: number;
+    deltaAbs: number;
+    deltaPct: number;
+    capPct: number | null;
+    overCap: number;
+  } | null;
+  /** A clause that raises the price on its own, e.g. "Fees rise 5% each year". */
+  escalator?: string | null;
+}
+
+/** "Renewal quote is up 9% (+$28,728), $12,768 over your 5% cap" */
+export function priceLine(i: AlertItem): string | null {
+  const p = i.priceChange;
+  if (p && p.deltaAbs > 0) {
+    const head = `${p.source === "quote" ? "Renewal quote is up" : "Renewal went up"} ${p.deltaPct}% (+${fmtMoney(p.deltaAbs, i.currency)}/yr)`;
+    if (p.capPct == null) return `${head}, and the contract has no cap`;
+    return p.overCap > 0 ? `${head}, ${fmtMoney(p.overCap, i.currency)} over your ${p.capPct}% cap` : `${head}, within your ${p.capPct}% cap`;
+  }
+  if (i.escalator) return `Built-in price increase: ${i.escalator}`;
+  return null;
 }
 
 export interface AlertEmailInput {
@@ -85,7 +109,10 @@ function itemRow(b: EmailBrand, i: AlertItem): string {
     <td valign="top" style="font-family:${FONT};">
       <div style="font-size:15px;line-height:22px;font-weight:600;color:${C.ink};">${esc(i.vendor)}${i.agreement ? `<span style="font-weight:400;color:${C.muted};"> &middot; ${esc(i.agreement)}</span>` : ""}</div>
       <div style="font-size:14px;line-height:21px;color:${C.ink2};">${esc(what(i))}: <strong>${esc(fmtDate(i.date))}</strong></div>
-      <div style="font-size:13px;line-height:20px;color:${C.muted};">${meta}</div>
+      <div style="font-size:13px;line-height:20px;color:${C.muted};">${meta}</div>${
+        priceLine(i) ? `
+      <div style="font-size:13px;line-height:20px;font-weight:600;color:${C.warn};">${esc(priceLine(i)!)}</div>` : ""
+      }
     </td>
     <td valign="middle" align="right" style="padding-left:10px;font-family:${FONT};font-size:13px;white-space:nowrap;">
       <a href="${attr(url)}" target="_blank" style="color:${C.brand};font-weight:600;text-decoration:none;">Open&nbsp;&rsaquo;</a>
@@ -118,10 +145,15 @@ export function renewalAlertEmail(b: EmailBrand, input: AlertEmailInput): Render
       heading = `${one.vendor} ends on ${fmtDate(one.date)}`;
       intro = `This is your ${one.bucket}-day reminder. ${esc(one.agreement || `Your ${one.vendor} contract`)} ends on <strong>${esc(fmtDate(one.date))}</strong> and does not renew on its own. If the team still needs it, start the renewal conversation now.`;
     }
+    const pc = one.priceChange;
     advice =
-      one.kind === "term_end"
-        ? "Check who still uses it and how many seats you really need before you agree new terms."
-        : `Decide whether to renew as is, renegotiate price and seats, or cancel.${one.upliftCapPct != null ? ` Your contract caps renewal increases at <strong>${one.upliftCapPct}%</strong>, so push back on anything above that.` : ""}`;
+      pc && pc.deltaAbs > 0
+        ? pc.capPct != null && pc.overCap > 0
+          ? `${pc.source === "quote" ? "The renewal quote" : "The renewal"} is <strong>${pc.deltaPct}%</strong> higher (${esc(fmtMoney(pc.previousFee, one.currency))} &rarr; ${esc(fmtMoney(pc.newFee, one.currency))}), but your contract caps increases at <strong>${pc.capPct}%</strong>. ${pc.source === "quote" ? `Push back on the <strong>${esc(fmtMoney(pc.overCap, one.currency))}</strong> over the cap before the deadline: the contract page drafts the email for you.` : `Ask for a credit of <strong>${esc(fmtMoney(pc.overCap, one.currency))}</strong>.`}`
+          : `${pc.source === "quote" ? "The renewal quote" : "The renewal"} is <strong>${pc.deltaPct}%</strong> higher (${esc(fmtMoney(pc.previousFee, one.currency))} &rarr; ${esc(fmtMoney(pc.newFee, one.currency))}). ${pc.capPct == null ? "Nothing in the contract limits increases, so negotiate it down and ask for a cap." : `That's within your ${pc.capPct}% cap, but it's still worth asking them to hold the price.`}`
+        : one.kind === "term_end"
+          ? "Check who still uses it and how many seats you really need before you agree new terms."
+          : `Decide whether to renew as is, renegotiate price and seats, or cancel.${one.upliftCapPct != null ? ` Your contract caps renewal increases at <strong>${one.upliftCapPct}%</strong>, so push back on anything above that.` : ""}${one.escalator ? ` Watch out: ${esc(one.escalator.replace(/^./, (x) => x.toLowerCase()))}.` : ""}`;
   } else {
     const notices = items.filter((i) => i.kind === "notice").length;
     subject = notices
@@ -129,7 +161,10 @@ export function renewalAlertEmail(b: EmailBrand, input: AlertEmailInput): Render
       : `${items.length} contract renewals coming up: ${soonest.vendor} first, ${inDays(soonest.daysLeft)}`;
     heading = `${items.length} contract dates need a decision`;
     intro = `Here is what is coming up in <strong>${esc(input.workspace)}</strong>. The first one is ${esc(soonest.vendor)}, ${esc(inDays(soonest.daysLeft))}.`;
-    advice = "For each one, decide whether to renew as is, renegotiate price and seats, or cancel. Notice usually has to be in writing, so leave time for it.";
+    const hikes = items.filter((i) => i.priceChange && i.priceChange.deltaAbs > 0);
+    advice =
+      "For each one, decide whether to renew as is, renegotiate price and seats, or cancel. Notice usually has to be in writing, so leave time for it." +
+      (hikes.length ? ` ${hikes.length === 1 ? `${esc(hikes[0].vendor)} has` : `${hikes.length} of them have`} a higher renewal price: push back before the notice deadline.` : "");
   }
 
   const list = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px;border-bottom:1px solid ${C.lineSoft};">
@@ -154,9 +189,9 @@ ${items.map((i) => itemRow(b, i)).join("\n")}
       "",
       intro.replace(/<[^>]+>/g, ""),
       "",
-      ...items.map((i) => `• ${i.vendor}${i.agreement ? ` (${i.agreement})` : ""}: ${what(i)} ${fmtDate(i.date)}, ${inDays(i.daysLeft)}${i.annualFee != null ? `, ${fmtMoney(i.annualFee, i.currency)}/yr` : ""}\n  ${b.appUrl}/contracts/${i.contractId}`),
+      ...items.map((i) => `• ${i.vendor}${i.agreement ? ` (${i.agreement})` : ""}: ${what(i)} ${fmtDate(i.date)}, ${inDays(i.daysLeft)}${i.annualFee != null ? `, ${fmtMoney(i.annualFee, i.currency)}/yr` : ""}${priceLine(i) ? `\n  ${priceLine(i)}` : ""}\n  ${b.appUrl}/contracts/${i.contractId}`),
       "",
-      advice.replace(/<[^>]+>/g, ""),
+      advice.replace(/<[^>]+>/g, "").replace(/&rarr;/g, "→"),
       "",
       `${one ? "Review the contract" : "Open the renewal calendar"}: ${ctaUrl}`,
     ],
