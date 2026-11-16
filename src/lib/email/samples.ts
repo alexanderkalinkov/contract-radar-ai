@@ -19,6 +19,7 @@ export function sampleAlertItems(today: string): AlertItem[] {
       upliftCapPct: 5,
       department: "Sales",
       priceChange: { source: "quote", previousFee: 186000, newFee: 202740, deltaAbs: 16740, deltaPct: 9, capPct: 5, overCap: 7440 },
+      decision: { status: "pending", summary: "Renegotiate · saves $7,440/yr", by: "sam@northwind.example" },
     },
     {
       contractId: "monday",
@@ -35,6 +36,7 @@ export function sampleAlertItems(today: string): AlertItem[] {
       upliftCapPct: null,
       department: "Operations",
       escalator: "Renews at the then-current list price",
+      decision: { status: "needed", summary: null, by: null },
     },
     {
       contractId: "zoom",
