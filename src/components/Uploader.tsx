@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { ExtractionResult } from "@/lib/extraction";
+import { REVIEW_FIELDS, type Extraction, type ExtractionResult, type FieldKey } from "@/lib/extraction";
+import { FIELD_INPUT, FIELD_LABELS, parseCorrection, quickConfirmable, reviewProgress, type ReviewAction, type ReviewValue } from "@/lib/review";
 import type { SavedContract } from "@/lib/saved";
 import { useSavedContracts } from "@/lib/portfolio";
 import { daysUntil } from "@/lib/engine";
@@ -10,7 +11,7 @@ import { longDate, usd } from "@/lib/format";
 import { useWorkspace } from "./WorkspaceProvider";
 import { createClient } from "@/lib/supabase/client";
 import { CONTRACTS_BUCKET } from "@/lib/supabase/config";
-import { ConfidenceTag, cx } from "./ui";
+import { btnSoft, ConfidenceTag, cx } from "./ui";
 import { IconUpload } from "./icons";
 
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -155,23 +156,67 @@ export function ExtractionSummary({ r }: { r: SavedContract }) {
   );
 }
 
-export function ExtractionCard({ r, hideHeader = false, savedNote }: { r: ExtractionResult; hideHeader?: boolean; savedNote?: string }) {
+/** How a term's value reads on screen. */
+function formatField(d: Extraction, k: FieldKey, value: ReviewValue = d[k].value as ReviewValue): string {
+  if (value == null) return k === "uplift_cap_percent" ? "No cap found" : "Not found";
+  switch (k) {
+    case "term_end":
+      return longDate(String(value));
+    case "auto_renewal":
+      return value ? `Yes${d.auto_renewal.renewal_term_months ? `, ${d.auto_renewal.renewal_term_months}-month terms` : ""}` : "No";
+    case "notice_period_days":
+      return `${value} days`;
+    case "uplift_cap_percent":
+      return `${value}% per renewal`;
+    case "seat_reduction_percent":
+      return `Up to ${value}% at renewal`;
+    case "annual_fee":
+      return `${usd(Number(value))}${d.currency && d.currency !== "USD" ? ` ${d.currency}` : ""}`;
+    default:
+      return String(value);
+  }
+}
+
+type ReviewFn = (a: ReviewAction) => Promise<void>;
+
+/**
+ * The extracted terms, each with the passage and page it came from. With onReview (a saved contract), each term can
+ * be confirmed or corrected, so Legal and Finance can sign off on what the AI read.
+ */
+export function ExtractionCard({
+  r,
+  hideHeader = false,
+  onReview,
+  onOpenPage,
+  savedNote,
+}: {
+  r: ExtractionResult;
+  hideHeader?: boolean;
+  /** Replaces the "saved to …" footer, e.g. for an import result that isn't in Contracts yet. */
+  savedNote?: string;
+  onReview?: ReviewFn;
+  onOpenPage?: (page: number) => void;
+}) {
   const ws = useWorkspace();
   const d = r.data;
   const days = r.noticeDeadline ? daysUntil(r.noticeDeadline) : null;
-  const fields: { label: string; value: string; f: { quote: string | null; page: number | null; confidence: "high" | "medium" | "low" } }[] = [
-    { label: "Term ends", value: d.term_end.value ? longDate(d.term_end.value) : "Not found", f: d.term_end },
-    {
-      label: "Auto-renewal",
-      value: d.auto_renewal.value == null ? "Not found" : d.auto_renewal.value ? `Yes${d.auto_renewal.renewal_term_months ? `, ${d.auto_renewal.renewal_term_months}-month terms` : ""}` : "No",
-      f: d.auto_renewal,
-    },
-    { label: "Notice period", value: d.notice_period_days.value != null ? `${d.notice_period_days.value} days` : "Not found", f: d.notice_period_days },
-    { label: "Uplift cap", value: d.uplift_cap_percent.value != null ? `${d.uplift_cap_percent.value}% per renewal` : "No cap found", f: d.uplift_cap_percent },
-    { label: "Seat reduction", value: d.seat_reduction_percent.value != null ? `Up to ${d.seat_reduction_percent.value}% at renewal` : "Not found", f: d.seat_reduction_percent },
-    { label: "Annual fee", value: d.annual_fee.value != null ? `${usd(d.annual_fee.value)}${d.currency && d.currency !== "USD" ? ` ${d.currency}` : ""}` : "Not found", f: d.annual_fee },
-    { label: "Seats", value: d.seats.value != null ? String(d.seats.value) : "Not found", f: d.seats },
-  ];
+  const progress = reviewProgress(d);
+  const quick = quickConfirmable(d);
+  const [busyAll, setBusyAll] = useState(false);
+  const [errAll, setErrAll] = useState<string | null>(null);
+
+  async function confirmQuick() {
+    if (!onReview) return;
+    setBusyAll(true);
+    setErrAll(null);
+    try {
+      await onReview({ action: "confirm", fields: quick });
+    } catch (e) {
+      setErrAll((e as Error).message);
+    } finally {
+      setBusyAll(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4 rounded-[14px] border border-line bg-white p-5">
@@ -194,24 +239,31 @@ export function ExtractionCard({ r, hideHeader = false, savedNote }: { r: Extrac
           Sample extraction: no ANTHROPIC_API_KEY is set on the server, so these are example results, not your PDF. Add a key to read your own contracts.
         </p>
       )}
-      <div className="flex flex-col divide-y divide-line-soft">
-        {fields.map((x) => (
-          <div key={x.label} className="flex flex-col gap-1.5 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm">
-                <span className="text-muted">{x.label}: </span>
-                <strong>{x.value}</strong>
-              </span>
-              <span className="flex items-center gap-2 text-xs text-muted">
-                {x.f.page != null && `page ${x.f.page}`} <ConfidenceTag level={x.f.confidence} />
-              </span>
-            </div>
-            {x.f.quote && (
-              <blockquote className="m-0 rounded-lg bg-[#F8FAFC] px-3 py-2 font-serif text-[13px] leading-relaxed text-ink-2">
-                &ldquo;{x.f.quote}&rdquo;
-              </blockquote>
-            )}
+      {onReview && (
+        <div
+          className={cx(
+            "flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3",
+            progress.reviewed === progress.total ? "border-good-line bg-[#F6FEF9]" : "border-line bg-[#F8FAFC]",
+          )}
+        >
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold">
+              {progress.reviewed === progress.total ? "All terms reviewed" : `${progress.reviewed} of ${progress.total} terms reviewed`}
+              {progress.corrected > 0 && ` · ${progress.corrected} corrected`}
+            </span>
+            <span className="text-[13px] text-muted">Check each value against its source quote, then confirm it or correct it. Corrections update deadlines and reminders.</span>
           </div>
+          {quick.length > 0 && (
+            <button type="button" className={btnSoft} onClick={confirmQuick} disabled={busyAll}>
+              {busyAll ? "Saving…" : `Confirm ${quick.length} verified, high-confidence ${quick.length === 1 ? "term" : "terms"}`}
+            </button>
+          )}
+          {errAll && <span role="alert" className="w-full text-[13px] text-[#912018]">{errAll}</span>}
+        </div>
+      )}
+      <div className="flex flex-col divide-y divide-line-soft">
+        {REVIEW_FIELDS.map((k) => (
+          <TermRow key={k} d={d} k={k} onReview={onReview} onOpenPage={onOpenPage} />
         ))}
       </div>
       {d.risks.length > 0 && (
@@ -227,6 +279,141 @@ export function ExtractionCard({ r, hideHeader = false, savedNote }: { r: Extrac
       <span className="text-xs text-muted">
         {r.demo ? "Sample data" : `Read by ${r.model}`} · {new Date(r.extractedAt).toLocaleString("en-US")} · {savedNote ?? (ws.mode === "cloud" ? `saved to ${ws.workspaceName}` : "saved in this browser (demo mode)")}
       </span>
+    </div>
+  );
+}
+
+const linkBtn = "font-semibold text-brand hover:underline disabled:opacity-50";
+
+function TermRow({ d, k, onReview, onOpenPage }: { d: Extraction; k: FieldKey; onReview?: ReviewFn; onOpenPage?: (page: number) => void }) {
+  const f = d[k];
+  const review = d.reviews?.[k];
+  const checked = d.verified ? Boolean(d.verified[k]) : null; // null: read before quotes were checked
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const kind = FIELD_INPUT[k];
+
+  async function run(a: ReviewAction) {
+    if (!onReview) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      await onReview(a);
+      setEditing(false);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function startEdit() {
+    const v = f.value as ReviewValue;
+    setDraft(v == null ? "" : String(v));
+    setErr(null);
+    setEditing(true);
+  }
+
+  function save() {
+    const raw = kind === "boolean" ? (draft === "" ? null : draft === "true") : draft.trim();
+    const parsed = parseCorrection(k, raw);
+    if ("error" in parsed) return setErr(parsed.error);
+    run({ action: "correct", field: k, value: parsed.value });
+  }
+
+  const who = (r: { by: string | null; at: string }) => `${r.by ? `by ${r.by} ` : ""}on ${longDate(r.at.slice(0, 10))}`;
+
+  return (
+    <div className="flex flex-col gap-1.5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm">
+          <span className="text-muted">{FIELD_LABELS[k]}: </span>
+          <strong>{formatField(d, k)}</strong>
+          {review?.status === "corrected" && <span className="ml-1.5 text-[13px] text-muted line-through">{formatField(d, k, review.original ?? null)}</span>}
+        </span>
+        <span className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          {f.page != null &&
+            (onOpenPage ? (
+              <button type="button" className={linkBtn} onClick={() => onOpenPage(f.page!)}>
+                page {f.page}
+              </button>
+            ) : (
+              `page ${f.page}`
+            ))}
+          {f.quote && checked === true && (
+            <span className="rounded-full bg-brand-soft px-2 py-0.5 font-semibold whitespace-nowrap text-brand-dark" title="This quote was copied from the document by Claude's citations, not written by the model.">
+              Quote found in document
+            </span>
+          )}
+          {f.quote && checked === false && (
+            <span className="rounded-full bg-warn-soft px-2 py-0.5 font-semibold whitespace-nowrap text-warn-text" title="Claude could not point to this exact text in the document. Check it against the original before relying on it.">
+              Quote not matched
+            </span>
+          )}
+          <ConfidenceTag level={f.confidence} />
+        </span>
+      </div>
+      {f.quote && (
+        <blockquote className="m-0 rounded-lg bg-[#F8FAFC] px-3 py-2 font-serif text-[13px] leading-relaxed text-ink-2">&ldquo;{f.quote}&rdquo;</blockquote>
+      )}
+      {onReview && !editing && (
+        <div className="flex flex-wrap items-center gap-3 text-[13px]">
+          {review ? (
+            <>
+              <span className={cx("font-semibold", review.status === "confirmed" ? "text-good-dark" : "text-brand-dark")}>
+                {review.status === "confirmed" ? "✓ Confirmed" : "✎ Corrected"} {who(review)}
+              </span>
+              <button type="button" className={linkBtn} onClick={startEdit} disabled={busy}>
+                Correct
+              </button>
+              <button type="button" className={linkBtn} onClick={() => run({ action: "reset", field: k })} disabled={busy}>
+                {review.status === "corrected" ? "Undo correction" : "Undo"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className={linkBtn} onClick={() => run({ action: "confirm", fields: [k] })} disabled={busy}>
+                {busy ? "Saving…" : "Confirm"}
+              </button>
+              <button type="button" className={linkBtn} onClick={startEdit} disabled={busy}>
+                Correct
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {editing && (
+        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+          {kind === "boolean" ? (
+            <select value={draft} onChange={(e) => setDraft(e.target.value)} className="min-h-9 rounded-lg border border-[#D0D5DD] bg-white px-2 text-[13px]" aria-label={FIELD_LABELS[k]}>
+              <option value="true">Yes, renews automatically</option>
+              <option value="false">No</option>
+              <option value="">Not in the contract</option>
+            </select>
+          ) : (
+            <input
+              type={kind === "date" ? "date" : "text"}
+              inputMode={kind === "date" ? undefined : "decimal"}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && save()}
+              placeholder={kind === "date" ? "YYYY-MM-DD" : "Leave empty if not in the contract"}
+              aria-label={FIELD_LABELS[k]}
+              className="min-h-9 w-56 max-w-full rounded-lg border border-[#D0D5DD] bg-white px-2 text-[13px]"
+              autoFocus
+            />
+          )}
+          <button type="button" className={btnSoft} onClick={save} disabled={busy}>
+            {busy ? "Saving…" : "Save"}
+          </button>
+          <button type="button" className={linkBtn} onClick={() => setEditing(false)} disabled={busy}>
+            Cancel
+          </button>
+        </div>
+      )}
+      {err && <span role="alert" className="text-[13px] text-[#912018]">{err}</span>}
     </div>
   );
 }

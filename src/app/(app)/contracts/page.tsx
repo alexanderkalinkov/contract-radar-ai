@@ -6,6 +6,7 @@ import { daysUntil, noticeDeadline } from "@/lib/engine";
 import { shortDate, usd } from "@/lib/format";
 import { usePortfolio } from "@/lib/portfolio";
 import { isRisky } from "@/lib/saved";
+import { reviewProgress } from "@/lib/review";
 import { btnGhost, btnPrimary, Card, DaysBadge, PageHeader, VendorLogo } from "@/components/ui";
 import { IconUpload } from "@/components/icons";
 import { SampleDataNote } from "@/components/SampleDataNote";
@@ -67,6 +68,7 @@ export default function ContractsPage() {
               const notice = noticeDeadline(c);
               const s = savedById[c.id];
               const flags = s ? isRisky(s) : [];
+              const reviewed = s ? reviewProgress(s.data) : null;
               return (
                 <tr key={c.id} className="border-t border-line-soft hover:bg-[#F8FAFC]">
                   <td className="px-5 py-3.5">
@@ -78,6 +80,14 @@ export default function ContractsPage() {
                           {c.uploaded && (
                             <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-dark">Uploaded</span>
                           )}
+                          {reviewed &&
+                            (reviewed.reviewed === reviewed.total ? (
+                              <span className="ml-2 rounded-full bg-good-soft px-2 py-0.5 text-xs font-semibold text-good-dark">Terms reviewed</span>
+                            ) : (
+                              <span className="ml-2 rounded-full bg-chip px-2 py-0.5 text-xs font-medium text-muted">
+                                {reviewed.reviewed}/{reviewed.total} terms reviewed
+                              </span>
+                            ))}
                           {!c.uploaded && (
                             <span className="ml-2 rounded-full bg-chip px-2 py-0.5 text-xs font-medium text-muted">Sample</span>
                           )}

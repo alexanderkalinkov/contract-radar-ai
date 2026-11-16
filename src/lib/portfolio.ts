@@ -14,6 +14,7 @@ import { useUsage } from "./useUsage";
 import { useTeam } from "./team/useTeam";
 import type { SeatUsage } from "./types";
 import type { ExtractionResult } from "./extraction";
+import { applyReview, noticeDeadlineOf, type ReviewAction } from "./review";
 import type { Contract, Opportunity } from "./types";
 
 const LOCAL_KEY = "cr-uploads";
@@ -108,7 +109,32 @@ export function useSavedContracts() {
     [ws.mode, local, setLocal],
   );
 
-  return { saved, loading, error, refresh, add, remove, link };
+  /** Confirms or corrects extracted terms (see lib/review.ts). Demo mode applies it in the browser. */
+  const review = useCallback(
+    async (id: string, action: ReviewAction) => {
+      if (ws.mode === "cloud") {
+        const res = await fetch(`/api/contracts/${id}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ review: action }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error ?? "Could not save the review");
+        publish((cloudCache ?? []).map((x) => (x.id === id ? { ...x, data: json.data, noticeDeadline: json.noticeDeadline } : x)));
+      } else {
+        setLocal(
+          normaliseLocal(local).map((x) => {
+            if (x.id !== id) return x;
+            const data = applyReview(x.data, action, null);
+            return { ...x, data, noticeDeadline: noticeDeadlineOf(data) };
+          }),
+        );
+      }
+    },
+    [ws.mode, local, setLocal],
+  );
+
+  return { saved, loading, error, refresh, add, remove, link, review };
 }
 
 /**
