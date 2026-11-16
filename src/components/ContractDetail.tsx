@@ -12,6 +12,7 @@ import { PriceChangePanel } from "./PriceHikes";
 import { priceChangeFor } from "@/lib/price-history";
 import { btnGhost, btnPrimary, Card, ConfidenceTag, cx, H2, Segmented, VendorLogo } from "./ui";
 import { SeatUsageCard } from "./SeatUsage";
+import { RenewalDecisionCard } from "./RenewalDecision";
 
 export function ContractDetail({ contract: c }: { contract: Contract }) {
   const m = renewalMath(c);
@@ -95,6 +96,8 @@ export function ContractDetail({ contract: c }: { contract: Contract }) {
           />
         </div>
       </Card>
+
+      <RenewalDecisionCard contract={c} opportunities={opps} />
 
       <div className="flex flex-wrap items-start gap-6">
         <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-6">
@@ -207,7 +210,8 @@ export function ContractDetail({ contract: c }: { contract: Contract }) {
           {c.usage && <SeatUsageCard u={c.usage} />}
         </div>
 
-        <Card label="Pushback email draft" className="flex min-w-0 flex-[1_1_440px] flex-col">
+        <div id="pushback-email" className="flex min-w-0 flex-[1_1_440px] scroll-mt-6 flex-col">
+        <Card label="Pushback email draft" className="flex min-w-0 flex-1 flex-col">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-[18px]">
             <div className="flex flex-col gap-0.5">
               <H2>{c.quote ? "Pushback email" : "Renewal notice email"}</H2>
@@ -274,6 +278,7 @@ export function ContractDetail({ contract: c }: { contract: Contract }) {
             )}
           </div>
         </Card>
+        </div>
       </div>
     </>
   );
