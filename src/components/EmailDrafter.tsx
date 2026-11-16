@@ -3,9 +3,11 @@
 import { useState } from "react";
 import type { EmailGoal } from "@/lib/opportunities";
 import type { SavedContract } from "@/lib/saved";
+import type { PriceChange } from "@/lib/types";
 import { btnGhost, btnPrimary, Card, H2, Segmented } from "./ui";
 
 const GOALS: { value: EmailGoal; label: string }[] = [
+  { value: "hike", label: "Push back on increase" },
   { value: "cap", label: "Ask for a cap" },
   { value: "seats", label: "Cut seats" },
   { value: "review", label: "Renegotiate" },
@@ -23,7 +25,17 @@ export interface SeatFacts {
   days: number;
 }
 
-export function EmailDrafter({ contract, defaultGoal, seats }: { contract: SavedContract; defaultGoal: EmailGoal; seats?: SeatFacts }) {
+export function EmailDrafter({
+  contract,
+  defaultGoal,
+  priceChange,
+  seats,
+}: {
+  contract: SavedContract;
+  defaultGoal: EmailGoal;
+  priceChange?: PriceChange | null;
+  seats?: SeatFacts;
+}) {
   const [goal, setGoal] = useState<EmailGoal>(defaultGoal);
   const [tone, setTone] = useState<"firm" | "friendly">("friendly");
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -44,6 +56,7 @@ export function EmailDrafter({ contract, defaultGoal, seats }: { contract: Saved
           noticeDeadline: contract.noticeDeadline,
           goal,
           tone,
+          priceChange: priceChange ?? null,
           seats: seats ?? null,
         }),
       });

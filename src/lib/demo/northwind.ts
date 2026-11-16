@@ -43,6 +43,8 @@ interface DemoContract {
   fee: number;
   seats: number;
   risks: string[];
+  kind?: Extraction["document_kind"];
+  escalators?: Extraction["price_escalators"];
 }
 
 const CONTRACTS: DemoContract[] = [
@@ -97,6 +99,16 @@ const CONTRACTS: DemoContract[] = [
     fee: 43_200,
     seats: 12,
     risks: ["No cap on renewal pricing.", "Marketing contact tiers are billed on the highest count in the term."],
+    escalators: [
+      {
+        description: "Renews at HubSpot's then-current list price",
+        percent: null,
+        frequency: "at_renewal",
+        quote: "Renewal fees will be at Vendor's then-current list price unless otherwise agreed in writing.",
+        page: 3,
+        confidence: "high",
+      },
+    ],
   },
   {
     key: "looker",
@@ -241,6 +253,7 @@ function extraction(c: DemoContract, today: string): Extraction {
   return {
     vendor: c.vendor,
     agreement_name: c.agreement,
+    document_kind: c.kind ?? (/order form/i.test(c.agreement) ? "order_form" : "contract"),
     customer: `${DEMO_COMPANY} Inc.`,
     term_start: start,
     term_end: {
@@ -285,6 +298,7 @@ function extraction(c: DemoContract, today: string): Extraction {
     annual_fee: { value: c.fee, quote: `Annual Subscription Fee: ${money(c.fee)}`, page: 4, confidence: "high" },
     seats: { value: c.seats, quote: `Licensed users: ${spell(c.seats)}`, page: 4, confidence: "high" },
     currency: "USD",
+    price_escalators: c.escalators ?? [],
     risks: c.risks,
   };
 }
@@ -339,6 +353,43 @@ const TOOLS: DemoTool[] = [
   { key: "docusign", name: "DocuSign", category: "E-signature", dept: "fin", cost: 9_600, seats: 10, renewsIn: 228, source: "import", confirmed: false },
 ];
 
+// Earlier terms and renewal quotes for some vendors, so price-hike tracking has something to show.
+// Each copies its contract and changes what differs; endsIn is shifted a year back (last term) or forward (quote).
+const OTHER_DOCS: (DemoContract & { of: string })[] = [
+  {
+    ...CONTRACTS.find((c) => c.key === "salesforce")!,
+    of: "salesforce",
+    key: "salesforce-quote",
+    agreement: "Renewal Quote Q-05102 (Sales Cloud Enterprise)",
+    file: "Salesforce_RenewalQuote_Q-05102.pdf",
+    kind: "renewal_quote",
+    endsIn: 42 + 365,
+    fee: 347_928,
+    risks: ["Quoted at 9% over the current term, above the 5% cap in the order form.", "Quote expires 10 days before the notice deadline."],
+  },
+  {
+    ...CONTRACTS.find((c) => c.key === "hubspot")!,
+    of: "hubspot",
+    key: "hubspot-quote",
+    agreement: "Marketing Hub Professional Renewal Quote",
+    file: "HubSpot_Renewal_Quote_2027.pdf",
+    kind: "renewal_quote",
+    endsIn: 71 + 365,
+    fee: 48_384,
+    risks: ["12% over the current term.", "The order form has no cap on renewal pricing."],
+  },
+  {
+    ...CONTRACTS.find((c) => c.key === "zendesk")!,
+    of: "zendesk",
+    key: "zendesk-2025",
+    agreement: "Suite Professional Order Form (prior term)",
+    file: "Zendesk_Suite_Professional_2025.pdf",
+    endsIn: 137 - 365,
+    fee: 48_000,
+    risks: ["60 days' notice."],
+  },
+];
+
 // ---------- the whole workspace ----------
 
 export interface DemoRows {
@@ -387,6 +438,23 @@ export function buildDemoRows(workspaceId: string, today: string, uuid: () => st
       created_at: at(18 - (i % 6), 9 + (i % 7)),
     };
   });
+  // The prior term was uploaded first; quotes arrived in the last few days.
+  for (const [i, c] of OTHER_DOCS.entries()) {
+    const data = extraction(c, today);
+    contracts.push({
+      id: uuid(),
+      workspace_id: workspaceId,
+      uploaded_by: null,
+      uploaded_by_email: headOf(c.dept),
+      file_name: c.file,
+      file_path: null,
+      ...extractionColumns(data, null),
+      extraction: data,
+      model: "claude-opus-5-5",
+      demo: false,
+      created_at: c.kind === "renewal_quote" ? at(2 + i, 11) : at(19, 9),
+    });
+  }
 
   const toolId = new Map<string, string>();
   const tools = TOOLS.map((t, i) => {

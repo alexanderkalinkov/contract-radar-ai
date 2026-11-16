@@ -8,6 +8,8 @@ import { longDate, shortDate, usd } from "@/lib/format";
 import { useOppStatus } from "@/lib/store";
 import type { Contract } from "@/lib/types";
 import { IconCheck } from "./icons";
+import { PriceChangePanel } from "./PriceHikes";
+import { priceChangeFor } from "@/lib/price-history";
 import { btnGhost, btnPrimary, Card, ConfidenceTag, cx, H2, Segmented, VendorLogo } from "./ui";
 import { SeatUsageCard } from "./SeatUsage";
 
@@ -173,6 +175,8 @@ export function ContractDetail({ contract: c }: { contract: Contract }) {
               <span className="font-display text-[30px] font-semibold text-good-dark">{usd(savings)}</span>
             </div>
           </Card>
+
+          <PriceChangePanel change={priceChangeFor(c)} escalators={c.escalators} />
 
           <Card label="Clauses found by AI" className="flex flex-col gap-3.5 p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">

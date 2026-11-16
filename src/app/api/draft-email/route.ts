@@ -3,7 +3,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { addDays } from "@/lib/engine";
-import { ExtractionSchema, type Extraction } from "@/lib/extraction";
+import { escalatorsOf, StoredExtractionSchema, type Extraction } from "@/lib/extraction";
 import { TARGET_CAP_PCT, type EmailGoal } from "@/lib/opportunities";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { lockedReason } from "@/lib/server/billing";
@@ -14,10 +14,30 @@ export const maxDuration = 60;
 
 const MODEL = "claude-opus-5-5";
 
+const money = z.number().finite();
+const PriceChangeFacts = z.object({
+  source: z.enum(["quote", "renewal"]),
+  previousDoc: z.string().max(300),
+  newDoc: z.string().max(300),
+  previousFee: money,
+  newFee: money,
+  deltaAbs: money,
+  deltaPct: money,
+  previousSeats: z.number().nullable(),
+  newSeats: z.number().nullable(),
+  perSeatPrevious: z.number().nullable(),
+  perSeatNew: z.number().nullable(),
+  capPct: z.number().nullable(),
+  cappedFee: z.number().nullable(),
+  overCap: money,
+});
+type PriceChangeFacts = z.infer<typeof PriceChangeFacts>;
+
 const Body = z.object({
-  data: ExtractionSchema,
+  data: StoredExtractionSchema,
   noticeDeadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
-  goal: z.enum(["cap", "seats", "cancel", "review"]),
+  goal: z.enum(["hike", "cap", "seats", "cancel", "review"]),
+  priceChange: PriceChangeFacts.nullable().optional(),
   tone: z.enum(["firm", "friendly"]),
   company: z.string().max(120).nullable().optional(),
   /** Sign-in facts from Google Workspace / Microsoft, for seat-cut emails. */
@@ -46,6 +66,7 @@ const EmailSchema = z.object({
 });
 
 const GOALS: Record<EmailGoal, string> = {
+  hike: `The vendor's renewal price is higher than the current term. State the increase in percent and in money, comparing the two documents by name. If the contract caps renewal increases and the new price is over the cap, quote the cap clause and ask for the price to be brought down to the capped amount (and, for an already-signed renewal, for a credit of the difference). If there is no cap, ask to keep the price flat or hold the increase to ${TARGET_CAP_PCT}% at most, and ask what justifies the increase. If the per-seat price rose more than the total, point that out.`,
   cap: `The contract renews automatically and does not limit price increases. Ask the vendor to agree in writing that the renewal price will rise by no more than ${TARGET_CAP_PCT}% (or stay flat), and to send renewal pricing before the notice deadline so there is time to decide.`,
   seats: "Tell the vendor the customer will reduce its seat count at renewal under the seat-reduction clause (or, if the contract has none, ask for it), and ask for a revised order form. If a seat count to ask for is given, use it and mention how many seats were actually used; otherwise leave the new seat number as [new seat count] for the customer to fill in.",
   cancel: "Give formal written notice of non-renewal under the notice clause, and ask the vendor to confirm in writing that the subscription will not auto-renew.",
@@ -60,7 +81,22 @@ Rules:
 - Plain text only, no markdown. Under 200 words. Start with "Hi [Name]," and end with "Best regards," then "[Your name]" and the company name if given.
 - Tone: "firm" is formal and points to the contract's obligations; "friendly" is warm and collaborative but still clear about the ask.`;
 
-function facts(d: Extraction, noticeDeadline: string | null) {
+const fmt = (n: number, cur: string | null) => `${Math.round(n).toLocaleString("en-US")} ${cur ?? ""}`.trim();
+
+function changeFacts(p: PriceChangeFacts, cur: string | null): string[] {
+  return [
+    `Price change (${p.source === "quote" ? "renewal quote received, not signed yet" : "renewal already signed"}):`,
+    `- ${p.previousDoc}: annual fee ${fmt(p.previousFee, cur)}${p.previousSeats ? ` for ${p.previousSeats} seats` : ""}`,
+    `- ${p.newDoc}: annual fee ${fmt(p.newFee, cur)}${p.newSeats ? ` for ${p.newSeats} seats` : ""}`,
+    `- Increase: ${p.deltaPct}% (${fmt(p.deltaAbs, cur)} a year)`,
+    p.perSeatPrevious && p.perSeatNew ? `- Per seat: ${fmt(p.perSeatPrevious, cur)} → ${fmt(p.perSeatNew, cur)} a year` : "",
+    p.capPct != null
+      ? `- Cap in ${p.previousDoc}: ${p.capPct}%, so the renewal fee may not exceed ${fmt(p.cappedFee ?? 0, cur)}; the new price is ${p.overCap > 0 ? `${fmt(p.overCap, cur)} over the cap` : "within the cap"}`
+      : "- The contract has no cap on renewal increases",
+  ].filter(Boolean);
+}
+
+function facts(d: Extraction, noticeDeadline: string | null, change?: PriceChangeFacts | null) {
   const term = (label: string, f: { value: unknown; quote: string | null; page: number | null }) =>
     f.value == null && !f.quote ? `${label}: not stated` : `${label}: ${f.value ?? "see quote"}${f.quote ? ` (quote${f.page ? `, page ${f.page}` : ""}: "${f.quote}")` : ""}`;
   return [
@@ -76,13 +112,25 @@ function facts(d: Extraction, noticeDeadline: string | null) {
     term("Seats", d.seats),
     `Notice deadline: ${noticeDeadline ?? "unknown"}`,
     `Reply-by date: ${noticeDeadline ? addDays(noticeDeadline, -5) : "unknown"}`,
+    ...escalatorsOf(d).map((e) => `Automatic price increase clause: ${e.description}${e.quote ? ` (quote${e.page ? `, page ${e.page}` : ""}: "${e.quote}")` : ""}`),
+    ...(change ? changeFacts(change, d.currency) : []),
   ].join("\n");
 }
 
 /** Used when no API key is configured, so the screen still works in a demo. */
-function templateEmail(d: Extraction, noticeDeadline: string | null, goal: EmailGoal, company: string | null, seats: SeatFacts | null) {
+function templateEmail(d: Extraction, noticeDeadline: string | null, goal: EmailGoal, company: string | null, p?: PriceChangeFacts | null, seats: SeatFacts | null = null) {
   const replyBy = noticeDeadline ? addDays(noticeDeadline, -5) : null;
+  const cur = d.currency;
+  const hike = !p
+    ? `We'd like to discuss the renewal pricing for the ${d.agreement_name} before it renews. Please send the renewal quote.`
+    : `${p.source === "quote" ? "Thanks for the renewal quote" : "We've reviewed the renewal"} (${p.newDoc}). It moves our annual fee from ${fmt(p.previousFee, cur)} to ${fmt(p.newFee, cur)}, an increase of ${p.deltaPct}% (${fmt(p.deltaAbs, cur)} a year).` +
+      (p.capPct != null && p.overCap > 0
+        ? ` Our ${p.previousDoc} caps renewal increases at ${p.capPct}%, so the fee can't exceed ${fmt(p.cappedFee ?? 0, cur)}. ${p.source === "quote" ? "Please send a revised quote at or below that amount." : `Please issue a credit for the ${fmt(p.overCap, cur)} difference.`}`
+        : p.capPct != null
+          ? ` That is within the ${p.capPct}% cap, but we'd still like to understand what's behind it and whether you can hold the price.`
+          : ` We'd like to keep the price flat, or at most a ${TARGET_CAP_PCT}% increase. Could you share what's behind the change?`);
   const ask: Record<EmailGoal, string> = {
+    hike,
     cap: `Our ${d.agreement_name} renews automatically and doesn't limit renewal price increases. Before it renews, we'd like your written confirmation that the renewal price will rise by no more than ${TARGET_CAP_PCT}%, along with the renewal pricing.`,
     seats: seats
       ? `Only ${seats.active} of our ${seats.paid} seats were used in the last ${seats.days} days, so we'll be reducing our seat count at renewal of the ${d.agreement_name}. Please send a revised order form for ${seats.target ?? "[new seat count]"} seats.`
@@ -92,7 +140,8 @@ function templateEmail(d: Extraction, noticeDeadline: string | null, goal: Email
   };
   const when = replyBy ? `Please reply by ${replyBy}, ahead of our ${noticeDeadline} notice deadline.` : "Please reply at your earliest convenience.";
   return {
-    subject: goal === "cancel" ? `Notice of non-renewal: ${d.agreement_name}` : `Renewal of ${d.agreement_name}`,
+    subject:
+      goal === "cancel" ? `Notice of non-renewal: ${d.agreement_name}` : goal === "hike" ? `Renewal pricing: ${d.agreement_name}` : `Renewal of ${d.agreement_name}`,
     body: `Hi [Name],\n\n${ask[goal]}\n\n${when}\n\nBest regards,\n[Your name]${company ? `\n${company}` : ""}`,
   };
 }
@@ -106,12 +155,14 @@ export async function POST(req: Request) {
   if (locked) return NextResponse.json({ error: locked }, { status: 402 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Missing contract details for the email." }, { status: 400 });
-  const { data, noticeDeadline, goal, tone } = parsed.data;
+  const { noticeDeadline, goal, tone } = parsed.data;
+  const data = { price_escalators: [], document_kind: "contract", ...parsed.data.data } as Extraction;
+  const change = parsed.data.priceChange ?? null;
   const seats = goal === "seats" ? parsed.data.seats ?? null : null;
   const company = parsed.data.company ?? data.customer ?? null;
 
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
-    return NextResponse.json({ ...templateEmail(data, noticeDeadline, goal, company, seats), demo: true });
+    return NextResponse.json({ ...templateEmail(data, noticeDeadline, goal, company, change, seats), demo: true });
   }
 
   const client = new Anthropic();
@@ -126,7 +177,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "user",
-          content: `Contract facts:\n${facts(data, noticeDeadline)}${seats ? `\n${seatLine(seats)}` : ""}\n\nCompany name for the sign-off: ${company ?? "not given"}\nTone: ${tone}\n\nWhat the email must do: ${GOALS[goal]}`,
+          content: `Contract facts:\n${facts(data, noticeDeadline, change)}${seats ? `\n${seatLine(seats)}` : ""}\n\nCompany name for the sign-off: ${company ?? "not given"}\nTone: ${tone}\n\nWhat the email must do: ${GOALS[goal]}`,
         },
       ],
     });

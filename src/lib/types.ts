@@ -67,6 +67,46 @@ export interface Contract {
   uploaded?: boolean;
   /** Uploaded contracts carry the deadline computed at extraction time (null when not found). */
   noticeDeadlineOverride?: string | null;
+  /** Price change against the previous document for the same vendor (uploaded contracts; see price-history.ts). */
+  priceChange?: PriceChange;
+  /** Clauses that raise the price automatically (annual uplift, CPI, list price at renewal). */
+  escalators?: PriceEscalator[];
+}
+
+export interface PriceEscalator {
+  description: string;
+  percent: number | null;
+  frequency: "annual" | "at_renewal" | "other";
+  quote: string | null;
+  page: number | null;
+}
+
+/** A renewal price compared with the price before it. Money is per year, in the documents' currency. */
+export interface PriceChange {
+  /** "quote": the vendor's renewal quote vs. the current contract. "renewal": a signed renewal vs. the one before. */
+  source: "quote" | "renewal";
+  contractId: string; // the contract this change is shown on
+  previousId: string | null;
+  newId: string | null;
+  previousDoc: string;
+  newDoc: string;
+  receivedOn: string; // when the newer document arrived
+  currency: string | null;
+  previousFee: number;
+  newFee: number;
+  deltaAbs: number;
+  deltaPct: number; // one decimal
+  previousSeats: number | null;
+  newSeats: number | null;
+  perSeatPrevious: number | null;
+  perSeatNew: number | null;
+  perSeatPct: number | null;
+  /** Cap from the earlier document, which governs the renewal. */
+  capPct: number | null;
+  cappedFee: number | null;
+  overCap: number; // 0 when within the cap or no cap
+  /** Notice deadline that decides whether there is still time to push back. */
+  actBy: string;
 }
 
 export interface Opportunity {

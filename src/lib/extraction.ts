@@ -12,6 +12,11 @@ const evidence = {
 export const ExtractionSchema = z.object({
   vendor: z.string().describe("The SaaS vendor's company name"),
   agreement_name: z.string().describe("Short name of the document, e.g. 'Master Subscription Agreement' or 'Order Form #00417'"),
+  document_kind: z
+    .enum(["contract", "order_form", "renewal_quote", "amendment", "invoice", "other"])
+    .describe(
+      "What this document is: a signed agreement or MSA (contract), a signed order form (order_form), a renewal quote or proposal the vendor sent but the customer has not signed yet (renewal_quote), an amendment, an invoice, or other",
+    ),
   customer: z.string().nullable(),
   term_start: z.string().nullable().describe("Start of the current term, YYYY-MM-DD"),
   term_end: z
@@ -37,6 +42,18 @@ export const ExtractionSchema = z.object({
   annual_fee: z.object({ value: z.number().nullable().describe("Total annual fee in the contract currency"), ...evidence }),
   seats: z.object({ value: z.number().int().nullable(), ...evidence }),
   currency: z.string().nullable().describe("ISO 4217 code, e.g. USD"),
+  price_escalators: z
+    .array(
+      z.object({
+        description: z.string().describe("Plain English, e.g. 'Fees rise 5% on each anniversary' or 'Renewal at then-current list price'"),
+        percent: z.number().nullable().describe("The automatic increase in percent, or null if the clause sets no number (list price, CPI)"),
+        frequency: z.enum(["annual", "at_renewal", "other"]),
+        ...evidence,
+      }),
+    )
+    .describe(
+      "Clauses that raise the price automatically without a new negotiation: fixed annual uplifts, CPI-linked increases, step-ups in later years, or renewal at then-current list price. Empty if none.",
+    ),
   risks: z
     .array(z.string())
     .describe("Up to 3 short plain-English notes a finance lead should know, e.g. 'Price can change with 30 days notice'"),
@@ -57,6 +74,7 @@ export interface ExtractionResult {
 export const DEMO_EXTRACTION: Extraction = {
   vendor: "Acme Analytics, Inc.",
   agreement_name: "Master Subscription Agreement + Order Form #AC-2207",
+  document_kind: "contract",
   customer: "Northwind Logistics",
   term_start: "2026-02-01",
   term_end: {
@@ -94,8 +112,44 @@ export const DEMO_EXTRACTION: Extraction = {
   annual_fee: { value: 86_400, quote: "Annual Subscription Fee: USD 86,400", page: 3, confidence: "high" },
   seats: { value: 120, quote: "Named Users: 120", page: 3, confidence: "high" },
   currency: "USD",
+  price_escalators: [],
   risks: [
     "Notice is 60 days, double the usual 30, so the deadline comes early.",
     "Overage users are billed at list price, not your discounted rate.",
   ],
 };
+
+/**
+ * Returned instead of DEMO_EXTRACTION when a demo upload's file name says it is a renewal quote, so price-hike
+ * tracking can be tried without an API key: it is 10% over the demo contract's fee, against a 6% cap.
+ */
+export const DEMO_RENEWAL_QUOTE: Extraction = {
+  ...DEMO_EXTRACTION,
+  agreement_name: "Renewal Quote #AC-3108",
+  document_kind: "renewal_quote",
+  term_start: "2027-02-01",
+  term_end: { value: "2028-01-31", quote: "Renewal Subscription Term: February 1, 2027 to January 31, 2028.", page: 1, confidence: "high" },
+  annual_fee: { value: 95_040, quote: "Annual Subscription Fee (renewal term): USD 95,040", page: 1, confidence: "high" },
+  seats: { value: 120, quote: "Named Users: 120", page: 1, confidence: "high" },
+  price_escalators: [],
+  risks: ["The renewal fee is 10% higher than the current term.", "Quote expires before the notice deadline, so it may be used to rush a decision."],
+};
+
+/** Documents saved before price-hike tracking have no document_kind; infer it from the name. */
+export function documentKind(d: Pick<Extraction, "agreement_name"> & { document_kind?: Extraction["document_kind"] }): Extraction["document_kind"] {
+  if (d.document_kind) return d.document_kind;
+  return /\b(quote|quotation|proposal)\b/i.test(d.agreement_name) ? "renewal_quote" : "contract";
+}
+
+export type Escalator = Extraction["price_escalators"][number];
+
+/** Price escalators, or none for documents saved before they were extracted. */
+export function escalatorsOf(d: { price_escalators?: Escalator[] }): Escalator[] {
+  return Array.isArray(d.price_escalators) ? d.price_escalators : [];
+}
+
+/** The same schema, but accepting documents saved before document_kind and price_escalators existed. */
+export const StoredExtractionSchema = ExtractionSchema.extend({
+  document_kind: ExtractionSchema.shape.document_kind.optional(),
+  price_escalators: ExtractionSchema.shape.price_escalators.optional(),
+});

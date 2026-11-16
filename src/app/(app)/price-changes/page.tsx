@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePortfolio } from "@/lib/portfolio";
-import { renewalMath } from "@/lib/engine";
+import { priceChangeFor, signedPct } from "@/lib/price-history";
+import { HikeList, priceHikeRows } from "@/components/PriceHikes";
 import { shortDate, usd } from "@/lib/format";
 import { Card, H2, PageHeader, VendorLogo } from "@/components/ui";
 
@@ -23,11 +24,17 @@ const PRICING_CHANGES = [
 
 export default function PriceChangesPage() {
   const { contracts: CONTRACTS, showSample } = usePortfolio();
-  const quoted = CONTRACTS.filter((c) => c.quote);
+  const hikes = priceHikeRows(CONTRACTS);
+  const totalIncrease = hikes.reduce((sum, r) => sum + (r.change?.deltaAbs ?? r.escalator?.amount ?? 0), 0);
+  const overCap = hikes.reduce((sum, r) => sum + (r.change?.overCap ?? 0), 0);
+  const within = CONTRACTS.filter((c) => {
+    const p = priceChangeFor(c);
+    return p && p.deltaAbs <= 0;
+  });
   const uncapped = CONTRACTS.filter((c) => c.uploaded && c.autoRenew && c.upliftCapPct == null);
   return (
     <>
-      <PageHeader eyebrow="Renewal quotes checked against your contract caps, plus pricing and terms pages we watch" title="Price changes" />
+      <PageHeader eyebrow="Renewal quotes and signed renewals compared with the term before, checked against your contract caps" title="Price changes" />
 
       {uncapped.length > 0 && (
         <Card label="Uploaded contracts with no price cap" className="flex flex-col gap-3 p-5">
@@ -49,32 +56,40 @@ export default function PriceChangesPage() {
         </Card>
       )}
 
-      {quoted.length > 0 && (
-      <Card label="Renewal quotes vs caps" className="flex flex-col gap-3 p-5">
-        <H2>Renewal quotes vs. caps</H2>
-        {quoted.map((c) => {
-          const m = renewalMath(c);
-          const over = m.cappedFee != null && m.quotedFee != null && m.quotedFee > m.cappedFee;
-          return (
-            <Link key={c.id} href={`/contracts/${c.id}`} className="flex flex-wrap items-center gap-3.5 rounded-xl border border-line-soft px-4 py-3 text-ink hover:bg-[#F8FAFC]">
-              <VendorLogo initials={c.initials} hue={c.hue} />
-              <div className="flex min-w-[220px] flex-1 flex-col">
-                <span className="font-semibold">{c.vendor} {c.product}</span>
-                <span className="text-[13px] text-muted">
-                  Quote received {shortDate(c.quote!.receivedOn)}: {usd(m.currentFee)} → {usd(m.quotedFee!)} (+{m.quoteIncreasePct}%), cap {c.upliftCapPct ?? "none"}%
-                </span>
-              </div>
-              {over ? (
-                <span className="rounded-full bg-warn-soft px-3 py-1 text-[13px] font-semibold text-warn-text">
-                  {usd(m.capSavings)} over cap
-                </span>
-              ) : (
-                <span className="rounded-full bg-good-soft px-3 py-1 text-[13px] font-semibold text-good-dark">Within cap</span>
-              )}
-            </Link>
-          );
-        })}
-      </Card>
+      {hikes.length > 0 && (
+        <Card label="Price hikes at renewal" className="flex flex-col gap-3 p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <H2>Price hikes at renewal</H2>
+            <span className="text-[13px] text-muted">
+              +{usd(totalIncrease)}/yr{overCap > 0 ? ` · ${usd(overCap)} over your contract caps` : ""}
+            </span>
+          </div>
+          <p className="m-0 text-[13px] text-muted">
+            Each renewal quote or signed renewal compared with the term before it, and checked against the cap in your contract.
+          </p>
+          <HikeList rows={hikes} />
+        </Card>
+      )}
+
+      {within.length > 0 && (
+        <Card label="Renewals with no increase" className="flex flex-col gap-3 p-5">
+          <H2>No increase</H2>
+          {within.map((c) => {
+            const p = priceChangeFor(c)!;
+            return (
+              <Link key={c.id} href={`/contracts/${c.id}`} className="flex flex-wrap items-center gap-3.5 rounded-xl border border-line-soft px-4 py-3 text-ink hover:bg-[#F8FAFC]">
+                <VendorLogo initials={c.initials} hue={c.hue} />
+                <div className="flex min-w-[220px] flex-1 flex-col">
+                  <span className="font-semibold">{c.vendor} {c.product}</span>
+                  <span className="text-[13px] text-muted">
+                    {usd(p.previousFee)} → {usd(p.newFee)} ({signedPct(p.deltaPct)}), received {shortDate(p.receivedOn)}
+                  </span>
+                </div>
+                <span className="rounded-full bg-good-soft px-3 py-1 text-[13px] font-semibold text-good-dark">Flat or lower</span>
+              </Link>
+            );
+          })}
+        </Card>
       )}
 
       {showSample && (
@@ -100,9 +115,9 @@ export default function PriceChangesPage() {
         })}
       </Card>
       )}
-      {!showSample && uncapped.length === 0 && (
+      {!showSample && uncapped.length === 0 && hikes.length === 0 && within.length === 0 && (
         <Card className="p-8 text-center text-sm text-muted">
-          Nothing to flag yet. Upload renewal quotes and contracts and we&apos;ll check them against your caps.
+          Nothing to flag yet. Upload a contract and, when the vendor sends it, the renewal quote. We&apos;ll compare the two and check the increase against your cap.
         </Card>
       )}
     </>

@@ -26,3 +26,33 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (row?.file_path) await ctx.supabase.storage.from(CONTRACTS_BUCKET).remove([row.file_path]);
   return NextResponse.json({ ok: true });
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Sets which earlier document this one is compared with for price changes.
+ * Body: { supersedesId: "<contract id>" | "<own id>" (compare with nothing) | null (match automatically) }.
+ */
+export async function PATCH(req: Request, { params }: Params) {
+  const ctx = await requireSession();
+  if (ctx instanceof NextResponse) return ctx;
+  const { id } = await params;
+  const body = (await req.json().catch(() => null)) as { supersedesId?: unknown } | null;
+  const target = body?.supersedesId;
+  if (!body || !("supersedesId" in body) || (target !== null && (typeof target !== "string" || !UUID.test(target)))) {
+    return NextResponse.json({ error: "supersedesId must be a contract id or null." }, { status: 400 });
+  }
+  const ws = ctx.session.workspace.id;
+  if (typeof target === "string" && target !== id) {
+    const { data: other } = await ctx.supabase.from("contracts").select("id").eq("id", target).eq("workspace_id", ws).maybeSingle();
+    if (!other) return NextResponse.json({ error: "That contract isn't in this workspace." }, { status: 404 });
+  }
+  const { error } = await ctx.supabase.from("contracts").update({ supersedes_id: target }).eq("id", id).eq("workspace_id", ws);
+  if (error) {
+    if (/supersedes_id/.test(error.message)) {
+      return NextResponse.json({ error: "Run supabase/migrations/20261116200000_price_history.sql in the Supabase SQL editor first." }, { status: 500 });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true, supersedesId: target });
+}

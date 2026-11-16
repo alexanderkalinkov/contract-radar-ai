@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { daysUntil, TODAY } from "@/lib/engine";
 import { longDate, usd } from "@/lib/format";
-import { useContractUsage, useSavedContracts } from "@/lib/portfolio";
+import { documentKind } from "@/lib/extraction";
+import { useContractUsage, usePortfolio, useSavedContracts } from "@/lib/portfolio";
 import { hueFor, initialsFor, isRisky } from "@/lib/saved";
 import { opportunitiesFromSaved } from "@/lib/opportunities";
 import { SeatUsageCard } from "./SeatUsage";
 import { EmailDrafter } from "./EmailDrafter";
+import { PriceChangePanel } from "./PriceHikes";
 import { ExtractionCard } from "./Uploader";
 import { btnGhost, Card, cx, VendorLogo } from "./ui";
 import { useWorkspace } from "./WorkspaceProvider";
@@ -17,9 +19,10 @@ import { useWorkspace } from "./WorkspaceProvider";
 export function SavedContractPage({ id }: { id: string }) {
   const ws = useWorkspace();
   const router = useRouter();
-  const { saved, loading, remove } = useSavedContracts();
+  const { saved, loading, remove, link } = useSavedContracts();
+  const { history, contracts } = usePortfolio();
+  const [busy, setBusy] = useState<"pdf" | "delete" | "link" | null>(null);
   const usageOf = useContractUsage();
-  const [busy, setBusy] = useState<"pdf" | "delete" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const s = saved.find((x) => x.id === id);
 
@@ -39,9 +42,43 @@ export function SavedContractPage({ id }: { id: string }) {
   const d = s.data;
   const days = s.noticeDeadline ? daysUntil(s.noticeDeadline, TODAY) : null;
   const flags = isRisky(s);
+  const change = history.changes.get(s.id) ?? null;
   const usage = usageOf(s);
-  const found = opportunitiesFromSaved(s, usage);
+  const found = opportunitiesFromSaved(s, change, usage);
   const seatOpp = found.find((o) => o.lever === "seats");
+  const shownOnId = history.shownOn.get(s.id);
+  const shownOn = shownOnId ? saved.find((x) => x.id === shownOnId) : undefined;
+  const asContract = contracts.find((c) => c.id === s.id);
+  const KIND: Record<string, string> = {
+    contract: "Contract",
+    order_form: "Order form",
+    renewal_quote: "Renewal quote",
+    amendment: "Amendment",
+    invoice: "Invoice",
+    other: "Document",
+  };
+  const timeline = (history.timeline.get(s.id) ?? []).map((x) => ({
+    id: x.id,
+    doc: x.data.agreement_name,
+    fee: x.data.annual_fee.value,
+    date: x.data.term_start ?? x.extractedAt.slice(0, 10),
+    kind: KIND[documentKind(x.data)] ?? "Document",
+    current: x.id === s.id,
+  }));
+  const others = saved.filter((x) => x.id !== s.id);
+  const matchValue = s.supersedesId == null ? "auto" : s.supersedesId === s.id ? "none" : s.supersedesId;
+
+  async function setMatch(value: string) {
+    setBusy("link");
+    setErr(null);
+    try {
+      await link(id, value === "auto" ? null : value === "none" ? id : value);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function openPdf() {
     setBusy("pdf");
@@ -98,6 +135,16 @@ export function SavedContractPage({ id }: { id: string }) {
         </div>
       </header>
 
+      {shownOn && (
+        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-brand-line bg-brand-soft px-[18px] py-3 text-sm text-brand-dark">
+          {documentKind(d) === "renewal_quote" ? "This renewal quote is compared with" : "A newer document replaces this one:"}{" "}
+          <Link href={`/contracts/${shownOn.id}`} className="font-semibold text-brand">
+            {shownOn.data.agreement_name}
+          </Link>
+          . Price changes, reminders and the pushback email live there.
+        </div>
+      )}
+
       {flags.length > 0 && (
         <div className="flex flex-col gap-1 rounded-xl border border-warn-line bg-warn-soft px-[18px] py-3.5 text-sm text-[#7A2E0B]">
           <strong>Worth acting on</strong>
@@ -127,8 +174,8 @@ export function SavedContractPage({ id }: { id: string }) {
             <h2 className="m-0 font-display text-[19px] font-semibold">Savings found</h2>
             <span className="text-[13px] text-muted">
               {usage
-                ? `From this contract and ${usage.source} sign-ins. "Up to" amounts need the vendor to agree.`
-                : "Estimates from this contract alone. Connecting Google Workspace or Microsoft sign-ins will firm up seat savings."}
+                ? `From this contract, the documents compared with it and ${usage.source} sign-ins. "Up to" amounts need the vendor to agree.`
+                : `From this contract and the documents compared with it. "Up to" amounts are estimates; connecting Google Workspace or Microsoft sign-ins will firm up seat savings.`}
             </span>
           </div>
           <ul className="m-0 flex list-none flex-col divide-y divide-line-soft p-0">
@@ -149,9 +196,33 @@ export function SavedContractPage({ id }: { id: string }) {
 
       {usage && <SeatUsageCard u={usage} />}
 
+      <PriceChangePanel change={change} escalators={asContract?.escalators ?? []} timeline={timeline} />
+
+      {others.length > 0 && (
+        <label className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
+          Compare prices with
+          <select
+            value={matchValue}
+            onChange={(e) => setMatch(e.target.value)}
+            disabled={busy !== null}
+            className="min-h-9 max-w-full rounded-lg border border-[#D0D5DD] bg-white px-2 text-[13px] text-ink"
+          >
+            <option value="auto">Matched automatically</option>
+            <option value="none">Nothing (a separate contract)</option>
+            {others.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.data.vendor} · {x.data.agreement_name}
+              </option>
+            ))}
+          </select>
+          {busy === "link" && <span>Saving…</span>}
+        </label>
+      )}
+
       <EmailDrafter
         contract={s}
-        defaultGoal={[...found].sort((a, b) => b.annualSavings - a.annualSavings)[0]?.goal ?? "review"}
+        priceChange={change}
+        defaultGoal={[...found].sort((a, b) => b.annualSavings - a.annualSavings)[0]?.goal ?? (change && change.deltaAbs > 0 ? "hike" : "review")}
         seats={usage ? { paid: usage.paid, active: usage.active, target: seatOpp?.targetSeats ?? null, source: usage.source, days: usage.activeDays ?? 30 } : undefined}
       />
 

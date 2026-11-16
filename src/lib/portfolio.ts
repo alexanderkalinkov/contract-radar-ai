@@ -6,6 +6,7 @@ import { opportunitiesFromSaved } from "./opportunities";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "@/components/WorkspaceProvider";
 import { CONTRACTS, OPPORTUNITIES, PORTFOLIO } from "./seed";
+import { buildPriceHistory, type PriceHistory } from "./price-history";
 import { savedToContract, type SavedContract } from "./saved";
 import { useStored } from "./store";
 import { usageForContract } from "./usage";
@@ -89,7 +90,25 @@ export function useSavedContracts() {
     [ws.mode, local, setLocal],
   );
 
-  return { saved, loading, error, refresh, add, remove };
+  /** Picks which earlier document this one is compared with (see SavedContract.supersedesId). */
+  const link = useCallback(
+    async (id: string, supersedesId: string | null) => {
+      if (ws.mode === "cloud") {
+        const res = await fetch(`/api/contracts/${id}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ supersedesId }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error ?? "Could not save the match");
+        publish((cloudCache ?? []).map((x) => (x.id === id ? { ...x, supersedesId } : x)));
+      } else {
+        setLocal(normaliseLocal(local).map((x) => (x.id === id ? { ...x, supersedesId } : x)));
+      }
+    },
+    [ws.mode, local, setLocal],
+  );
+
+  return { saved, loading, error, refresh, add, remove, link };
 }
 
 /**
@@ -118,6 +137,7 @@ export interface Portfolio {
   contracts: Contract[];
   opportunities: Opportunity[];
   saved: SavedContract[];
+  history: PriceHistory;
   showSample: boolean;
   loading: boolean;
   totals: { identifiedSavings: number; opportunityCount: number; capturedThisYear: number; wins: number; contractsTracked: number };
@@ -128,15 +148,28 @@ export function usePortfolio(): Portfolio {
   const { saved, loading } = useSavedContracts();
   const usageOf = useContractUsage();
   return useMemo(() => {
-    const usage = new Map(saved.map((s) => [s.id, usageOf(s)]));
-    const uploaded = saved.map((s) => ({ ...savedToContract(s), usage: usage.get(s.id) }));
-    const found = saved.flatMap((s) => opportunitiesFromSaved(s, usage.get(s.id)));
+    // Older terms and renewal quotes fold into the contract they belong to, which carries the price change.
+    const history = buildPriceHistory(saved);
+    const current = saved.filter((s) => !history.hidden.has(s.id));
+    const usage = new Map(current.map((s) => [s.id, usageOf(s)]));
+    const uploaded = current.map((s) => {
+      const c = savedToContract(s);
+      c.usage = usage.get(s.id);
+      const change = history.changes.get(s.id);
+      if (change) {
+        c.priceChange = change;
+        if (change.source === "quote") c.quote = { receivedOn: change.receivedOn, annualFee: change.newFee };
+      }
+      return c;
+    });
+    const found = current.flatMap((s) => opportunitiesFromSaved(s, history.changes.get(s.id), usage.get(s.id)));
     const foundTotal = found.reduce((sum, o) => sum + o.annualSavings, 0);
     const showSample = ws.showSample;
     return {
       contracts: [...uploaded, ...(showSample ? CONTRACTS : [])],
       opportunities: [...found, ...(showSample ? OPPORTUNITIES : [])],
       saved,
+      history,
       showSample,
       loading,
       totals: showSample
