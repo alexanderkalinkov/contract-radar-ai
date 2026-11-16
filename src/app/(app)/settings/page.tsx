@@ -1,3 +1,4 @@
+import { EmailInboxCard } from "@/components/EmailInboxCard";
 import { DemoWorkspaceCard } from "@/components/DemoWorkspaceCard";
 import { PageHeader } from "@/components/ui";
 import { RenewalAlertSettings } from "@/components/RenewalAlertSettings";
@@ -24,6 +25,7 @@ export default async function SettingsPage() {
     <>
       <PageHeader eyebrow="Who can see this workspace, and what it shows" title="Workspace" />
       <div className="flex max-w-[760px] flex-col gap-6">
+        <EmailInboxCard />
         <RenewalAlertSettings />
         <DemoWorkspaceCard />
       </div>

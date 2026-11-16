@@ -193,24 +193,36 @@ export async function syncSubscription(subscriptionId: string): Promise<{ worksp
 
 /** For API routes that add data: a short reason when the workspace's trial has ended, else null. */
 export async function lockedReason(workspaceId: string): Promise<string | null> {
-  const b = await getBilling(workspaceId);
+  return lockedMessage(await getBilling(workspaceId));
+}
+
+function lockedMessage(b: BillingSummary): string | null {
   if (b.access) return null;
   return b.state === "canceled"
     ? "Your subscription has ended. Choose a plan on the Billing page to keep using Contract Radar."
     : "Your free trial has ended. Choose a plan on the Billing page to keep using Contract Radar.";
 }
 
-/** Checks a count against the plan's limit. Returns a message when the limit is reached. */
-export async function limitReason(workspaceId: string, kind: "contracts" | "people", current: number): Promise<string | null> {
-  const locked = await lockedReason(workspaceId);
+function limitMessage(b: BillingSummary, kind: "contracts" | "people", current: number): string | null {
+  const locked = lockedMessage(b);
   if (locked) return locked;
-  const b = await getBilling(workspaceId);
   const max = b.limits[kind];
   if (max == null || current < max) return null;
   const name = planById(b.plan)?.name ?? (b.state === "trial" ? "trial" : "current");
   return kind === "contracts"
     ? `Your ${name} plan includes ${max} contracts. Upgrade on the Billing page to add more.`
     : `Your ${name} plan includes ${max} people (including pending invites). Upgrade on the Billing page to invite more.`;
+}
+
+/** Checks a count against the plan's limit. Returns a message when the limit is reached. */
+export async function limitReason(workspaceId: string, kind: "contracts" | "people", current: number): Promise<string | null> {
+  return limitMessage(await getBilling(workspaceId), kind, current);
+}
+
+/** Same check for server jobs with no signed-in user (the email inbox), read with the service role. */
+export async function limitReasonAdmin(workspaceId: string, kind: "contracts" | "people", current: number): Promise<string | null> {
+  if (!isBillingConfigured()) return null;
+  return limitMessage(summarize(await getBillingRowAdmin(workspaceId)), kind, current);
 }
 
 /** Public address for Stripe redirect URLs: APP_URL when set, otherwise the request's own origin. */

@@ -106,6 +106,14 @@ service role key, plus pasting the templates in `supabase/templates` into Supaba
 
 ![Renewal reminder email](docs/screenshots/email-renewal-digest.png)
 
+## Let people email contracts in
+
+Each workspace has its own inbox address (Workspace settings). Members forward a vendor's email or send a PDF or
+Word contract to it; Claude reads each attachment like an upload, files the tool under the sender's department and
+replies with what it found. Only workspace members whose mail server authenticates their address are accepted.
+Needs one SQL file, receiving turned on in Resend, a webhook and two env vars. Step-by-step:
+[docs/email-inbox-setup.md](docs/email-inbox-setup.md).
+
 ## What to click
 
 | Screen | URL | What works |
@@ -119,7 +127,7 @@ service role key, plus pasting the templates in `supabase/templates` into Supaba
 | Team | `/team` | Departments and their owners, invite by email, set each person's department and role |
 | Tools & survey | `/tools`, `/tools/<id>` | Every tool by department; owners confirm theirs and answer 4 questions (purpose, criticality 1–5, replacement, seats) |
 | Leadership view | `/insights` | For admins: overlapping tools across teams, high-cost low-value tools, spend by department, a keep / cut seats / consolidate / renegotiate / cancel call for every tool |
-| Workspace | `/settings` | Show or hide sample data, rename the workspace |
+| Workspace | `/settings` | The workspace's contract inbox address and recent emails, renewal reminders, demo workspace, show or hide sample data, rename the workspace |
 | Upload contract | `/upload` | Real Claude extraction from a PDF. Click "Try the sample Acme Analytics MSA" if you have no contract handy |
 | Onboarding | `/welcome` | First-login flow: free 3-contract audit, connect logins and spend (simulated), "Found so far" counter |
 | Renewal calendar, Seats & usage, Price changes, Sources | sidebar | Read-only views over the same sample data |

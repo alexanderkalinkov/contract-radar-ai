@@ -108,7 +108,7 @@ export function SavedContractPage({ id }: { id: string }) {
       <div className="flex flex-wrap gap-2.5">
         {s.hasFile && (
           <button type="button" className={btnGhost} onClick={openPdf} disabled={busy !== null}>
-            {busy === "pdf" ? "Opening…" : "Open original PDF"}
+            {busy === "pdf" ? "Opening…" : "Open original file"}
           </button>
         )}
         <button type="button" className={cx(btnGhost, "text-[#912018]")} onClick={del} disabled={busy !== null}>

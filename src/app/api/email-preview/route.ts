@@ -3,12 +3,12 @@ import { toISO } from "@/lib/engine";
 import { authTemplates } from "@/lib/email/auth-templates";
 import { brand } from "@/lib/email/brand";
 import { sampleAlertItems } from "@/lib/email/samples";
-import { inviteEmail, renewalAlertEmail, testEmail } from "@/lib/email/templates";
+import { inboundReceiptEmail, inviteEmail, renewalAlertEmail, testEmail } from "@/lib/email/templates";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession } from "@/lib/server/workspace";
 
 // Shows any email in the browser with sample data: /api/email-preview?t=renewal
-// t = renewal | renewal-digest | invite | test | confirm-signup | invite-user | magic-link | reset-password | change-email | reauthentication
+// t = renewal | renewal-digest | invite | test | inbox-receipt | confirm-signup | invite-user | magic-link | reset-password | change-email | reauthentication
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
@@ -29,6 +29,17 @@ export async function GET(req: Request) {
   else if (t === "invite")
     html = inviteEmail(b, { workspace, inviter: "Alex Morgan", department: "Marketing", role: "member", actionUrl: `${b.appUrl}/auth/confirm` }).html;
   else if (t === "test") html = testEmail(b, email).html;
+  else if (t === "inbox-receipt")
+    html = inboundReceiptEmail(b, {
+      workspace,
+      address: `northwind-logistics.k3x9q2m7ab@in.example.com`,
+      subject: "Fwd: Your Salesforce renewal quote",
+      added: [
+        { vendor: "Salesforce", agreement: "Order Form Q-04417", file: "Salesforce_OrderForm_Q-04417.pdf", noticeDeadline: items[0]?.date ?? null, termEnd: null, annualFee: 319200, currency: "USD", url: `${b.appUrl}/contracts` },
+      ],
+      skipped: [{ file: "pricing.xlsx", reason: "Not a PDF or Word (.docx) file" }],
+      problem: null,
+    }).html;
   else {
     const tpl = authTemplates(b.name).find((x) => x.file === `${t}.html`);
     html = tpl?.html
