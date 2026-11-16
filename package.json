@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "email:templates": "tsx scripts/build-email-templates.ts",
-    "stripe:setup": "tsx --env-file=.env.local scripts/stripe-setup.ts"
+    "stripe:setup": "tsx --env-file=.env.local scripts/stripe-setup.ts",
+    "sso:activate": "tsx --env-file=.env.local scripts/sso-activate.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
