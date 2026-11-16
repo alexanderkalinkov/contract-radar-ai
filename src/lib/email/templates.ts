@@ -1,6 +1,7 @@
 // The emails the app sends itself (renewal alerts, team invites, test email).
 // Supabase's own auth emails live in ./auth-templates.ts and share the same layout.
 import { attr, bullets, C, callout, esc, FONT, link, linkFallback, p, renderEmail, renderText, small, type EmailBrand } from "./layout";
+import type { Role } from "@/lib/roles";
 
 export interface RenderedEmail {
   subject: string;
@@ -56,6 +57,18 @@ export interface AlertItem {
   } | null;
   /** A clause that raises the price on its own, e.g. "Fees rise 5% each year". */
   escalator?: string | null;
+  /** Where the renewal decision stands (renewal approvals). Null when approvals aren't set up. */
+  decision?: { status: "needed" | "pending" | "approved" | "rejected"; summary: string | null; by: string | null } | null;
+}
+
+/** "Decision: waiting for approval (Cut seats to 160)" */
+export function decisionLine(i: AlertItem): string | null {
+  const d = i.decision;
+  if (!d) return null;
+  if (d.status === "needed") return "Decision: no recommendation yet. Keep, cut seats, consolidate, renegotiate or cancel?";
+  if (d.status === "pending") return `Decision: waiting for approval (${d.summary}${d.by ? `, from ${d.by}` : ""})`;
+  if (d.status === "approved") return `Decision: approved, ${d.summary}${d.by ? ` (by ${d.by})` : ""}`;
+  return `Decision: sent back${d.by ? ` by ${d.by}` : ""}. Update the recommendation (${d.summary})`;
 }
 
 /** "Renewal quote is up 9% (+$28,728), $12,768 over your 5% cap" */
@@ -112,6 +125,9 @@ function itemRow(b: EmailBrand, i: AlertItem): string {
       <div style="font-size:13px;line-height:20px;color:${C.muted};">${meta}</div>${
         priceLine(i) ? `
       <div style="font-size:13px;line-height:20px;font-weight:600;color:${C.warn};">${esc(priceLine(i)!)}</div>` : ""
+      }${
+        decisionLine(i) ? `
+      <div style="font-size:13px;line-height:20px;color:${i.decision?.status === "approved" ? C.good : C.ink2};">${esc(decisionLine(i)!)}</div>` : ""
       }
     </td>
     <td valign="middle" align="right" style="padding-left:10px;font-family:${FONT};font-size:13px;white-space:nowrap;">
@@ -154,6 +170,11 @@ export function renewalAlertEmail(b: EmailBrand, input: AlertEmailInput): Render
         : one.kind === "term_end"
           ? "Check who still uses it and how many seats you really need before you agree new terms."
           : `Decide whether to renew as is, renegotiate price and seats, or cancel.${one.upliftCapPct != null ? ` Your contract caps renewal increases at <strong>${one.upliftCapPct}%</strong>, so push back on anything above that.` : ""}${one.escalator ? ` Watch out: ${esc(one.escalator.replace(/^./, (x) => x.toLowerCase()))}.` : ""}`;
+    const dec = one.decision;
+    if (dec?.status === "needed") advice += ` <br/><br/><strong>Next step:</strong> the department owner records a recommendation on the contract page, and an approver signs it off before the deadline.`;
+    else if (dec?.status === "pending") advice += ` <br/><br/><strong>Waiting for approval:</strong> ${esc(dec.summary ?? "")}.`;
+    else if (dec?.status === "approved") advice += ` <br/><br/><strong>Approved plan:</strong> ${esc(dec.summary ?? "")}. Tell the vendor before the deadline.`;
+    else if (dec?.status === "rejected") advice += ` <br/><br/><strong>Sent back:</strong> update the recommendation on the contract page.`;
   } else {
     const notices = items.filter((i) => i.kind === "notice").length;
     subject = notices
@@ -162,8 +183,12 @@ export function renewalAlertEmail(b: EmailBrand, input: AlertEmailInput): Render
     heading = `${items.length} contract dates need a decision`;
     intro = `Here is what is coming up in <strong>${esc(input.workspace)}</strong>. The first one is ${esc(soonest.vendor)}, ${esc(inDays(soonest.daysLeft))}.`;
     const hikes = items.filter((i) => i.priceChange && i.priceChange.deltaAbs > 0);
+    const undecided = items.filter((i) => i.decision?.status === "needed" || i.decision?.status === "rejected").length;
+    const waiting = items.filter((i) => i.decision?.status === "pending").length;
     advice =
       "For each one, decide whether to renew as is, renegotiate price and seats, or cancel. Notice usually has to be in writing, so leave time for it." +
+      (undecided ? ` ${undecided} still ${undecided === 1 ? "needs" : "need"} a recommendation from the department owner.` : "") +
+      (waiting ? ` ${waiting} ${waiting === 1 ? "is" : "are"} waiting for approval.` : "") +
       (hikes.length ? ` ${hikes.length === 1 ? `${esc(hikes[0].vendor)} has` : `${hikes.length} of them have`} a higher renewal price: push back before the notice deadline.` : "");
   }
 
@@ -189,9 +214,9 @@ ${items.map((i) => itemRow(b, i)).join("\n")}
       "",
       intro.replace(/<[^>]+>/g, ""),
       "",
-      ...items.map((i) => `• ${i.vendor}${i.agreement ? ` (${i.agreement})` : ""}: ${what(i)} ${fmtDate(i.date)}, ${inDays(i.daysLeft)}${i.annualFee != null ? `, ${fmtMoney(i.annualFee, i.currency)}/yr` : ""}${priceLine(i) ? `\n  ${priceLine(i)}` : ""}\n  ${b.appUrl}/contracts/${i.contractId}`),
+      ...items.map((i) => `• ${i.vendor}${i.agreement ? ` (${i.agreement})` : ""}: ${what(i)} ${fmtDate(i.date)}, ${inDays(i.daysLeft)}${i.annualFee != null ? `, ${fmtMoney(i.annualFee, i.currency)}/yr` : ""}${priceLine(i) ? `\n  ${priceLine(i)}` : ""}${decisionLine(i) ? `\n  ${decisionLine(i)}` : ""}\n  ${b.appUrl}/contracts/${i.contractId}`),
       "",
-      advice.replace(/<[^>]+>/g, "").replace(/&rarr;/g, "→"),
+      advice.replace(/<br\/>/g, "\n").replace(/<[^>]+>/g, "").replace(/&rarr;/g, "→"),
       "",
       `${one ? "Review the contract" : "Open the renewal calendar"}: ${ctaUrl}`,
     ],
@@ -206,7 +231,7 @@ export interface InviteEmailInput {
   workspace: string;
   inviter: string | null;
   department: string | null;
-  role: "owner" | "member";
+  role: Role;
   actionUrl: string;
   /** true when the person already has an account and the link just signs them in. */
   existingUser?: boolean;
@@ -215,12 +240,24 @@ export interface InviteEmailInput {
 export function inviteEmail(b: EmailBrand, i: InviteEmailInput): RenderedEmail {
   const who = i.inviter ? esc(i.inviter) : "Your team";
   const as =
-    i.role === "owner" ? " as an admin" : i.department ? ` as the owner of the <strong>${esc(i.department)}</strong> department` : "";
+    i.role === "owner"
+      ? " as an admin"
+      : i.role === "approver"
+        ? " as a renewal approver"
+        : i.role === "viewer"
+          ? " with read-only access"
+          : i.department
+            ? ` as the owner of the <strong>${esc(i.department)}</strong> department`
+            : "";
   const subject = `${i.inviter ?? "Your team"} invited you to ${i.workspace} on ${b.name}`;
   const jobs =
     i.role === "owner"
       ? ["See every software contract, renewal date and price increase in one place", "Get reminders 90, 60 and 30 days before each notice deadline", "Invite department owners and see what each team pays for"]
-      : ["Confirm the tools your department pays for (takes about 2 minutes)", "Answer 4 quick questions per tool so nothing gets cut by mistake", "Get a reminder before any of your tools renews"];
+      : i.role === "approver"
+        ? ["See every software contract, renewal date and price increase in one place", "Approve or send back keep, cut and renegotiate recommendations before each renewal", "Get reminders 90, 60 and 30 days before each notice deadline"]
+        : i.role === "viewer"
+          ? ["See every software contract, renewal date and price increase in one place", "Follow upcoming renewals on the calendar", "Read the savings opportunities the team is working on"]
+          : ["Confirm the tools your department pays for (takes about 2 minutes)", "Answer 4 quick questions per tool so nothing gets cut by mistake", "Get a reminder before any of your tools renews"];
   const html = renderEmail(b, {
     preheader: `${i.inviter ?? "Your team"} added you to ${i.workspace}. Accept to get started.`,
     eyebrow: "You're invited",
@@ -366,6 +403,78 @@ export function inboundReceiptEmail(b: EmailBrand, i: InboundReceiptInput): Rend
       cta ? `${cta.label}: ${cta.url}` : null,
     ],
     `You emailed ${i.address}, the contract inbox for ${i.workspace}.`,
+  );
+  return { subject, html, text };
+}
+
+// ---------- renewal approvals ----------
+
+export interface ApprovalEmailInput {
+  workspace: string;
+  contractId: string;
+  vendor: string;
+  /** e.g. "Cut seats to 160 · saves $56,977/yr" */
+  summary: string;
+  reason: string;
+  /** Notice deadline or term end, when known. */
+  decideBy: string | null;
+  recommendedBy: string | null;
+}
+
+/** To approvers: a department owner recommended what to do at a renewal. */
+export function approvalRequestEmail(b: EmailBrand, i: ApprovalEmailInput): RenderedEmail {
+  const url = `${b.appUrl}/contracts/${i.contractId}#renewal-decision`;
+  const who = i.recommendedBy ?? "A department owner";
+  const by = i.decideBy ? ` The decision is needed by <strong>${esc(fmtDate(i.decideBy))}</strong>.` : "";
+  const subject = `Approval needed: ${i.vendor} renewal (${i.summary.split(" · ")[0]})`;
+  const html = renderEmail(b, {
+    preheader: `${who} recommends: ${i.summary}.`,
+    eyebrow: "Renewal approval",
+    heading: `${i.vendor}: ${i.summary.split(" · ")[0]}?`,
+    body:
+      p(`<strong>${esc(who)}</strong> recommends <strong>${esc(i.summary)}</strong> for the ${esc(i.vendor)} renewal in ${esc(i.workspace)}.${by}`) +
+      callout(`<strong>Why:</strong> ${esc(i.reason)}`, "info"),
+    cta: { label: "Approve or send back", url },
+    after: small(`${link(`${b.appUrl}/approvals`, "See every renewal waiting for a decision")}.`),
+    footer: `You're getting this because you approve renewals in ${esc(i.workspace)} on ${esc(b.name)}.`,
+  });
+  const text = renderText(
+    b,
+    [`${who} recommends ${i.summary} for the ${i.vendor} renewal in ${i.workspace}.`, i.decideBy ? `Decide by ${fmtDate(i.decideBy)}.` : null, "", `Why: ${i.reason}`, "", `Approve or send back: ${url}`],
+    `You're getting this because you approve renewals in ${i.workspace}.`,
+  );
+  return { subject, html, text };
+}
+
+/** To the person who recommended: the approver's decision. */
+export function approvalDecisionEmail(
+  b: EmailBrand,
+  i: ApprovalEmailInput & { decision: "approved" | "rejected"; decidedBy: string | null; note: string | null },
+): RenderedEmail {
+  const url = `${b.appUrl}/contracts/${i.contractId}#renewal-decision`;
+  const who = i.decidedBy ?? "An approver";
+  const ok = i.decision === "approved";
+  const subject = ok ? `Approved: ${i.vendor} renewal (${i.summary.split(" · ")[0]})` : `Sent back: ${i.vendor} renewal recommendation`;
+  const next = ok
+    ? i.decideBy
+      ? `Next step: tell ${esc(i.vendor)} before <strong>${esc(fmtDate(i.decideBy))}</strong>. The contract page drafts the email for you.`
+      : `Next step: tell ${esc(i.vendor)}. The contract page drafts the email for you.`
+    : "Update the recommendation on the contract page and it goes back for approval.";
+  const html = renderEmail(b, {
+    preheader: ok ? `${who} approved ${i.summary}.` : `${who} sent your ${i.vendor} recommendation back.`,
+    eyebrow: "Renewal approval",
+    heading: ok ? `${i.vendor}: approved` : `${i.vendor}: sent back`,
+    body:
+      p(`<strong>${esc(who)}</strong> ${ok ? "approved" : "sent back"} your recommendation for ${esc(i.vendor)}: <strong>${esc(i.summary)}</strong>.`) +
+      (i.note ? callout(`<strong>Note:</strong> ${esc(i.note)}`, ok ? "good" : "warn") : "") +
+      p(next),
+    cta: { label: ok ? "Draft the email to the vendor" : "Update the recommendation", url },
+    footer: `You're getting this because you recommended this renewal decision in ${esc(i.workspace)} on ${esc(b.name)}.`,
+  });
+  const text = renderText(
+    b,
+    [`${who} ${ok ? "approved" : "sent back"} your recommendation for ${i.vendor}: ${i.summary}.`, i.note ? `Note: ${i.note}` : null, "", next.replace(/<[^>]+>/g, ""), "", url],
+    `You're getting this because you recommended this renewal decision in ${i.workspace}.`,
   );
   return { subject, html, text };
 }

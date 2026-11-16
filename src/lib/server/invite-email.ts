@@ -5,12 +5,13 @@ import { brand } from "@/lib/email/brand";
 import { inviteEmail } from "@/lib/email/templates";
 import { adminClient } from "./admin";
 import { isEmailConfigured, sendEmail } from "./mailer";
+import type { Role } from "@/lib/roles";
 
 export interface InviteContext {
   workspace: string;
   inviter: string | null;
   department: string | null;
-  role: "owner" | "member";
+  role: Role;
 }
 
 /**

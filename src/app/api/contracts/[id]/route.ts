@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { CONTRACTS_BUCKET } from "@/lib/supabase/config";
-import { requireSession } from "@/lib/server/api";
+import { denyViewer, requireSession } from "@/lib/server/api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -19,6 +19,8 @@ export async function GET(_req: Request, { params }: Params) {
 export async function DELETE(_req: Request, { params }: Params) {
   const ctx = await requireSession();
   if (ctx instanceof NextResponse) return ctx;
+  const readOnly = denyViewer(ctx.session);
+  if (readOnly) return readOnly;
   const { id } = await params;
   const { data: row } = await ctx.supabase.from("contracts").select("file_path").eq("id", id).single();
   const { error } = await ctx.supabase.from("contracts").delete().eq("id", id);
@@ -36,6 +38,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function PATCH(req: Request, { params }: Params) {
   const ctx = await requireSession();
   if (ctx instanceof NextResponse) return ctx;
+  const readOnly = denyViewer(ctx.session);
+  if (readOnly) return readOnly;
   const { id } = await params;
   const body = (await req.json().catch(() => null)) as { supersedesId?: unknown } | null;
   const target = body?.supersedesId;

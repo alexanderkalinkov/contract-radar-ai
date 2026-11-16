@@ -10,11 +10,15 @@ import { useContractUsage, usePortfolio, useSavedContracts } from "@/lib/portfol
 import { hueFor, initialsFor, isRisky } from "@/lib/saved";
 import { opportunitiesFromSaved } from "@/lib/opportunities";
 import { SeatUsageCard } from "./SeatUsage";
+import { RenewalDecisionCard } from "./RenewalDecision";
+import { cycleFor, goalFor } from "@/lib/approvals";
+import { useApprovals } from "@/lib/useApprovals";
 import { EmailDrafter } from "./EmailDrafter";
 import { PriceChangePanel } from "./PriceHikes";
 import { ExtractionCard } from "./Uploader";
 import { btnGhost, Card, cx, VendorLogo } from "./ui";
 import { useWorkspace } from "./WorkspaceProvider";
+import { canWrite } from "@/lib/roles";
 
 export function SavedContractPage({ id }: { id: string }) {
   const ws = useWorkspace();
@@ -24,6 +28,7 @@ export function SavedContractPage({ id }: { id: string }) {
   const [busy, setBusy] = useState<"pdf" | "delete" | "link" | null>(null);
   const usageOf = useContractUsage();
   const [err, setErr] = useState<string | null>(null);
+  const approvals = useApprovals();
   const s = saved.find((x) => x.id === id);
 
   if (loading) return <p className="text-sm text-muted">Loading contract…</p>;
@@ -65,6 +70,8 @@ export function SavedContractPage({ id }: { id: string }) {
     kind: KIND[documentKind(x.data)] ?? "Document",
     current: x.id === s.id,
   }));
+  const review = asContract ? approvals.reviewFor(s.id, cycleFor(asContract)) : undefined;
+  const approvedGoal = review?.status === "approved" ? goalFor(review.recommendation, Boolean(change && change.deltaAbs > 0)) : null;
   const others = saved.filter((x) => x.id !== s.id);
   const matchValue = s.supersedesId == null ? "auto" : s.supersedesId === s.id ? "none" : s.supersedesId;
 
@@ -162,9 +169,11 @@ export function SavedContractPage({ id }: { id: string }) {
             {busy === "pdf" ? "Opening…" : "Open original file"}
           </button>
         )}
-        <button type="button" className={cx(btnGhost, "text-[#912018]")} onClick={del} disabled={busy !== null}>
-          {busy === "delete" ? "Deleting…" : "Delete contract"}
-        </button>
+        {(ws.mode === "demo" || canWrite(ws.role)) && (
+          <button type="button" className={cx(btnGhost, "text-[#912018]")} onClick={del} disabled={busy !== null}>
+            {busy === "delete" ? "Deleting…" : "Delete contract"}
+          </button>
+        )}
       </div>
       {err && <p role="alert" className="m-0 text-sm text-[#912018]">{err}</p>}
 
@@ -219,12 +228,27 @@ export function SavedContractPage({ id }: { id: string }) {
         </label>
       )}
 
+      {asContract && !shownOn && <RenewalDecisionCard contract={asContract} opportunities={found} />}
+
+      <div id="pushback-email" className="scroll-mt-6">
       <EmailDrafter
+        key={approvedGoal ?? "suggested"}
         contract={s}
         priceChange={change}
-        defaultGoal={[...found].sort((a, b) => b.annualSavings - a.annualSavings)[0]?.goal ?? (change && change.deltaAbs > 0 ? "hike" : "review")}
-        seats={usage ? { paid: usage.paid, active: usage.active, target: seatOpp?.targetSeats ?? null, source: usage.source, days: usage.activeDays ?? 30 } : undefined}
+        defaultGoal={approvedGoal ?? [...found].sort((a, b) => b.annualSavings - a.annualSavings)[0]?.goal ?? (change && change.deltaAbs > 0 ? "hike" : "review")}
+        seats={
+          usage
+            ? {
+                paid: usage.paid,
+                active: usage.active,
+                target: (review?.status === "approved" && review.recommendation === "cut_seats" ? review.targetSeats : null) ?? seatOpp?.targetSeats ?? null,
+                source: usage.source,
+                days: usage.activeDays ?? 30,
+              }
+            : undefined
+        }
       />
+      </div>
 
       <div className="flex flex-col gap-2">
         <h2 className="m-0 font-display text-[19px] font-semibold">Extracted terms</h2>

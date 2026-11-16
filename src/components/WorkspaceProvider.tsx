@@ -3,11 +3,12 @@
 import { createContext, useContext } from "react";
 import type { BillingSummary } from "@/lib/billing/plans";
 import { useStored } from "@/lib/store";
+import type { Role } from "@/lib/roles";
 
 export interface WorkspaceCtx {
   mode: "demo" | "cloud";
   email?: string;
-  role?: "owner" | "member";
+  role?: Role;
   workspaceId?: string;
   workspaceName: string;
   showSample: boolean;
@@ -16,7 +17,7 @@ export interface WorkspaceCtx {
   /** True in a seeded demo workspace for sales calls (cloud only). */
   isDemo?: boolean;
   /** Every workspace the person belongs to, for the switcher (cloud only). */
-  workspaces?: { id: string; name: string; is_demo: boolean; role: "owner" | "member" }[];
+  workspaces?: { id: string; name: string; is_demo: boolean; role: Role }[];
   /** Plan and trial state (cloud only). Absent or enabled=false means nothing is gated. */
   billing?: BillingSummary;
   setShowSample: (v: boolean) => void;
@@ -30,7 +31,7 @@ export function WorkspaceProvider({
 }: {
   cloud: {
     email: string;
-    role: "owner" | "member";
+    role: Role;
     workspaceId: string;
     workspaceName: string;
     showSample: boolean;

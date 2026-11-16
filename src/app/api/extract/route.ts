@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { limitReason } from "@/lib/server/billing";
 import { extractContract, isExtractError, isPdf, MAX_CONTRACT_BYTES as MAX_BYTES } from "@/lib/server/extract";
 import { getSession } from "@/lib/server/workspace";
+import { canWrite } from "@/lib/roles";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -21,6 +22,9 @@ export async function POST(req: Request) {
   const session = isSupabaseConfigured ? await getSession() : null;
   if (isSupabaseConfigured && !session) {
     return NextResponse.json({ error: "Sign in to upload contracts." }, { status: 401 });
+  }
+  if (session && !canWrite(session.role)) {
+    return NextResponse.json({ error: "You have read-only access to this workspace, so you can't upload contracts." }, { status: 403 });
   }
   return session ? extractFromStorage(req, session) : extractFromForm(req);
 }

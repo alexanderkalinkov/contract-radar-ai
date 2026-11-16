@@ -15,7 +15,7 @@ type Params = { params: Promise<{ id: string }> };
  *   { action: "skip", ids } · { action: "retry" } (failed files) · { action: "cancel" }
  */
 export async function POST(req: NextRequest, { params }: Params) {
-  const ctx = await importContext();
+  const ctx = await importContext({ write: true });
   if (ctx instanceof NextResponse) return ctx;
   const { id } = await params;
   const { data: job } = isUuid(id) ? await ctx.db.from("import_jobs").select("id").eq("id", id).eq("workspace_id", ctx.session.workspace.id).maybeSingle() : { data: null };

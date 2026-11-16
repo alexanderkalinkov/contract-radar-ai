@@ -16,7 +16,7 @@ type Params = { params: Promise<{ id: string }> };
  *   { action: "finished" }                      → anything not sent is marked failed
  */
 export async function POST(req: NextRequest, { params }: Params) {
-  const ctx = await importContext();
+  const ctx = await importContext({ write: true });
   if (ctx instanceof NextResponse) return ctx;
   const { id } = await params;
   const ws = ctx.session.workspace.id;

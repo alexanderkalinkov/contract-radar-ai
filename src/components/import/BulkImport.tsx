@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { readSelection, startUpload, type Selection } from "@/lib/import-client";
 import { DRIVE_NAMES, pendingCount, SOURCE_NAMES, totalCount, type DriveProvider, type JobSummary } from "@/lib/imports";
 import { useWorkspace } from "../WorkspaceProvider";
+import { useCanWrite } from "../WriteOnly";
 import { btnGhost, btnPrimary, btnSoft, cx } from "../ui";
 import { IconUpload } from "../icons";
 
@@ -19,6 +20,7 @@ interface DriveInfo {
 
 export function BulkImport() {
   const ws = useWorkspace();
+  const canWrite = useCanWrite();
   const router = useRouter();
   const q = useSearchParams();
   const [jobs, setJobs] = useState<JobSummary[] | null>(null);
@@ -94,6 +96,13 @@ export function BulkImport() {
       {setupError && <p className="m-0 rounded-lg border border-[#FDA29B] bg-[#FEF3F2] px-3 py-2 text-sm text-[#912018]">{setupError}</p>}
       {error && <p className="m-0 rounded-lg border border-[#FDA29B] bg-[#FEF3F2] px-3 py-2 text-sm text-[#912018]">{error}</p>}
 
+      {!canWrite && (
+        <p className="m-0 rounded-[14px] border border-line bg-white p-5 text-sm text-ink-2">
+          You have read-only access to this workspace, so you can look at imports but not start one.
+        </p>
+      )}
+      {canWrite && (
+      <>
       <section className="flex flex-col gap-3 rounded-[14px] border border-line bg-white p-5">
         <h2 className="m-0 font-display text-base font-semibold">From your computer</h2>
         {!selection ? (
@@ -205,6 +214,8 @@ export function BulkImport() {
           <FolderPicker provider={browsing} onClose={() => setBrowsing(null)} onPicked={(jobId) => router.push(`/import/${jobId}`)} />
         )}
       </section>
+      </>
+      )}
 
       <section className="flex flex-col gap-2">
         <h2 className="m-0 font-display text-base font-semibold">Recent imports</h2>

@@ -25,7 +25,7 @@ export async function GET() {
  *   { source: "gdrive" | "onedrive", folder: { id, name } }     → { jobId }  (the server walks the folder)
  */
 export async function POST(req: NextRequest) {
-  const ctx = await importContext();
+  const ctx = await importContext({ write: true });
   if (ctx instanceof NextResponse) return ctx;
   const body = (await req.json().catch(() => null)) as { source?: ImportSource; name?: string; files?: NewFile[]; folder?: { id?: string; name?: string } } | null;
   const source = body?.source;

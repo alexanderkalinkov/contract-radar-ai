@@ -19,7 +19,7 @@ const back = (req: NextRequest, q: Record<string, string>) => {
 export async function GET(req: NextRequest, { params }: Params) {
   const { provider } = await params;
   if (!isDriveProvider(provider)) return back(req, { drive_error: "Unknown drive." });
-  const ctx = await importContext();
+  const ctx = await importContext({ write: true });
   if (ctx instanceof NextResponse) return ctx.status === 401 ? NextResponse.redirect(new URL("/login?next=/import", req.nextUrl.origin)) : back(req, { drive_error: "Bulk import needs Supabase login." });
   if (ctx.session.workspace.is_demo) return back(req, { drive_error: "This is the demo workspace: connect a drive in your own workspace." });
   const blocker = driveBlocker(provider);
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { provider } = await params;
   if (!isDriveProvider(provider)) return NextResponse.json({ error: "Unknown drive." }, { status: 404 });
-  const ctx = await importContext();
+  const ctx = await importContext({ write: true });
   if (ctx instanceof NextResponse) return ctx;
   try {
     const conn = await findDriveConnection(ctx.db, ctx.session.workspace.id, ctx.session.userId, provider);

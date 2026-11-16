@@ -7,6 +7,7 @@ import { FLAG_LABELS, pendingCount, SOURCE_NAMES, totalCount, type ItemView, typ
 import { longDate, usd } from "@/lib/format";
 import { ExtractionCard } from "../Uploader";
 import { useWorkspace } from "../WorkspaceProvider";
+import { useCanWrite } from "../WriteOnly";
 import { btnGhost, btnPrimary, btnSoft, cx } from "../ui";
 import { jobLine } from "./BulkImport";
 
@@ -25,6 +26,7 @@ const TABS: { id: Filter; label: string; count: (j: JobSummary) => number }[] = 
 export function ImportReview({ id }: { id: string }) {
   const ws = useWorkspace();
   const upload = useUploadProgress(id);
+  const canWrite = useCanWrite();
   const [job, setJob] = useState<JobSummary | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
   const [total, setTotal] = useState(0);
@@ -111,7 +113,7 @@ export function ImportReview({ id }: { id: string }) {
   const finished = all - pendingCount(job.counts);
   const pct = all ? Math.round((finished / all) * 100) : 0;
   const uploadStalled = job.counts.waiting_upload > 0 && (!upload || upload.done);
-  const selectable = tab === "clean" || tab === "flagged" || tab === "failed";
+  const selectable = canWrite && (tab === "clean" || tab === "flagged" || tab === "failed");
   const pages = Math.ceil(total / 100);
 
   return (
@@ -134,7 +136,7 @@ export function ImportReview({ id }: { id: string }) {
           </span>
         )}
         {upload?.error && <span className="text-[13px] text-[#912018]">Upload stopped: {upload.error}</span>}
-        {uploadStalled && (
+        {uploadStalled && canWrite && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg bg-warn-soft px-3 py-2 text-[13px]">
             <span>{job.counts.waiting_upload.toLocaleString()} files were never uploaded (the tab was probably closed). Pick the same ZIP or folder to send the rest.</span>
             <label className={cx(btnSoft, "cursor-pointer")}>
@@ -153,7 +155,7 @@ export function ImportReview({ id }: { id: string }) {
             Claude reads a few files at a time, about a minute each, so large imports take a while. It carries on if you close this page; come back any time.
           </span>
         )}
-        <div className="flex flex-wrap gap-2">
+        <div className={cx("flex flex-wrap gap-2", !canWrite && "hidden")}>
           {job.clean > 0 && (
             <button type="button" className={btnPrimary} disabled={busy} onClick={() => act({ action: "add", clean: true }, (j) => `Added ${j.added} contracts.`)}>
               Add all {job.clean.toLocaleString()} ready contracts

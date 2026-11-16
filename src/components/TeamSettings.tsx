@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useWorkspace } from "./WorkspaceProvider";
 import { btnGhost, btnPrimary, Card, H2 } from "./ui";
+import type { Role } from "@/lib/roles";
 
-export type Member = { user_id: string; email: string; role: "owner" | "member"; created_at: string };
+export type Member = { user_id: string; email: string; role: Role; created_at: string };
 export type Invite = { id: string; email: string; created_at: string };
 
 export function TeamSettings({ members, invites }: { members: Member[]; invites: Invite[]; currentUserId?: string | null }) {
