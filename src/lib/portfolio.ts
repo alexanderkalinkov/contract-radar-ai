@@ -9,6 +9,10 @@ import { CONTRACTS, OPPORTUNITIES, PORTFOLIO } from "./seed";
 import { buildPriceHistory, type PriceHistory } from "./price-history";
 import { savedToContract, type SavedContract } from "./saved";
 import { useStored } from "./store";
+import { usageForContract } from "./usage";
+import { useUsage } from "./useUsage";
+import { useTeam } from "./team/useTeam";
+import type { SeatUsage } from "./types";
 import type { ExtractionResult } from "./extraction";
 import type { Contract, Opportunity } from "./types";
 
@@ -107,6 +111,28 @@ export function useSavedContracts() {
   return { saved, loading, error, refresh, add, remove, link };
 }
 
+/**
+ * Sign-ins for an uploaded contract. A tool linked to the contract wins, because it knows the owning department
+ * (Sales' Zoom contract counts Sales' sign-ins, not the whole company's); otherwise match on the vendor.
+ */
+export function useContractUsage(): (s: SavedContract) => SeatUsage | undefined {
+  const { live } = useUsage();
+  const team = useTeam();
+  return useMemo(() => {
+    const byContract = new Map<string, SeatUsage>();
+    for (const t of team.raw?.tools ?? []) {
+      const u = t.contract_id ? team.usage.get(t.id) : undefined;
+      if (u && t.contract_id && !byContract.has(t.contract_id)) byContract.set(t.contract_id, u);
+    }
+    return (s: SavedContract) => {
+      const linked = byContract.get(s.id);
+      const paid = s.data.seats.value;
+      if (linked) return paid && paid !== linked.paid ? { ...linked, paid, neverSignedIn: Math.max(0, paid - linked.active - linked.inactive) } : linked;
+      return usageForContract(s, live);
+    };
+  }, [live, team.raw, team.usage]);
+}
+
 export interface Portfolio {
   contracts: Contract[];
   opportunities: Opportunity[];
@@ -120,12 +146,15 @@ export interface Portfolio {
 export function usePortfolio(): Portfolio {
   const ws = useWorkspace();
   const { saved, loading } = useSavedContracts();
+  const usageOf = useContractUsage();
   return useMemo(() => {
     // Older terms and renewal quotes fold into the contract they belong to, which carries the price change.
     const history = buildPriceHistory(saved);
     const current = saved.filter((s) => !history.hidden.has(s.id));
+    const usage = new Map(current.map((s) => [s.id, usageOf(s)]));
     const uploaded = current.map((s) => {
       const c = savedToContract(s);
+      c.usage = usage.get(s.id);
       const change = history.changes.get(s.id);
       if (change) {
         c.priceChange = change;
@@ -133,7 +162,7 @@ export function usePortfolio(): Portfolio {
       }
       return c;
     });
-    const found = current.flatMap((s) => opportunitiesFromSaved(s, history.changes.get(s.id)));
+    const found = current.flatMap((s) => opportunitiesFromSaved(s, history.changes.get(s.id), usage.get(s.id)));
     const foundTotal = found.reduce((sum, o) => sum + o.annualSavings, 0);
     const showSample = ws.showSample;
     return {
@@ -152,5 +181,5 @@ export function usePortfolio(): Portfolio {
           }
         : { identifiedSavings: foundTotal, opportunityCount: found.length, capturedThisYear: 0, wins: 0, contractsTracked: uploaded.length },
     };
-  }, [saved, loading, ws.showSample]);
+  }, [saved, loading, ws.showSample, usageOf]);
 }

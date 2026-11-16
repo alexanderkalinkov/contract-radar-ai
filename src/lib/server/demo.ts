@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildDemoRows, DEMO_WORKSPACE_NAME } from "@/lib/demo/northwind";
+import { isMissingUsageColumn, withoutLoginFields } from "@/lib/discovery/types";
 import { adminClient } from "./admin";
 
 // Creates and resets the demo workspace. Runs with the service role key, because ordinary users can't
@@ -113,7 +114,11 @@ async function seed(admin: SupabaseClient, ws: string) {
   ];
   for (const [table, list] of steps) {
     if (!list.length) continue;
-    const { error } = await admin.from(table).insert(list);
+    let { error } = await admin.from(table).insert(list);
+    // Login activity needs 20261116213000_seat_usage.sql; until it's run, add the signals without it.
+    if (error && table === "discovery_signals" && isMissingUsageColumn(error.message)) {
+      ({ error } = await admin.from(table).insert(list.map(withoutLoginFields)));
+    }
     check(error, `add demo ${table.replace(/_/g, " ")}`);
   }
 }

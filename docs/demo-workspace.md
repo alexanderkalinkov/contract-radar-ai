@@ -5,7 +5,7 @@ instead of real customer data. It lives next to your own workspace and never tou
 
 What's in it: 6 departments with their owners (pending invites at `@northwind.example`, an address that can never
 receive mail), 11 contracts with notice periods, price caps and seat-reduction clauses, 15 tools with survey answers,
-four connected sources (QuickBooks, Xero, Google Workspace, Microsoft) with 20 discovered tools, and renewals spread over
+four connected sources (QuickBooks, Xero, Google Workspace, Microsoft) with discovered tools and seat usage from sign-ins (see `docs/seat-usage.md`), and renewals spread over
 the next six months. Every date is set relative to the day you create or reset it, so deadlines always look current.
 
 ## Set up (once)

@@ -32,7 +32,26 @@ export interface Signal {
   /** People per department label from the directory, e.g. { "Sales": 8, "Marketing": 2 }. */
   dept_counts: Record<string, number> | null;
   evidence: string | null; // short human note, e.g. "12 payments, last on 3 Nov 2026"
+  // Login activity (identity sources, added in 20261116213000_seat_usage.sql; null on older rows and spend rows)
+  /** People who signed in during the last ACTIVE_DAYS (30) days. Null when the source only knows assignments. */
+  active_users?: number | null;
+  /** Most recent sign-in by anyone, YYYY-MM-DD. */
+  last_login?: string | null;
+  /** How many days of sign-in history the source looked at (Google 90, Microsoft 30). */
+  window_days?: number | null;
+  /** People who signed in during the window but not in the last ACTIVE_DAYS, oldest first (capped). */
+  idle_people?: IdlePerson[] | null;
 }
+
+export interface IdlePerson {
+  email: string;
+  last: string; // YYYY-MM-DD of their last sign-in
+}
+
+/** A seat counts as active when its person signed in within this many days. */
+export const ACTIVE_DAYS = 30;
+/** How many idle people a signal keeps, so a sync row stays small. */
+export const IDLE_PEOPLE_CAP = 100;
 
 export interface ConnectionInfo {
   provider: ProviderId;
@@ -84,3 +103,14 @@ export type DiscoveryOp =
   | { op: "dismiss"; vendor_keys: string[] }
   | { op: "restore"; vendor_keys: string[] }
   | { op: "setDepartment"; vendor_key: string; department_id: string | null };
+
+/** The login columns from 20261116213000_seat_usage.sql. */
+export const LOGIN_COLUMNS = ["active_users", "last_login", "window_days", "idle_people"] as const;
+
+export const isMissingUsageColumn = (msg: string) => /active_users|last_login|window_days|idle_people/.test(msg) && /column|schema cache/i.test(msg);
+
+export function withoutLoginFields<T extends object>(row: T): Omit<T, (typeof LOGIN_COLUMNS)[number]> {
+  const copy = { ...row } as Record<string, unknown>;
+  for (const c of LOGIN_COLUMNS) delete copy[c];
+  return copy as Omit<T, (typeof LOGIN_COLUMNS)[number]>;
+}

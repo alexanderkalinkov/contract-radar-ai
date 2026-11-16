@@ -11,6 +11,7 @@ import { daysUntil, TODAY, urgency } from "@/lib/engine";
 import { longDate, shortDate, usd } from "@/lib/format";
 import { useOppStatus, type OppStatus } from "@/lib/store";
 import type { LeverKey, Opportunity } from "@/lib/types";
+import { unusedSeats } from "@/lib/usage";
 import { IconClock, IconMail, IconMore, IconUpload } from "./icons";
 import { btnGhost, btnPrimary, btnSoft, Card, cx, DaysBadge, H2, PageHeader, Segmented, urgencyClassFor, VendorLogo } from "./ui";
 import { DigestModal } from "./DigestModal";
@@ -60,6 +61,12 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, sort, visible.length]);
   const rowTotal = rows.reduce((s, o) => s + o.annualSavings, 0);
+
+  // Paid seats nobody signed in to, from login data (Google Workspace / Microsoft, or the sample portfolio's Okta).
+  const withUsage = CONTRACTS.filter((c) => c.usage && c.seats);
+  const idleSeats = withUsage.reduce((s, c) => s + unusedSeats(c.usage!), 0);
+  const paidSeats = withUsage.reduce((s, c) => s + c.usage!.paid, 0);
+  const idleCost = withUsage.reduce((s, c) => s + (unusedSeats(c.usage!) * c.annualFee) / c.seats, 0);
 
   const urgent = open
     .filter((o) => urgency(daysUntil(o.actBy)) === "urgent")
@@ -132,6 +139,13 @@ export function Dashboard() {
             return `${dates.length} notice deadline${dates.length === 1 ? "" : "s"}${dates[0] ? ` · first in ${daysUntil(dates[0])} days` : ""}`;
           })()}
         </Kpi>
+        {withUsage.length > 0 && (
+          <Link href="/seats" className="block">
+            <Kpi label="Seats nobody used" value={idleSeats.toLocaleString("en-US")} suffix={` of ${paidSeats.toLocaleString("en-US")}`}>
+              {usd(idleCost)} /yr across {withUsage.length} app{withUsage.length === 1 ? "" : "s"} · from sign-ins
+            </Kpi>
+          </Link>
+        )}
         <Kpi label="Captured this year" value={usd(captured)} valueClass="text-good">
           <div
             className="mb-2 h-2 overflow-hidden rounded bg-[#E6F4EC]"

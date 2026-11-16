@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "@/components/WorkspaceProvider";
 import { useStored } from "@/lib/store";
 import { useTeam } from "@/lib/team/useTeam";
+import { publishSignals } from "@/lib/useUsage";
 import { buildItems, importDescription, importSeats } from "./build";
 import { SAMPLE_ACCOUNT, SAMPLE_SIGNALS } from "./sample";
 import { PROVIDERS, type DiscoveryData, type DiscoveryOp, type DiscoveryState, type ProviderId } from "./types";
@@ -39,6 +40,7 @@ export function useDiscovery() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Could not load discovered tools.");
       setCloud(json);
+      publishSignals(json.signals ?? []);
       setError(null);
     } catch (e) {
       setError((e as Error).message);

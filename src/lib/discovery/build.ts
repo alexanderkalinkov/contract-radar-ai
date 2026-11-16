@@ -1,6 +1,6 @@
 // Pure functions shared by the server (sync) and the browser (review screen, demo mode).
 import { isCompanyWide, matchDepartment, matchVendor, NON_SOFTWARE_HINT, SOFTWARE_HINT, type Match } from "./catalog";
-import type { DiscoveredItem, DiscoveryData, Signal } from "./types";
+import { ACTIVE_DAYS, IDLE_PEOPLE_CAP, type DiscoveredItem, type DiscoveryData, type IdlePerson, type Signal } from "./types";
 
 const DAY = 86_400_000;
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -113,6 +113,26 @@ export interface UsageApp {
   count?: number;
   licensed?: number | null;
   note?: string;
+  /** Latest sign-in per person (email → ISO time), when the source logs sign-ins rather than assignments. */
+  last?: Map<string, string>;
+  /** People with a licence who never signed in during the window (e.g. Google Workspace accounts). Listed as idle with last = "". */
+  neverIn?: string[];
+}
+
+/** Active count, latest sign-in and the idle list, from per-person last sign-in times. */
+export function loginStats(last: Map<string, string> | undefined, now = new Date()): Pick<Signal, "active_users" | "last_login" | "idle_people"> {
+  if (!last) return { active_users: null, last_login: null, idle_people: null };
+  const cutoff = new Date(now.getTime() - ACTIVE_DAYS * DAY).toISOString();
+  let active = 0;
+  let latest = "";
+  const idle: IdlePerson[] = [];
+  for (const [email, t] of last) {
+    if (t > latest) latest = t;
+    if (t >= cutoff) active++;
+    else idle.push({ email, last: t.slice(0, 10) });
+  }
+  idle.sort((a, b) => a.last.localeCompare(b.last));
+  return { active_users: active, last_login: latest ? latest.slice(0, 10) : null, idle_people: idle.slice(0, IDLE_PEOPLE_CAP) };
 }
 
 export function usageSignal(
@@ -129,6 +149,10 @@ export function usageSignal(
     if (d) counts[d] = (counts[d] ?? 0) + 1;
   }
   const n = app.count ?? app.users.size;
+  const stats = loginStats(app.last);
+  if (stats.idle_people && app.neverIn?.length) {
+    stats.idle_people = [...app.neverIn.map((email) => ({ email, last: "" })), ...stats.idle_people].slice(0, IDLE_PEOPLE_CAP);
+  }
   return {
     provider,
     vendor_key: m.key,
@@ -145,6 +169,8 @@ export function usageSignal(
     licensed: app.licensed ?? null,
     dept_counts: Object.keys(counts).length ? counts : null,
     evidence: app.note ?? `${n} ${n === 1 ? "person" : "people"} signed in, last ${windowDays} days`,
+    ...stats,
+    window_days: app.last ? windowDays : null,
   };
 }
 
