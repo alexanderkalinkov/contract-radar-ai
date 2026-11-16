@@ -299,6 +299,16 @@ function extraction(c: DemoContract, today: string): Extraction {
     seats: { value: c.seats, quote: `Licensed users: ${spell(c.seats)}`, page: 4, confidence: "high" },
     currency: "USD",
     price_escalators: c.escalators ?? [],
+    // Sample quotes count as found in the document, so the review flow on the contract page looks as it does for real uploads.
+    verified: {
+      term_end: true,
+      auto_renewal: true,
+      notice_period_days: Boolean(notice),
+      uplift_cap_percent: c.capPct != null,
+      seat_reduction_percent: c.seatCutPct != null,
+      annual_fee: true,
+      seats: true,
+    },
     risks: c.risks,
   };
 }

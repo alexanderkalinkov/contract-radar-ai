@@ -3,7 +3,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { addDays } from "@/lib/engine";
-import { DEMO_EXTRACTION, DEMO_RENEWAL_QUOTE, ExtractionSchema, type Extraction, type ExtractionResult } from "@/lib/extraction";
+import {
+  DEMO_EXTRACTION,
+  DEMO_RENEWAL_QUOTE,
+  ExtractionSchema,
+  REVIEW_FIELDS,
+  type Extraction,
+  type ExtractionResult,
+  type FieldKey,
+} from "@/lib/extraction";
 
 // Claude reads one contract and returns its renewal terms. Shared by uploads (/api/extract)
 // and contracts emailed to a workspace inbox (/api/inbound/resend).
@@ -26,6 +34,67 @@ Rules:
 const TermsSchema = ExtractionSchema.omit({ document_kind: true, price_escalators: true });
 const PricingSchema = ExtractionSchema.pick({ document_kind: true, price_escalators: true });
 const PRICING_ASK = "Say what kind of document this is, and list every clause that raises the price automatically.";
+
+// Source quotes. Structured outputs can't be combined with Claude's citations feature, so a third request, run in
+// parallel with the other two, asks Claude to point at the passage behind each term with citations turned on.
+// A citation's text is copied from the document by the API (with its page for PDFs), so it is a real quote, unlike
+// the "quote" field of the structured read, which the model writes itself and could paraphrase.
+const CITE_TOPICS: Record<FieldKey, string> = {
+  term_end: "when the current subscription term ends",
+  auto_renewal: "whether and how the agreement renews automatically",
+  notice_period_days: "how much notice is needed to cancel or not renew",
+  uplift_cap_percent: "any cap or limit on price increases at renewal",
+  seat_reduction_percent: "whether the customer can reduce seats or licences at renewal",
+  annual_fee: "the annual fee or total subscription fee",
+  seats: "the number of seats, users or licences purchased",
+};
+const CITE_ASK = `For each topic below, find the passage in this document that states it.
+Write one line per topic, in this order. Start the line with the topic key in square brackets, then one short sentence that answers it and cites the passage.
+If the document does not cover a topic, write the key followed by "not stated", with no citation.
+
+${REVIEW_FIELDS.map((k) => `[${k}] ${CITE_TOPICS[k]}`).join("\n")}`;
+
+type CitedQuote = { quote: string; page: number | null };
+
+/** Splits a cited answer into the passages cited under each [key] line. */
+export function citationsByField(content: Anthropic.Beta.BetaContentBlock[]): Partial<Record<FieldKey, CitedQuote>> {
+  const out: Partial<Record<FieldKey, CitedQuote>> = {};
+  const label = new RegExp(`\\[(${REVIEW_FIELDS.join("|")})\\]`, "g");
+  let text = "";
+  for (const block of content) {
+    if (block.type !== "text") continue;
+    text += block.text;
+    const labels = [...text.matchAll(label)];
+    const key = labels.length ? (labels[labels.length - 1][1] as FieldKey) : null;
+    if (!key || !block.citations?.length) continue;
+    const quotes: string[] = [];
+    let page: number | null = null;
+    for (const c of block.citations) {
+      if (c.type !== "page_location" && c.type !== "char_location") continue;
+      const q = c.cited_text.replace(/\s+/g, " ").trim();
+      if (!q) continue;
+      quotes.push(q);
+      if (c.type === "page_location" && page == null) page = c.start_page_number;
+    }
+    if (!quotes.length) continue;
+    const prev = out[key];
+    const all = [...(prev ? [prev.quote] : []), ...quotes].filter((q, i, a) => a.indexOf(q) === i).slice(0, 2);
+    out[key] = { quote: all.join(" … ").slice(0, 1200), page: prev?.page ?? page };
+  }
+  return out;
+}
+
+/** Swaps in the cited passage for every term that has a value and a citation, and marks it verified. */
+function withCitations(d: Extraction, cited: Partial<Record<FieldKey, CitedQuote>>): Extraction {
+  const next: Extraction = { ...d, verified: {} };
+  for (const k of REVIEW_FIELDS) {
+    const c = cited[k];
+    if (!c || d[k].value == null) continue;
+    (next as Record<FieldKey, unknown>)[k] = { ...d[k], quote: c.quote, page: c.page ?? d[k].page };
+    next.verified![k] = true;
+  }
+  return next;
+}
 
 export type ContractInput = { kind: "pdf"; bytes: Buffer } | { kind: "text"; text: string };
 export type ExtractError = { error: string; status: number };
@@ -89,12 +158,30 @@ export async function extractContract(fileName: string, input: ContractInput): P
         output_config: { effort, format: betaZodOutputFormat(schema) },
         messages: [{ role: "user", content: [document, { type: "text", text }] }],
       });
-    const [terms, pricing] = await Promise.all([
+    const cite = () =>
+      client.beta.messages.create({
+        model: MODEL,
+        max_tokens: 8000,
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        system: "You find the exact passages in B2B SaaS contracts that state each renewal term, and cite them.",
+        output_config: { effort: "low" },
+        messages: [{ role: "user", content: [{ ...document, citations: { enabled: true } }, { type: "text", text: CITE_ASK }] }],
+      });
+    const [terms, pricing, cited] = await Promise.all([
       call(TermsSchema, ask, "medium"),
       call(PricingSchema, `${PRICING_ASK}${input.kind === "text" ? " Page numbers are unknown: return null for every page." : ""}`, "low").catch((e) => {
         console.error("price escalator extraction failed", e);
         return null;
       }),
+      // Also optional: without it the terms keep the model's own quotes, shown as not verified.
+      cite().then(
+        (r) => (r.stop_reason === "refusal" ? {} : citationsByField(r.content)),
+        (e) => {
+          console.error("citation pass failed", e);
+          return {};
+        },
+      ),
     ]);
 
     if (terms.stop_reason === "refusal") return { error: "The model declined to read this document.", status: 422 };
@@ -103,7 +190,10 @@ export async function extractContract(fileName: string, input: ContractInput): P
     }
     // The second request only adds detail; if it fails the contract is still saved, as a plain contract.
     const extra = pricing?.parsed_output ?? { document_kind: "contract" as const, price_escalators: [] };
-    const data: Extraction = { ...terms.parsed_output, document_kind: extra.document_kind, price_escalators: extra.price_escalators };
+    const data: Extraction = withCitations(
+      { ...terms.parsed_output, document_kind: extra.document_kind, price_escalators: extra.price_escalators },
+      cited,
+    );
     return {
       fileName,
       extractedAt: new Date().toISOString(),

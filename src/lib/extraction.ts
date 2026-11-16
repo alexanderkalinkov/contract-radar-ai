@@ -59,7 +59,28 @@ export const ExtractionSchema = z.object({
     .describe("Up to 3 short plain-English notes a finance lead should know, e.g. 'Price can change with 30 days notice'"),
 });
 
-export type Extraction = z.infer<typeof ExtractionSchema>;
+/** The single-value terms a reviewer can confirm or correct, in the order they are shown. */
+export const REVIEW_FIELDS = ["term_end", "auto_renewal", "notice_period_days", "uplift_cap_percent", "seat_reduction_percent", "annual_fee", "seats"] as const;
+export type FieldKey = (typeof REVIEW_FIELDS)[number];
+
+/** A person's check of one extracted value. "corrected" keeps what the AI first read in `original`. */
+export interface FieldReview {
+  status: "confirmed" | "corrected";
+  by: string | null;
+  at: string;
+  original?: number | string | boolean | null;
+}
+
+/**
+ * What Claude reads, plus two things added after the read (kept out of the structured-output schema so it stays small):
+ * - verified: the quote for that field came back from Claude's citations, so it is text copied from the document itself
+ *   with the page it is on, not text the model wrote.
+ * - reviews: who confirmed or corrected each value, and when.
+ */
+export type Extraction = z.infer<typeof ExtractionSchema> & {
+  verified?: Partial<Record<FieldKey, boolean>>;
+  reviews?: Partial<Record<FieldKey, FieldReview>>;
+};
 
 export interface ExtractionResult {
   fileName: string;
@@ -113,6 +134,7 @@ export const DEMO_EXTRACTION: Extraction = {
   seats: { value: 120, quote: "Named Users: 120", page: 3, confidence: "high" },
   currency: "USD",
   price_escalators: [],
+  verified: { term_end: true, auto_renewal: true, notice_period_days: true, uplift_cap_percent: true, seat_reduction_percent: true, annual_fee: true, seats: true },
   risks: [
     "Notice is 60 days, double the usual 30, so the deadline comes early.",
     "Overage users are billed at list price, not your discounted rate.",
@@ -152,4 +174,16 @@ export function escalatorsOf(d: { price_escalators?: Escalator[] }): Escalator[]
 export const StoredExtractionSchema = ExtractionSchema.extend({
   document_kind: ExtractionSchema.shape.document_kind.optional(),
   price_escalators: ExtractionSchema.shape.price_escalators.optional(),
+  verified: z.partialRecord(z.enum(REVIEW_FIELDS), z.boolean()).optional(),
+  reviews: z
+    .partialRecord(
+      z.enum(REVIEW_FIELDS),
+      z.object({
+        status: z.enum(["confirmed", "corrected"]),
+        by: z.string().nullable(),
+        at: z.string(),
+        original: z.union([z.number(), z.string(), z.boolean()]).nullable().optional(),
+      }),
+    )
+    .optional(),
 });
