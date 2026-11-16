@@ -36,7 +36,7 @@ named like a department (for example `Marketing/` or `FanDuel/Marketing/`) files
 
 ## Setup
 
-1. Run `supabase/migrations/20261116220000_bulk_import.sql` in the Supabase SQL editor (safe to run again).
+1. Run `supabase/migrations/20261116223000_bulk_import.sql` in the Supabase SQL editor (safe to run again).
 2. `SUPABASE_SERVICE_ROLE_KEY` must be set (it already is for the email inbox). The worker's secret is derived
    from it, so nothing else is needed. Optional: `IMPORT_CONCURRENCY` (1 to 8), `IMPORT_WORKER_SECRET`.
 3. Cost: every file is two Claude requests (about the same as a single upload). 1,000 contracts at 3 at a time

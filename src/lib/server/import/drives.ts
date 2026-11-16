@@ -129,7 +129,7 @@ export async function saveDriveConnection(db: Db, ws: string, userId: string, p:
 
 export const missingImportTables = (msg: string) =>
   /relation .* does not exist|Could not find the (table|function)|schema cache/i.test(msg)
-    ? "The bulk import tables aren't in the database yet. Run supabase/migrations/20261116220000_bulk_import.sql in the Supabase SQL editor."
+    ? "The bulk import tables aren't in the database yet. Run supabase/migrations/20261116223000_bulk_import.sql in the Supabase SQL editor."
     : msg;
 
 export interface DriveConn {
