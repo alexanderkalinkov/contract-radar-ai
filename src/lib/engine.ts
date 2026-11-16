@@ -1,12 +1,18 @@
 import type { Contract } from "./types";
 
-/**
- * The demo runs on a fixed "today" so the seeded deadlines always read the same.
- * Swap for `new Date()` once data comes from real sources.
- */
-export const TODAY = "2026-11-15";
-
 const DAY = 24 * 60 * 60 * 1000;
+
+/** Today's date (UTC), YYYY-MM-DD. */
+export const TODAY = new Date().toISOString().slice(0, 10);
+
+/** The day the sample data was written for. Sample dates are shifted by the same number of days, so they never go stale. */
+const SAMPLE_ANCHOR = "2026-11-15";
+const SAMPLE_SHIFT = Math.round((Date.parse(TODAY) - Date.parse(SAMPLE_ANCHOR)) / DAY);
+
+/** A sample-data date, moved forward so it stays as far from today as it was from the anchor day. */
+export function sampleDate(iso: string): string {
+  return new Date(Date.parse(iso + "T00:00:00Z") + SAMPLE_SHIFT * DAY).toISOString().slice(0, 10);
+}
 
 export function parseISO(iso: string): Date {
   return new Date(iso + "T00:00:00Z");

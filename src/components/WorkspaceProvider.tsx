@@ -13,6 +13,10 @@ export interface WorkspaceCtx {
   showSample: boolean;
   /** Admin finished the setup wizard (cloud only; demo uses its own flag). */
   onboarded?: boolean;
+  /** True in a seeded demo workspace for sales calls (cloud only). */
+  isDemo?: boolean;
+  /** Every workspace the person belongs to, for the switcher (cloud only). */
+  workspaces?: { id: string; name: string; is_demo: boolean; role: "owner" | "member" }[];
   /** Plan and trial state (cloud only). Absent or enabled=false means nothing is gated. */
   billing?: BillingSummary;
   setShowSample: (v: boolean) => void;
@@ -24,7 +28,17 @@ export function WorkspaceProvider({
   cloud,
   children,
 }: {
-  cloud: { email: string; role: "owner" | "member"; workspaceId: string; workspaceName: string; showSample: boolean; onboarded?: boolean; billing?: BillingSummary } | null;
+  cloud: {
+    email: string;
+    role: "owner" | "member";
+    workspaceId: string;
+    workspaceName: string;
+    showSample: boolean;
+    onboarded?: boolean;
+    isDemo?: boolean;
+    workspaces?: WorkspaceCtx["workspaces"];
+    billing?: BillingSummary;
+  } | null;
   children: React.ReactNode;
 }) {
   const [demoSample, setDemoSample] = useStored<boolean>("cr-show-sample", true);
@@ -42,6 +56,8 @@ export function WorkspaceProvider({
       workspaceId: cloud.workspaceId,
       workspaceName: cloud.workspaceName,
       onboarded: cloud.onboarded,
+      isDemo: cloud.isDemo,
+      workspaces: cloud.workspaces,
       billing: cloud.billing,
       showSample,
       setShowSample: (v: boolean) => {

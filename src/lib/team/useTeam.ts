@@ -72,6 +72,8 @@ function applyDemo(d: TeamData, op: TeamOp): [TeamData, OpResult] {
     case "cancelInvite":
       next.invites = next.invites.filter((i) => i.id !== op.id);
       break;
+    case "resendInvite":
+      return [d, { ok: true, emailed: false, emailNote: "Demo mode: no email is sent." }];
     case "addTool": {
       if (!op.tool.name?.trim()) return [d, { ok: false, error: "Give the tool a name." }];
       const id = uid();

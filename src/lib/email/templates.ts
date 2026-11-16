@@ -195,8 +195,8 @@ export function inviteEmail(b: EmailBrand, i: InviteEmailInput): RenderedEmail {
       p("Here's what you'll be able to do:", "margin-bottom:10px;") +
       bullets(jobs),
     cta: { label: i.existingUser ? `Open ${i.workspace}` : "Accept invite", url: i.actionUrl },
-    after: linkFallback(i.actionUrl) + small("This link works once and expires in 24 hours. If it has expired, ask for a new invite."),
-    footer: `${who} invited you to ${esc(i.workspace)}. If you weren't expecting this, you can ignore this email.`,
+    after: linkFallback(i.actionUrl) + small(`This link works once and expires after a while for security. If it has expired, ask ${who} to resend the invite from the Team page.`),
+    footer: `${who} invited you to ${esc(i.workspace)}. Reply to this email to reach them. If you weren't expecting this, you can ignore it.`,
   });
   const text = renderText(
     b,
@@ -208,7 +208,7 @@ export function inviteEmail(b: EmailBrand, i: InviteEmailInput): RenderedEmail {
       ...jobs.map((j) => `• ${j}`),
       "",
       `${i.existingUser ? "Open the workspace" : "Accept the invite"}: ${i.actionUrl}`,
-      "This link works once and expires in 24 hours.",
+      `This link works once and expires after a while. If it has expired, ask ${i.inviter ?? "your admin"} to resend the invite.`,
     ],
     "If you weren't expecting this, you can ignore this email.",
   );

@@ -24,6 +24,7 @@ export default async function LandingPage() {
       <SiteHeader signedIn={signedIn} startHref={startHref} startLabel={startLabel} />
       <main className="flex flex-col">
         <Hero startHref={startHref} startLabel={startLabel} />
+        <IndustryNumbers />
         <ValueProps />
         <HowItWorks />
         <DashboardPreview />
@@ -113,10 +114,10 @@ function HeroCard() {
     <div aria-label="Example of what Contract Radar finds" className="rounded-2xl bg-white p-5 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.35)] sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="m-0 text-[13px] font-semibold text-muted">Savings found this quarter</p>
-          <p className="m-0 font-display text-[34px] font-bold text-good">$184,200</p>
+          <p className="m-0 text-[13px] font-semibold text-muted">Before your next renewals</p>
+          <p className="m-0 font-display text-[24px] leading-tight font-bold">What Radar flags</p>
         </div>
-        <span className="rounded-full bg-chip px-2.5 py-1 text-xs font-semibold text-ink-2">Sample company</span>
+        <span className="rounded-full bg-chip px-2.5 py-1 text-xs font-semibold text-ink-2">Example</span>
       </div>
       <ul className="m-0 mt-4 flex list-none flex-col gap-2.5 p-0">
         {rows.map((r) => (
@@ -130,6 +131,64 @@ function HeroCard() {
         ))}
       </ul>
     </div>
+  );
+}
+
+// Industry figures with their sources. Only published research goes here, never our own customer claims.
+// Re-check each figure when its source publishes a new edition (Zylo every January, Vertice monthly).
+const STATS = [
+  {
+    figure: "36%",
+    label: "of SaaS licenses go unused on average",
+    source: "Zylo, 2026 SaaS Management Index",
+    url: "https://zylo.com/news/2026-saas-management-index",
+  },
+  {
+    figure: "12.7%",
+    label: "SaaS price inflation year over year in August 2026, after a 16.4% peak in June",
+    source: "Vertice, SaaS Inflation Index",
+    url: "https://www.vertice.one/insights/saas-inflation-rate",
+  },
+  {
+    figure: "81%",
+    label: "of SaaS spend is controlled by business teams, with IT managing just 15%",
+    source: "Zylo, 2026 SaaS Management Index",
+    url: "https://zylo.com/news/2026-saas-management-index",
+  },
+  {
+    figure: "152",
+    label: "apps in use at the average company with up to 500 employees",
+    source: "Zylo, 2025 SaaS Management Index",
+    url: "https://zylo.com/news/2025-saas-management-index",
+  },
+];
+
+function IndustryNumbers() {
+  return (
+    <section aria-labelledby="numbers-title" className="border-b border-line bg-white py-14 sm:py-16">
+      <div className="mx-auto max-w-[1180px] px-4 sm:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex max-w-[640px] flex-col gap-2">
+            <p className="m-0 text-[13px] font-semibold tracking-wide text-brand uppercase">Why it matters</p>
+            <h2 id="numbers-title" className="m-0 font-display text-[26px] leading-tight font-bold sm:text-[30px]">
+              Software prices rise faster than budgets, and a third of seats sit idle
+            </h2>
+          </div>
+          <p className="m-0 text-[13px] text-muted">Independent industry research. Sources linked below each figure.</p>
+        </div>
+        <ul className="m-0 mt-8 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
+          {STATS.map((s) => (
+            <li key={s.figure} className="flex flex-col gap-2 rounded-2xl border border-line bg-canvas p-5">
+              <span className="font-display text-[36px] leading-none font-bold text-navy">{s.figure}</span>
+              <span className="text-[15px] leading-snug text-ink-2">{s.label}</span>
+              <a href={s.url} target="_blank" rel="noopener noreferrer" className="mt-auto pt-2 text-[12px] font-medium text-muted underline decoration-line underline-offset-2 hover:text-brand">
+                {s.source}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }
 
@@ -269,7 +328,7 @@ function DashboardPreview() {
         <div className="overflow-hidden rounded-2xl border border-line bg-white">
           <div className="flex items-center justify-between border-b border-line-soft px-5 py-3.5">
             <p className="m-0 font-display font-semibold">Upcoming renewals</p>
-            <span className="text-xs font-semibold text-muted">Sample data</span>
+            <span className="text-xs font-semibold text-muted">Example</span>
           </div>
           <ul className="m-0 list-none p-0">
             {recs.map((r) => (

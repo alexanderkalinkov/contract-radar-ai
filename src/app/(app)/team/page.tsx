@@ -204,6 +204,21 @@ export default function TeamPage() {
                       >
                         Copy sign-up link
                       </button>
+                      <button
+                        type="button"
+                        className="min-h-9 px-1 text-xs font-semibold text-brand"
+                        onClick={async () => {
+                          const r = await run({ op: "resendInvite", id: i.id });
+                          if (!r.ok) return say(r, "");
+                          setMsg(
+                            r.emailed
+                              ? { ok: true, text: `Sent ${i.email} a fresh invite link.` }
+                              : { ok: false, text: r.emailNote ?? `The invite email to ${i.email} didn't send. Copy the sign-up link instead.` },
+                          );
+                        }}
+                      >
+                        Resend invite
+                      </button>
                       <button type="button" className="min-h-9 px-1 text-xs font-semibold text-brand" onClick={async () => say(await run({ op: "cancelInvite", id: i.id }), "Invite cancelled.")}>
                         Cancel
                       </button>

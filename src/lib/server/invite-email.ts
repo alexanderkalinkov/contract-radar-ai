@@ -33,7 +33,9 @@ export async function sendInviteEmail(email: string, origin: string, ctx?: Invit
     }
     const actionUrl = link.data?.properties?.action_link;
     if (!link.error && actionUrl) {
-      const sent = await sendEmail(email, inviteEmail(brand(origin), { ...ctx, actionUrl, existingUser }), { tags: { type: "invite" } });
+      // Replies go to the person who sent the invite, not to the alerts mailbox.
+      const replyTo = ctx.inviter && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ctx.inviter) ? ctx.inviter : undefined;
+      const sent = await sendEmail(email, inviteEmail(brand(origin), { ...ctx, actionUrl, existingUser }), { tags: { type: "invite" }, replyTo });
       if (sent.ok) return { emailed: true };
       console.error("Branded invite failed, falling back to Supabase's email:", sent.error);
     }

@@ -50,7 +50,7 @@ export function authTemplates(name = "Contract Radar"): AuthTemplate[] {
           p(`Your team invited <strong>{{ .Email }}</strong> to their ${name} workspace, where they track software contracts, renewal dates and price increases.`) +
           p("Accept the invite to see your department's tools and confirm what you use."),
         cta: { label: "Accept invite", url },
-        after: linkFallback(url) + small("This link works once and expires in 24 hours. If it has expired, ask your admin for a new invite."),
+        after: linkFallback(url) + small("This link works once and expires after a while for security. If it has expired, ask your admin to resend the invite."),
         footer: `You were invited to ${name}. If you weren't expecting this, you can ignore this email.`,
       }),
     },
