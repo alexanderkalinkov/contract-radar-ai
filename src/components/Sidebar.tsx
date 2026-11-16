@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
-import { IconCal, IconChart, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
+import { IconCal, IconCard, IconChart, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
 import { useWorkspace } from "./WorkspaceProvider";
 import { cx } from "./ui";
 
@@ -21,6 +21,7 @@ const NAV = [
   { href: "/sources", label: "Sources", Icon: IconPlug },
   { href: "/team", label: "Team", Icon: IconTeam },
   { href: "/settings", label: "Workspace", Icon: IconGear },
+  { href: "/billing", label: "Billing", Icon: IconCard, adminOnly: true, cloudOnly: true },
 ];
 
 export function Sidebar() {
@@ -51,7 +52,7 @@ export function Sidebar() {
         </button>
       </div>
       <div className={cx("flex-col gap-1 text-sm font-medium lg:flex", open ? "flex" : "hidden")}>
-        {NAV.filter((n) => !n.adminOnly || ws.mode === "demo" || ws.role === "owner").map(({ href, label, Icon }) => (
+        {NAV.filter((n) => !("cloudOnly" in n && n.cloudOnly && !ws.billing?.enabled) && (!n.adminOnly || ws.mode === "demo" || ws.role === "owner")).map(({ href, label, Icon }) => (
           <Link
             key={href}
             href={href}
@@ -75,6 +76,7 @@ export function Sidebar() {
           {COMPANY.appsDetected} apps · {COMPANY.plan}
         </span>
         </div>}
+        <BillingChip />
         <div className="flex flex-col gap-1 px-2 text-xs text-navy-muted">
           <span className="truncate font-semibold text-white">{ws.workspaceName}</span>
           {ws.mode === "cloud" ? (
@@ -91,5 +93,22 @@ export function Sidebar() {
       </div>
     </nav>
     </div>
+  );
+}
+
+/** Trial countdown or payment warning above the account line. */
+function BillingChip() {
+  const b = useWorkspace().billing;
+  if (!b?.enabled) return null;
+  let text: string | null = null;
+  if (b.state === "trial") text = b.trialDaysLeft === 1 ? "Free trial: last day" : `Free trial: ${b.trialDaysLeft} days left`;
+  else if (b.state === "past_due") text = "Payment failed: update your card";
+  else if (b.state === "trial_ended" || b.state === "canceled") text = "Choose a plan to continue";
+  if (!text) return null;
+  return (
+    <Link href="/billing" className="flex min-h-11 items-center justify-between gap-2 rounded-xl bg-navy-2 px-4 py-2.5 text-xs font-semibold text-white hover:bg-navy-hover">
+      <span>{text}</span>
+      <span aria-hidden="true" className="text-navy-muted">→</span>
+    </Link>
   );
 }

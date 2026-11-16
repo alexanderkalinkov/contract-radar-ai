@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { BillingSummary } from "@/lib/billing/plans";
 import { useStored } from "@/lib/store";
 
 export interface WorkspaceCtx {
@@ -12,6 +13,8 @@ export interface WorkspaceCtx {
   showSample: boolean;
   /** Admin finished the setup wizard (cloud only; demo uses its own flag). */
   onboarded?: boolean;
+  /** Plan and trial state (cloud only). Absent or enabled=false means nothing is gated. */
+  billing?: BillingSummary;
   setShowSample: (v: boolean) => void;
 }
 
@@ -21,7 +24,7 @@ export function WorkspaceProvider({
   cloud,
   children,
 }: {
-  cloud: { email: string; role: "owner" | "member"; workspaceId: string; workspaceName: string; showSample: boolean; onboarded?: boolean } | null;
+  cloud: { email: string; role: "owner" | "member"; workspaceId: string; workspaceName: string; showSample: boolean; onboarded?: boolean; billing?: BillingSummary } | null;
   children: React.ReactNode;
 }) {
   const [demoSample, setDemoSample] = useStored<boolean>("cr-show-sample", true);
@@ -39,6 +42,7 @@ export function WorkspaceProvider({
       workspaceId: cloud.workspaceId,
       workspaceName: cloud.workspaceName,
       onboarded: cloud.onboarded,
+      billing: cloud.billing,
       showSample,
       setShowSample: (v: boolean) => {
         setCloudSampleLocal(v);

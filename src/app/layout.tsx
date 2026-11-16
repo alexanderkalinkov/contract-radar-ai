@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { AuthHashForwarder } from "@/components/AuthHashForwarder";
 import { WorkspaceProvider } from "@/components/WorkspaceProvider";
+import { getBilling } from "@/lib/server/billing";
 import { getSession } from "@/lib/server/workspace";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const session = await getSession();
+  const billing = session ? await getBilling(session.workspace.id) : null;
   const cloud = session
     ? {
         email: session.email,
@@ -27,6 +29,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         workspaceName: session.workspace.name,
         showSample: session.workspace.show_sample_data,
         onboarded: Boolean(session.workspace.onboarded_at),
+        billing: billing ?? undefined,
       }
     : null;
   return (
