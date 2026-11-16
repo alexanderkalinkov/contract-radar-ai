@@ -1,0 +1,53 @@
+// Sample data for email previews and the "send me a sample" button.
+import { addDays } from "@/lib/engine";
+import type { AlertItem } from "./templates";
+
+export function sampleAlertItems(today: string): AlertItem[] {
+  return [
+    {
+      contractId: "salesforce",
+      vendor: "Salesforce",
+      agreement: "Sales Cloud Enterprise MSA",
+      kind: "notice",
+      date: addDays(today, 30),
+      daysLeft: 30,
+      bucket: 30,
+      annualFee: 186000,
+      currency: "USD",
+      renewalTermMonths: 12,
+      noticeDays: 60,
+      upliftCapPct: 5,
+      department: "Sales",
+    },
+    {
+      contractId: "monday",
+      vendor: "monday.com",
+      agreement: "Enterprise plan order form",
+      kind: "renewal",
+      date: addDays(today, 58),
+      daysLeft: 58,
+      bucket: 60,
+      annualFee: 42000,
+      currency: "USD",
+      renewalTermMonths: 12,
+      noticeDays: 30,
+      upliftCapPct: null,
+      department: "Operations",
+    },
+    {
+      contractId: "zoom",
+      vendor: "Zoom",
+      agreement: null,
+      kind: "term_end",
+      date: addDays(today, 88),
+      daysLeft: 88,
+      bucket: 90,
+      annualFee: 18400,
+      currency: "USD",
+      renewalTermMonths: null,
+      noticeDays: null,
+      upliftCapPct: null,
+      department: null,
+    },
+  ];
+}

@@ -226,7 +226,15 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
       await supabase.from("workspace_invites").delete().eq("workspace_id", ws).eq("email", email);
       const { error } = await supabase.from("workspace_invites").insert({ workspace_id: ws, email, role, department_id });
       if (error) return fail(error);
-      const sent = await sendInviteEmail(email, origin);
+      const dept = department_id
+        ? (await supabase.from("departments").select("name").eq("id", department_id).maybeSingle()).data?.name ?? null
+        : null;
+      const sent = await sendInviteEmail(email, origin, {
+        workspace: session.workspace.name,
+        inviter: session.email || null,
+        department: dept,
+        role,
+      });
       return { ok: true, emailed: sent.emailed, emailNote: sent.note };
     }
     case "cancelInvite":
