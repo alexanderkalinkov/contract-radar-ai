@@ -4,6 +4,7 @@ import { addDays, daysUntil, toISO } from "@/lib/engine";
 import { alertDays, brand } from "@/lib/email/brand";
 import { renewalAlertEmail, type AlertItem, type AlertKind } from "@/lib/email/templates";
 import { escalatorsOf } from "@/lib/extraction";
+import { reviewSummary, type Recommendation, type ReviewStatus } from "@/lib/approvals";
 import { buildPriceHistory } from "@/lib/price-history";
 import { rowToSaved, type ContractRow as SavedRow } from "@/lib/saved";
 import { isBillingConfigured, summarize, type BillingRow } from "./billing";
@@ -128,6 +129,26 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
   const err = [c, t, d, m].find((r) => r.error)?.error;
   if (err) throw new Error(err.message);
 
+  // Renewal decisions (supabase/migrations/20261116220000_renewal_approvals.sql). Before that migration runs the
+  // query fails and reminders simply go out without the decision line.
+  const reviews = await db
+    .from("renewal_reviews")
+    .select("contract_id, cycle, recommendation, target_seats, consolidate_into, expected_savings, status, recommended_by_email, decided_by_email")
+    .in("workspace_id", wsIds);
+  type ReviewRow = {
+    contract_id: string;
+    cycle: string;
+    recommendation: Recommendation;
+    target_seats: number | null;
+    consolidate_into: string | null;
+    expected_savings: number | string | null;
+    status: ReviewStatus;
+    recommended_by_email: string | null;
+    decided_by_email: string | null;
+  };
+  const approvalsLive = !reviews.error;
+  const reviewOf = new Map(((reviews.data ?? []) as ReviewRow[]).map((r) => [`${r.contract_id}|${r.cycle}`, r]));
+
   const deptOfContract = new Map((t.data ?? []).map((x) => [x.contract_id as string, x.department_id as string | null]));
   const deptName = new Map((d.data ?? []).map((x) => [x.id as string, x.name as string]));
   const members = (m.data ?? []) as { workspace_id: string; email: string; role: string; department_id: string | null }[];
@@ -145,6 +166,16 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
     report.contractsChecked++;
     const change = history.changes.get(row.id);
     const escalator = row.extraction ? escalatorsOf(row.extraction)[0]?.description ?? null : null;
+    const rv = reviewOf.get(`${row.id}|${row.term_end ?? "open"}`);
+    const decision: AlertItem["decision"] = !approvalsLive
+      ? null
+      : rv
+        ? {
+            status: rv.status,
+            summary: reviewSummary({ recommendation: rv.recommendation, targetSeats: rv.target_seats, consolidateInto: rv.consolidate_into, expectedSavings: num(rv.expected_savings) }),
+            by: rv.status === "pending" ? rv.recommended_by_email : rv.decided_by_email,
+          }
+        : { status: "needed", summary: null, by: null };
     for (const ev of contractEvents(row)) {
       const days = daysUntil(ev.date, today);
       if (days > maxDays) continue;
@@ -180,6 +211,7 @@ export async function runRenewalAlerts(opts: AlertRunOptions = {}): Promise<Aler
               }
             : null,
         escalator,
+        decision,
       });
     }
   }

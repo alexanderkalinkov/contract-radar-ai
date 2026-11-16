@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
-import { IconCal, IconCard, IconChart, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
+import { IconCal, IconCard, IconChart, IconCheck, IconDoc, IconGear, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUsers, IconX, Logo } from "./icons";
 import { switchWorkspace } from "./DemoWorkspaceCard";
 import { useWorkspace } from "./WorkspaceProvider";
+import { useRenewalQueue } from "@/lib/useRenewalQueue";
 import { cx } from "./ui";
 
 const NAV = [
@@ -17,6 +18,7 @@ const NAV = [
   { href: "/discover", label: "Discovered tools", Icon: IconSpark },
   { href: "/contracts", label: "Contracts", Icon: IconDoc },
   { href: "/calendar", label: "Renewal calendar", Icon: IconCal },
+  { href: "/approvals", label: "Renewal approvals", Icon: IconCheck },
   { href: "/seats", label: "Seats & usage", Icon: IconUsers },
   { href: "/price-changes", label: "Price changes", Icon: IconTrend },
   { href: "/sources", label: "Sources", Icon: IconPlug },
@@ -29,6 +31,7 @@ export function Sidebar() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const ws = useWorkspace();
+  const queue = useRenewalQueue();
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
   return (
@@ -66,6 +69,11 @@ export function Sidebar() {
           >
             <Icon />
             {label}
+            {href === "/approvals" && queue.actionable > 0 && (
+              <span className="ml-auto rounded-full bg-[#FFB27A] px-2 py-0.5 text-[11px] font-bold text-navy" aria-label={`${queue.actionable} need action`}>
+                {queue.actionable}
+              </span>
+            )}
           </Link>
         ))}
       </div>

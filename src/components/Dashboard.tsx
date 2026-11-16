@@ -6,6 +6,7 @@ import { COMPANY, LEVERS, SAVINGS_BY_LEVER } from "@/lib/seed";
 import { usePortfolio } from "@/lib/portfolio";
 import { noticeDeadline } from "@/lib/engine";
 import { SampleDataNote } from "./SampleDataNote";
+import { QUEUE_DAYS, useRenewalQueue } from "@/lib/useRenewalQueue";
 import { useWorkspace } from "./WorkspaceProvider";
 import { daysUntil, TODAY, urgency } from "@/lib/engine";
 import { longDate, shortDate, usd } from "@/lib/format";
@@ -315,6 +316,8 @@ export function Dashboard() {
             </Link>
           </Card>
 
+          <ApprovalsCard />
+
           <PriceHikesCard contracts={CONTRACTS} />
 
           {showSample && (
@@ -475,5 +478,45 @@ function OppRow({
         )}
       </td>
     </tr>
+  );
+}
+
+/** Renewal decisions at a glance, linking to the approvals queue. */
+function ApprovalsCard() {
+  const q = useRenewalQueue();
+  if (!q.rows.length) return null;
+  const next = q.rows.find((r) => (q.canApprove ? r.stage === "pending" : r.stage === "needs_recommendation" || r.stage === "rejected"));
+  return (
+    <Card label="Renewal approvals" className="flex flex-col gap-3 p-5">
+      <div className="flex items-baseline justify-between gap-2">
+        <H2>Renewal decisions</H2>
+        <span className="text-[13px] text-muted">Next {QUEUE_DAYS} days</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        {[
+          { n: q.counts.pending, label: "Waiting for approval", hot: q.canApprove },
+          { n: q.counts.needs + q.counts.rejected, label: "Need a recommendation", hot: !q.canApprove },
+          { n: q.counts.approved, label: "Approved", hot: false },
+        ].map((x) => (
+          <div key={x.label} className={cx("flex flex-col gap-0.5 rounded-lg px-2 py-2.5", x.hot && x.n > 0 ? "bg-brand-soft" : "bg-[#F8FAFC]")}>
+            <span className="font-display text-xl font-semibold">{x.n}</span>
+            <span className="text-[11px] leading-tight text-muted">{x.label}</span>
+          </div>
+        ))}
+      </div>
+      {q.approvedSavings > 0 && (
+        <span className="text-[13px] text-muted">
+          Approved plans save <strong className="text-good">{usd(q.approvedSavings)}/yr</strong> if they go through.
+        </span>
+      )}
+      {next && (
+        <Link href={`/contracts/${next.contract.id}#renewal-decision`} className="text-[13px] font-semibold text-brand">
+          {q.canApprove ? `Review ${next.contract.vendor}` : `Recommend for ${next.contract.vendor}`}
+        </Link>
+      )}
+      <Link href="/approvals" className="text-[13px] font-semibold text-brand">
+        Open renewal approvals
+      </Link>
+    </Card>
   );
 }
