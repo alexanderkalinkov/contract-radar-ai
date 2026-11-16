@@ -10,15 +10,10 @@ import { TeamError } from "@/components/team/TeamError";
 import { usd } from "@/lib/format";
 import { COMPANY_SIZES, guessCategory, PRESET_DEPARTMENTS } from "@/lib/team/types";
 import { useTeam } from "@/lib/team/useTeam";
+import { ConnectionCards, DiscoveryReview, useConnectResult } from "@/components/discovery/Discovery";
+import { useDiscovery } from "@/lib/discovery/useDiscovery";
 
 const STEPS = ["Company", "Connect", "Departments", "Invite owners", "Add tools", "Done"];
-
-const CONNECTORS = [
-  { name: "QuickBooks", what: "Every vendor you pay, with spend" },
-  { name: "Xero", what: "Every vendor you pay, with spend" },
-  { name: "Google Workspace", what: "Which apps people sign in to" },
-  { name: "Microsoft 365 / Entra ID", what: "Which apps people sign in to" },
-];
 
 export default function SetupPage() {
   const router = useRouter();
@@ -27,6 +22,14 @@ export default function SetupPage() {
   const [step, setStep] = useState(0);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const disc = useDiscovery();
+  const [connectMsg, setConnectMsg] = useConnectResult();
+
+  // Coming back from a provider's sign-in page: reopen the step we left.
+  useEffect(() => {
+    const s = Number(new URL(window.location.href).searchParams.get("step"));
+    if (s >= 0 && s < STEPS.length) setStep(s);
+  }, []);
 
   // Step 1
   const [name, setName] = useState("");
@@ -211,20 +214,16 @@ export default function SetupPage() {
         <Card label="Connect" className="flex flex-col gap-5 p-6">
           <Intro
             title="Connect accounting and sign-in"
-            sub="Soon Radar will pull a draft list of every tool you pay for, with spend and active users, in minutes. Until then, department owners upload contracts or add tools by hand."
+            sub="Radar pulls a draft list of every tool you pay for (QuickBooks or Xero) and who uses it (Google Workspace or Microsoft). After you add departments, each tool is filed under the team that uses it."
           />
-          <div className="grid gap-3 sm:grid-cols-2">
-            {CONNECTORS.map((c) => (
-              <div key={c.name} className="flex items-center justify-between gap-3 rounded-xl border border-line-soft p-4">
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-semibold">{c.name}</span>
-                  <span className="text-[13px] text-muted">{c.what}</span>
-                </div>
-                <span className="rounded-full bg-chip px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap text-muted">Coming soon</span>
-              </div>
-            ))}
-          </div>
-          <Nav busy={busy} onBack={() => go(0)} onNext={() => go(2)} nextLabel="Continue without connecting" />
+          <ConnectionCards disc={disc} returnTo="/setup?step=1" onMessage={setConnectMsg} />
+          <Notice msg={connectMsg} />
+          <Nav
+            busy={busy}
+            onBack={() => go(0)}
+            onNext={() => go(2)}
+            nextLabel={disc.data?.connections.length ? "Continue" : "Continue without connecting"}
+          />
         </Card>
       )}
 
@@ -321,8 +320,16 @@ export default function SetupPage() {
             title="Get the tool list started"
             sub="Department owners will fill in the rest. Add a few you know about, or upload contracts and Claude reads the terms."
           />
+          {(disc.items?.length ?? 0) > 0 && (
+            <div className="flex flex-col gap-3 rounded-xl border border-brand-line bg-brand-soft/40 p-4">
+              <DiscoveryReview disc={disc} compact />
+            </div>
+          )}
           <div className="flex flex-wrap gap-2.5">
             <Link href="/upload" className={btnGhost}><IconUpload /> Upload contracts</Link>
+            {!(disc.items?.length) && (
+              <button type="button" className={btnGhost} onClick={() => go(1)}>Connect accounting or sign-in</button>
+            )}
           </div>
           <form
             className="grid gap-2.5 sm:grid-cols-[2fr_1.5fr_1fr_0.8fr_auto]"
