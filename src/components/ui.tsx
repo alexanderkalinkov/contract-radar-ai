@@ -71,11 +71,11 @@ export function ConfidenceTag({ level }: { level: "high" | "medium" | "low" }) {
 }
 
 export const btnPrimary =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50";
+  "cr-press inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50";
 export const btnGhost =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[#D0D5DD] bg-white px-4 text-sm font-semibold text-ink hover:bg-[#EEF2F7]";
+  "cr-press inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[#D0D5DD] bg-white px-4 text-sm font-semibold text-ink hover:bg-[#EEF2F7]";
 export const btnSoft =
-  "inline-flex min-h-10 items-center rounded-[9px] border border-brand-line bg-brand-soft px-3.5 text-[13px] font-semibold text-brand-dark hover:bg-[#E0E7FF]";
+  "cr-press inline-flex min-h-10 items-center rounded-[9px] border border-brand-line bg-brand-soft px-3.5 text-[13px] font-semibold text-brand-dark hover:bg-[#E0E7FF]";
 
 export function Segmented<T extends string>({
   options,

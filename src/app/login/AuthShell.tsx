@@ -9,7 +9,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
         <Logo size={32} />
         <span className="font-display text-xl font-bold">Contract Radar</span>
       </Link>
-      <div className="flex w-full max-w-[400px] flex-col gap-5 rounded-2xl bg-white p-7">
+      <div className="cr-card-in flex w-full max-w-[400px] flex-col gap-5 rounded-2xl bg-white p-7">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 font-display text-2xl font-semibold">{title}</h1>
           <p className="m-0 text-sm text-muted">{subtitle}</p>

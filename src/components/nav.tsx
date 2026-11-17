@@ -109,7 +109,7 @@ export function SectionTabs() {
               href={t.href}
               aria-current={on ? "page" : undefined}
               className={cx(
-                "-mb-px flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-semibold whitespace-nowrap",
+                "-mb-px flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200",
                 on ? "border-brand text-ink" : "border-transparent text-muted hover:border-line hover:text-ink",
               )}
             >
