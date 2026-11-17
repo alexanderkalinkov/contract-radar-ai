@@ -77,7 +77,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                       {u.memberships.map((m) => (
                         <Link key={m.workspaceId} href={`/admin/workspaces/${m.workspaceId}`} className="text-ink-2 hover:text-brand">
                           {m.workspaceName}
-                          {m.isDemo && " (demo)"} <span className="text-muted">· {roleLabel(m.role)}</span>
+                          {m.isDemo && !/demo/i.test(m.workspaceName) && " (demo)"} <span className="text-muted">· {roleLabel(m.role)}</span>
                         </Link>
                       ))}
                     </span>
