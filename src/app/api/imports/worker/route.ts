@@ -1,4 +1,5 @@
 import { after, NextResponse, type NextRequest } from "next/server";
+import { recordJobRun } from "@/lib/server/platform";
 import { isWorkerRequest, kickWorker, runWorker, workerOrigin } from "@/lib/server/import/worker";
 
 // The bulk import worker. Started by the app itself (when files are queued, and by each run while work
@@ -13,9 +14,11 @@ async function start(req: NextRequest) {
   after(async () => {
     try {
       const r = await runWorker();
+      await recordJobRun("import-worker", true, { ran: r.ran, processed: r.processed, listed: r.listed, more: r.more });
       if (r.ran && r.more) await kickWorker(origin);
     } catch (e) {
       console.error("import worker failed", e);
+      await recordJobRun("import-worker", false, {}, (e as Error).message);
     }
   });
   return NextResponse.json({ started: true }, { status: 202 });

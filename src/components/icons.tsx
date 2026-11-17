@@ -85,3 +85,6 @@ export const IconHelp = ({ size = 18, className }: P) => (
 export const IconUser = ({ size = 18, className }: P) => (
   <svg {...base(size)} className={className}><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4 4-6 8-6s7 2 8 6" /></svg>
 );
+export const IconShield = ({ size = 18, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z" /><path d="M9 12l2 2 4-4" /></svg>
+);

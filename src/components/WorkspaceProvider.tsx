@@ -29,6 +29,8 @@ export interface WorkspaceCtx {
   workspaces?: { id: string; name: string; is_demo: boolean; role: Role }[];
   /** Plan and trial state (cloud only). Absent or enabled=false means nothing is gated. */
   billing?: BillingSummary;
+  /** Can open the platform admin console (/admin). Cloud only. */
+  platformAdmin?: boolean;
   setShowSample: (v: boolean) => void;
 }
 
@@ -54,6 +56,7 @@ export function WorkspaceProvider({
     isDemo?: boolean;
     workspaces?: WorkspaceCtx["workspaces"];
     billing?: BillingSummary;
+    platformAdmin?: boolean;
   } | null;
   children: React.ReactNode;
 }) {
@@ -80,6 +83,7 @@ export function WorkspaceProvider({
       isDemo: cloud.isDemo,
       workspaces: cloud.workspaces,
       billing: cloud.billing,
+      platformAdmin: cloud.platformAdmin,
       showSample,
       setShowSample: (v: boolean) => {
         setCloudSampleLocal(v);

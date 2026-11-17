@@ -7,6 +7,7 @@ import { WorkspaceProvider } from "@/components/WorkspaceProvider";
 import { getBilling } from "@/lib/server/billing";
 import { getSession } from "@/lib/server/workspace";
 import { helpVideoUrl } from "@/lib/server/help";
+import { isPlatformAdmin } from "@/lib/server/platform";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const spaceGrotesk = Space_Grotesk({
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const session = await getSession();
   const billing = session ? await getBilling(session.workspace.id) : null;
+  const platformAdmin = session ? await isPlatformAdmin() : false;
   const cloud = session
     ? {
         userId: session.userId,
@@ -38,6 +40,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         isDemo: Boolean(session.workspace.is_demo),
         workspaces: session.workspaces,
         billing: billing ?? undefined,
+        platformAdmin,
       }
     : null;
   return (
