@@ -208,8 +208,8 @@ export function ImportReview({ id }: { id: string }) {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-[14px] border border-line bg-white">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
+      <div className="rtable-wrap overflow-x-auto rounded-[14px] border border-line bg-white">
+        <table className="rtable w-full min-w-[720px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs font-semibold tracking-wide text-muted">
               {selectable && (
@@ -288,11 +288,11 @@ function Row({ it, selectable, checked, onCheck, open, onToggle }: { it: ItemVie
     <>
       <tr className="border-b border-line-soft align-top last:border-0">
         {selectable && (
-          <td className="px-3 py-2.5">
+          <td className="rt-check px-3 py-2.5">
             <input type="checkbox" aria-label={`Select ${it.file_name}`} checked={checked} onChange={(e) => onCheck(e.target.checked)} />
           </td>
         )}
-        <td className="max-w-[260px] px-3 py-2.5">
+        <td className="rt-full max-w-[260px] px-3 py-2.5 break-words">
           {it.extraction ? (
             <button type="button" onClick={onToggle} className="text-left font-semibold text-brand hover:underline">{it.file_name}</button>
           ) : (
@@ -300,13 +300,13 @@ function Row({ it, selectable, checked, onCheck, open, onToggle }: { it: ItemVie
           )}
           {it.folder && <div className="truncate text-xs text-muted">{it.folder}</div>}
         </td>
-        <td className="px-3 py-2.5">
+        <td data-label="Vendor" className="px-3 py-2.5">
           {it.status === "added" ? <Link href={`/contracts/${it.id}`} className="font-semibold text-brand hover:underline">{it.vendor ?? "Open"}</Link> : (it.vendor ?? "—")}
         </td>
-        <td className="px-3 py-2.5 whitespace-nowrap">{fee}</td>
-        <td className="px-3 py-2.5 whitespace-nowrap">{it.term_end ? longDate(it.term_end) : "—"}</td>
-        <td className="px-3 py-2.5 whitespace-nowrap">{it.notice_deadline ? longDate(it.notice_deadline) : "—"}</td>
-        <td className={cx("px-3 py-2.5 text-[13px]", it.status === "failed" ? "text-[#912018]" : it.flags.length ? "text-warn-text" : "text-muted")}>{notes}</td>
+        <td data-label="Annual fee" className="px-3 py-2.5 whitespace-nowrap">{fee}</td>
+        <td data-label="Term ends" className="px-3 py-2.5 whitespace-nowrap">{it.term_end ? longDate(it.term_end) : "—"}</td>
+        <td data-label="Notice by" className="px-3 py-2.5 whitespace-nowrap">{it.notice_deadline ? longDate(it.notice_deadline) : "—"}</td>
+        <td data-label={it.status === "failed" ? "Why" : "Notes"} className={cx("rt-full px-3 py-2.5 text-[13px]", !notes && "rt-hide", it.status === "failed" ? "text-[#912018]" : it.flags.length ? "text-warn-text" : "text-muted")}>{notes}</td>
       </tr>
       {open && it.extraction && (
         <tr className="border-b border-line-soft bg-[#F8FAFC]">

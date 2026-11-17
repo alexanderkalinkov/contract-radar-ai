@@ -231,8 +231,8 @@ export function DiscoveryReview({ disc, compact = false }: { disc: Disc; compact
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-line-soft">
-        <table className="w-full min-w-[820px] border-collapse text-sm">
+      <div className="rtable-wrap overflow-x-auto rounded-xl border border-line-soft">
+        <table className="rtable w-full min-w-[820px] border-collapse text-sm">
           <thead>
             <tr className="text-left text-xs tracking-wide text-muted uppercase">
               {view === "new" && disc.isAdmin && (
@@ -257,11 +257,11 @@ export function DiscoveryReview({ disc, compact = false }: { disc: Disc; compact
             {rows.map((i) => (
               <tr key={i.vendor_key} className="border-t border-line-soft align-top">
                 {view === "new" && disc.isAdmin && (
-                  <td className="px-4 py-3.5">
+                  <td className="rt-check px-4 py-3.5">
                     <input type="checkbox" className="h-4 w-4" aria-label={`Add ${i.name}`} checked={selected.has(i.vendor_key)} onChange={() => toggle(i.vendor_key)} />
                   </td>
                 )}
-                <td className="px-4 py-3.5">
+                <td className="rt-full px-4 py-3.5">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-semibold">
                       {i.tool_id ? <Link href={`/tools/${i.tool_id}`} className="text-ink hover:text-brand">{i.name}</Link> : i.name}
@@ -272,7 +272,7 @@ export function DiscoveryReview({ disc, compact = false }: { disc: Disc; compact
                     </span>
                   </div>
                 </td>
-                <td className="px-3 py-3.5">
+                <td data-label="Found in" className="rt-full px-3 py-3.5">
                   <div className="flex flex-col gap-1">
                     {i.sources.map((s) => (
                       <span key={s.provider} className="text-[13px]">
@@ -282,12 +282,12 @@ export function DiscoveryReview({ disc, compact = false }: { disc: Disc; compact
                     ))}
                   </div>
                 </td>
-                <td className="px-3 py-3.5 text-right font-semibold whitespace-nowrap">{i.annual_spend != null ? usd(i.annual_spend) : "—"}</td>
-                <td className="px-3 py-3.5 text-right whitespace-nowrap">
+                <td data-label="Spend / yr" className="px-3 py-3.5 text-right font-semibold whitespace-nowrap">{i.annual_spend != null ? usd(i.annual_spend) : "—"}</td>
+                <td data-label="People" className="px-3 py-3.5 text-right whitespace-nowrap">
                   {i.users != null ? i.users : "—"}
                   {i.licensed != null && <span className="block text-xs text-muted">of {i.licensed} paid</span>}
                 </td>
-                <td className="px-4 py-3.5">
+                <td data-label="Department" className="rt-full px-4 py-3.5">
                   {view === "new" && disc.isAdmin ? (
                     <div className="flex min-w-[190px] flex-col gap-1">
                       <label className="sr-only" htmlFor={`d-${i.vendor_key}`}>Department for {i.name}</label>

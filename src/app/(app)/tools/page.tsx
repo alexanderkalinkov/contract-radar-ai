@@ -133,8 +133,8 @@ export default function ToolsPage() {
         />
       </div>
 
-      <Card label="Tools" className="overflow-x-auto">
-        <table className="w-full min-w-[880px] border-collapse text-sm">
+      <Card label="Tools" className="rtable-wrap overflow-x-auto">
+        <table className="rtable w-full min-w-[880px] border-collapse text-sm">
           <thead>
             <tr className="text-left text-xs tracking-wide text-muted uppercase">
               <th scope="col" className="px-5 py-3 font-semibold">Tool</th>
@@ -158,7 +158,7 @@ export default function ToolsPage() {
               const r = byId.get(t.id);
               return (
                 <tr key={t.id} className="border-t border-line-soft hover:bg-[#F8FAFC]">
-                  <td className="px-5 py-3.5">
+                  <td className="rt-full px-5 py-3.5">
                     <Link href={`/tools/${t.id}`} className="flex flex-col gap-0.5 text-ink">
                       <span className="font-semibold">
                         {t.name}
@@ -172,11 +172,11 @@ export default function ToolsPage() {
                       <span className="text-[13px] text-muted">{t.category}</span>
                     </Link>
                   </td>
-                  <td className="px-3 py-3.5 text-ink-2">{t.department_id ? deptName.get(t.department_id) : <span className="text-warn">Unassigned</span>}</td>
-                  <td className="px-3 py-3.5 text-right font-semibold">{t.annual_cost != null ? usd(t.annual_cost) : "—"}</td>
-                  <td className="px-3 py-3.5 text-right">{t.seats ?? "—"}</td>
-                  <td className="px-3 py-3.5">{t.renewal_date ? shortDate(t.renewal_date) : <span className="text-muted">—</span>}</td>
-                  <td className="px-3 py-3.5">
+                  <td data-label="Department" className="px-3 py-3.5 text-ink-2">{t.department_id ? deptName.get(t.department_id) : <span className="text-warn">Unassigned</span>}</td>
+                  <td data-label="Annual cost" className="px-3 py-3.5 text-right font-semibold">{t.annual_cost != null ? usd(t.annual_cost) : "—"}</td>
+                  <td data-label="Seats" className="px-3 py-3.5 text-right">{t.seats ?? "—"}</td>
+                  <td data-label="Renews" className="px-3 py-3.5">{t.renewal_date ? shortDate(t.renewal_date) : <span className="text-muted">—</span>}</td>
+                  <td data-label="Survey" className="px-3 py-3.5">
                     {r?.survey ? (
                       <span className="flex flex-col gap-0.5">
                         <span className="font-medium text-good-dark">Answered · {r.survey.criticality}/5</span>
@@ -190,7 +190,7 @@ export default function ToolsPage() {
                       <span className="text-muted">Waiting</span>
                     )}
                   </td>
-                  {isAdmin && <td className="px-5 py-3.5">{r && <ActionChip action={r.recommendation.action} />}</td>}
+                  {isAdmin && <td data-label="Recommendation" className="px-5 py-3.5">{r && <ActionChip action={r.recommendation.action} />}</td>}
                 </tr>
               );
             })}

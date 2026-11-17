@@ -49,3 +49,81 @@ button {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
 }
+
+/* Short viewports (laptops with a small window, landscape tablets): tighten the sidebar. */
+@custom-variant short (@media (max-height: 760px));
+
+/*
+ * Responsive tables. Wrap a table in `.rtable-wrap` and give it `.rtable`; when the wrapper is
+ * narrower than 760px each row becomes a card. Cells show their `data-label` as a small heading,
+ * `.rt-full` cells span the whole card, `.rt-hide` cells are dropped on narrow widths.
+ */
+.rtable-wrap {
+  container-type: inline-size;
+}
+@container (max-width: 759px) {
+  .rtable {
+    display: block;
+    min-width: 0 !important;
+  }
+  .rtable > thead {
+    display: none;
+  }
+  .rtable > tbody,
+  .rtable > tfoot {
+    display: block;
+  }
+  .rtable > tbody > tr,
+  .rtable > tfoot > tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    padding: 16px 20px;
+  }
+  .rtable > tbody > tr > td,
+  .rtable > tbody > tr > th,
+  .rtable > tfoot > tr > td {
+    display: block;
+    min-width: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+  .rtable td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .rtable .rt-full,
+  .rtable td[colspan] {
+    grid-column: 1 / -1;
+  }
+  .rtable .rt-hide {
+    display: none !important;
+  }
+  .rtable .rt-end {
+    justify-self: end;
+    align-self: end;
+  }
+}
+@container (max-width: 759px) {
+  .rtable.rtable-flush > tbody > tr {
+    padding: 14px 0;
+  }
+}
+@container (max-width: 759px) {
+  .rtable > tbody > tr:has(> .rt-check) {
+    position: relative;
+    padding-right: 52px;
+  }
+  .rtable .rt-check {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+  }
+}

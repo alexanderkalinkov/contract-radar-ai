@@ -40,8 +40,8 @@ export default function ContractsPage() {
 
       <SampleDataNote />
 
-      <Card label="Contracts" className="overflow-x-auto">
-        <table className="w-full min-w-[860px] border-collapse text-sm">
+      <Card label="Contracts" className="rtable-wrap overflow-x-auto">
+        <table className="rtable w-full min-w-[860px] border-collapse text-sm">
           <thead>
             <tr className="text-left text-xs tracking-wide text-muted uppercase">
               <th scope="col" className="px-5 py-3 font-semibold">Vendor</th>
@@ -71,7 +71,7 @@ export default function ContractsPage() {
               const reviewed = s ? reviewProgress(s.data) : null;
               return (
                 <tr key={c.id} className="border-t border-line-soft hover:bg-[#F8FAFC]">
-                  <td className="px-5 py-3.5">
+                  <td className="rt-full px-5 py-3.5">
                     <Link href={`/contracts/${c.id}`} className="flex items-center gap-3 text-ink">
                       <VendorLogo initials={c.initials} hue={c.hue} />
                       <div className="flex flex-col gap-0.5">
@@ -99,13 +99,13 @@ export default function ContractsPage() {
                       </div>
                     </Link>
                   </td>
-                  <td className="px-3 py-3.5 text-ink-2">{c.owner}</td>
-                  <td className="px-3 py-3.5 text-right font-semibold">{c.annualFee ? usd(c.annualFee) : "—"}</td>
-                  <td className="px-3 py-3.5">
+                  <td data-label="Owner" className="px-3 py-3.5 text-ink-2">{c.owner}</td>
+                  <td data-label="Annual fee" className="px-3 py-3.5 text-right font-semibold">{c.annualFee ? usd(c.annualFee) : "—"}</td>
+                  <td data-label="Uplift cap" className="px-3 py-3.5">
                     {c.upliftCapPct != null ? `${c.upliftCapPct}%` : <span className="font-medium text-warn">None found</span>}
                   </td>
-                  <td className="px-3 py-3.5">{c.autoRenew ? `Yes · ${c.noticeDays}-day notice` : "No"}</td>
-                  <td className="px-5 py-3.5">
+                  <td data-label="Auto-renew" className="px-3 py-3.5">{c.autoRenew ? `Yes · ${c.noticeDays}-day notice` : "No"}</td>
+                  <td data-label="Notice deadline" className="px-5 py-3.5">
                     {notice ? (
                       <div className="flex flex-col gap-1">
                         <span className="font-medium">{shortDate(notice)}</span>
