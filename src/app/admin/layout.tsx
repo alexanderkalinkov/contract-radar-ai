@@ -28,8 +28,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <IconShield size={12} /> Platform admin
               </span>
             </Link>
-            <div className="flex items-center gap-3 text-xs text-navy-muted">
-              <span className="hidden truncate sm:inline">{ctx.session.email}</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-navy-muted">
+              <form action="/admin/search" role="search" className="order-last w-full sm:order-none sm:w-auto">
+                <input
+                  name="q"
+                  placeholder="Search email, name or any id"
+                  aria-label="Search the console"
+                  className="min-h-9 w-full rounded-lg border border-navy-active bg-navy-2 px-3 text-[13px] text-white placeholder:text-navy-muted sm:w-64"
+                />
+              </form>
+              <span className="hidden truncate xl:inline">{ctx.session.email}</span>
               <Link href="/" className="min-h-9 rounded-lg border border-navy-active px-3 text-[13px] leading-9 font-semibold text-white hover:bg-navy-hover">
                 Back to the app
               </Link>

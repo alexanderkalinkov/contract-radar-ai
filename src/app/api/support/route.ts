@@ -66,12 +66,15 @@ export async function POST(request: Request) {
 
   let attachments: { filename: string; content: string }[] | undefined;
   let attachmentLabel: string | null = null;
+  let attachmentFile: { filename: string; type: string; bytes: Buffer } | null = null;
   const file = form.get("attachment");
   if (file instanceof File && file.size > 0) {
     if (file.size > SUPPORT_ATTACHMENT_MAX) return NextResponse.json({ ok: false, error: "That file is over 3 MB. Try a smaller screenshot." }, { status: 400 });
     if (!SUPPORT_ATTACHMENT_TYPES.includes(file.type)) return NextResponse.json({ ok: false, error: "Attach a PNG, JPG, GIF, WebP, PDF or text file." }, { status: 400 });
     const filename = file.name.replace(/[^\w.\- ]+/g, "_").slice(0, 100) || "attachment";
-    attachments = [{ filename, content: Buffer.from(await file.arrayBuffer()).toString("base64") }];
+    const bytes = Buffer.from(await file.arrayBuffer());
+    attachments = [{ filename, content: bytes.toString("base64") }];
+    attachmentFile = { filename, type: file.type, bytes };
     attachmentLabel = `${filename} (${Math.round(file.size / 1024)} KB)`;
   }
 
@@ -83,6 +86,7 @@ export async function POST(request: Request) {
 
   const b = brand(new URL(request.url).origin);
   const name = session?.name || null;
+  const browser = clip(form.get("browser"), 400) || request.headers.get("user-agent");
   const mail = supportRequestEmail(b, {
     topic,
     message,
@@ -90,7 +94,7 @@ export async function POST(request: Request) {
     workspace: session ? { id: session.workspace.id, name: session.workspace.name, role: roleLabel(session.role), isDemo: session.workspace.is_demo } : null,
     plan,
     page: page || null,
-    browser: clip(form.get("browser"), 400) || request.headers.get("user-agent"),
+    browser,
     errors,
     attachment: attachmentLabel,
     sentAt: new Date().toISOString(),
@@ -111,11 +115,22 @@ export async function POST(request: Request) {
         message,
         page: page || null,
         attachment: attachmentLabel,
+        role: session ? roleLabel(session.role) : null,
+        plan,
+        is_demo: session ? Boolean(session.workspace.is_demo) : null,
+        browser,
+        errors,
       })
       .select("id")
       .single();
     if (error) console.error("support request not stored", error.message);
     storedId = (data?.id as string | undefined) ?? null;
+    // Keep the attachment too (private bucket), so the admin console can open it.
+    if (storedId && attachmentFile) {
+      const path = `${storedId}/${attachmentFile.filename}`;
+      const up = await db.storage.from("support").upload(path, attachmentFile.bytes, { contentType: attachmentFile.type, upsert: true });
+      if (!up.error) await db.from("support_requests").update({ attachment_path: path }).eq("id", storedId);
+    }
   }
   const stored = Boolean(storedId);
 

@@ -25,7 +25,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
   const needle = q.trim().toLowerCase();
   const users = all.filter(
     (u) =>
-      (!needle || u.email.toLowerCase().includes(needle) || u.name.toLowerCase().includes(needle) || u.memberships.some((m) => m.workspaceName.toLowerCase().includes(needle))) &&
+      (!needle || u.id.toLowerCase().includes(needle) || u.email.toLowerCase().includes(needle) || u.memberships.some((m) => m.workspaceId.includes(needle)) || u.name.toLowerCase().includes(needle) || u.memberships.some((m) => m.workspaceName.toLowerCase().includes(needle))) &&
       (!status || (status === "admins" ? u.platformAdmin : u.status === status)),
   );
 
@@ -33,7 +33,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     <>
       <PageHeader eyebrow="Platform admin" title="Users" />
       <form className="flex flex-wrap items-center gap-2" action="/admin/users">
-        <input name="q" defaultValue={q} placeholder="Search email, name or workspace" aria-label="Search users" className="min-h-11 w-full max-w-sm rounded-[10px] border border-[#D0D5DD] bg-white px-3 text-sm" />
+        <input name="q" defaultValue={q} placeholder="Email, name, workspace or id" aria-label="Search users" className="min-h-11 w-full max-w-sm rounded-[10px] border border-[#D0D5DD] bg-white px-3 text-sm" />
         <select name="status" defaultValue={status} aria-label="Status" className="min-h-11 rounded-[10px] border border-[#D0D5DD] bg-white px-2 text-sm">
           {FILTERS.map((f) => (
             <option key={f.value} value={f.value}>{f.label}</option>

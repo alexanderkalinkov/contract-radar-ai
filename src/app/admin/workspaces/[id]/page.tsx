@@ -54,6 +54,8 @@ export default async function AdminWorkspace({ params }: { params: Promise<{ id:
       <PageHeader eyebrow="Workspace" title={ws.name}>
         {ws.is_demo && <Pill tone="warn">Demo workspace</Pill>}
         <BillingPill billing={billing} />
+        <Link href={`/admin/setup?q=${id}#errors`} className="text-sm font-semibold text-brand">Errors</Link>
+        <Link href={`/admin/support?status=all&q=${id}`} className="text-sm font-semibold text-brand">Support messages</Link>
       </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-2">

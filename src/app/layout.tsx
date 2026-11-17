@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Activity } from "@/components/Activity";
 import { AuthHashForwarder } from "@/components/AuthHashForwarder";
+import { ErrorTrail } from "@/components/help/ErrorTrail";
 import { WorkspaceProvider } from "@/components/WorkspaceProvider";
 import { getBilling } from "@/lib/server/billing";
 import { getSession } from "@/lib/server/workspace";
@@ -48,6 +49,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
         <AuthHashForwarder />
         <Activity />
+        <ErrorTrail />
         <WorkspaceProvider cloud={cloud} helpVideoUrl={helpVideoUrl()}>{children}</WorkspaceProvider>
       </body>
     </html>

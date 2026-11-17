@@ -15,15 +15,15 @@ export default async function AdminWorkspaces({ searchParams }: { searchParams: 
   const needle = q.trim().toLowerCase();
   const list = all.filter(
     (w) =>
-      (!needle || w.name.toLowerCase().includes(needle) || w.admins.some((a) => a.includes(needle))) &&
-      (demo === "all" || (demo === "only" ? w.isDemo : !w.isDemo)),
+      (!needle || w.id.toLowerCase().includes(needle) || w.name.toLowerCase().includes(needle) || w.admins.some((a) => a.includes(needle))) &&
+      (demo === "all" || (/^[0-9a-f-]{8,}$/.test(needle) && w.id.includes(needle)) || (demo === "only" ? w.isDemo : !w.isDemo)),
   );
 
   return (
     <>
       <PageHeader eyebrow="Platform admin" title="Workspaces" />
       <form className="flex flex-wrap items-center gap-2" action="/admin/workspaces">
-        <input name="q" defaultValue={q} placeholder="Search name or admin email" aria-label="Search workspaces" className="min-h-11 w-full max-w-sm rounded-[10px] border border-[#D0D5DD] bg-white px-3 text-sm" />
+        <input name="q" defaultValue={q} placeholder="Name, admin email or id" aria-label="Search workspaces" className="min-h-11 w-full max-w-sm rounded-[10px] border border-[#D0D5DD] bg-white px-3 text-sm" />
         <select name="demo" defaultValue={demo} aria-label="Demo workspaces" className="min-h-11 rounded-[10px] border border-[#D0D5DD] bg-white px-2 text-sm">
           <option value="">Real workspaces</option>
           <option value="only">Demo only</option>

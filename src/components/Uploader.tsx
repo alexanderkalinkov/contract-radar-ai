@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CONTRACTS_BUCKET } from "@/lib/supabase/config";
 import { btnSoft, ConfidenceTag, cx } from "./ui";
 import { IconUpload } from "./icons";
+import { reportError } from "./help/ErrorTrail";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -43,6 +44,7 @@ export function Uploader({ compact = false }: { compact?: boolean }) {
         router.push(`/import/${jobId}`);
       } catch (e) {
         setJobs((j) => j.map((x) => (x.id === id ? { ...x, status: "error", error: (e as Error).message } : x)));
+        reportError({ kind: "upload", message: (e as Error).message, details: { file: name, bulk: true } });
       }
       return;
     }
@@ -75,12 +77,16 @@ export function Uploader({ compact = false }: { compact?: boolean }) {
           res = await fetch("/api/extract", { method: "POST", body });
         }
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? `Upload failed (${res.status})`);
+        // The failed API call is already in the error log (ErrorTrail), so don't log it twice.
+        if (!res.ok) throw Object.assign(new Error(json.error ?? `Upload failed (${res.status})`), { logged: true });
         const result = json as SavedContract;
         setJobs((j) => j.map((x) => (x.id === id ? { ...x, status: "done", result } : x)));
         add(result);
       } catch (e) {
         setJobs((j) => j.map((x) => (x.id === id ? { ...x, status: "error", error: (e as Error).message } : x)));
+        if (!(e as { logged?: boolean }).logged) {
+          reportError({ kind: "upload", message: (e as Error).message, details: { file: file.name, size: file.size, type: file.type || "unknown" } });
+        }
       }
     }
   }

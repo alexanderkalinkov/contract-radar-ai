@@ -226,6 +226,7 @@ const DB_PROBES: { label: string; file: string; table: string; column?: string }
   { label: "Bulk import", file: "bulk-import.sql", table: "import_jobs" },
   { label: "Audit log, entities and SSO", file: "audit-entities-sso.sql", table: "audit_log" },
   { label: "Platform admin console", file: "platform-admin.sql", table: "platform_audit_log" },
+  { label: "Error log and support details", file: "error-log.sql", table: "app_errors" },
 ];
 
 export async function dbChecks(db: SupabaseClient): Promise<DbCheck[]> {
@@ -287,4 +288,55 @@ export async function loadHealth(db: SupabaseClient): Promise<Health> {
 export async function workspaceNames(db: SupabaseClient): Promise<Map<string, string>> {
   const { data } = await db.from("workspaces").select("id, name");
   return new Map(((data ?? []) as { id: string; name: string }[]).map((w) => [w.id, w.name]));
+}
+
+// ---------------------------------------------------------------------------
+// Error log: problems people ran into (see /api/errors and ErrorTrail).
+// ---------------------------------------------------------------------------
+
+export interface AppErrorRow {
+  id: number;
+  created_at: string;
+  kind: "api" | "upload" | "crash" | "not_found" | "server";
+  status: number | null;
+  message: string;
+  page: string | null;
+  endpoint: string | null;
+  user_id: string | null;
+  email: string | null;
+  workspace_id: string | null;
+  browser: string | null;
+  details: Record<string, unknown> | null;
+}
+
+export const ERROR_KINDS: { value: AppErrorRow["kind"]; label: string }[] = [
+  { value: "upload", label: "Uploads" },
+  { value: "api", label: "Failed actions" },
+  { value: "crash", label: "Crashes" },
+  { value: "not_found", label: "Page not found" },
+  { value: "server", label: "Server" },
+];
+
+export async function loadErrors(
+  db: SupabaseClient,
+  opts: { kind?: string; q?: string; limit?: number } = {},
+): Promise<{ rows: AppErrorRow[]; counts: Record<string, { day: number; week: number }>; missing: boolean }> {
+  let query = db.from("app_errors").select("*").order("created_at", { ascending: false }).limit(opts.limit ?? 100);
+  if (opts.kind && ERROR_KINDS.some((k) => k.value === opts.kind)) query = query.eq("kind", opts.kind);
+  const q = (opts.q ?? "").replace(/[%,()*]/g, "").trim().slice(0, 80);
+  if (q) {
+    query = /^[0-9a-f-]{36}$/i.test(q)
+      ? query.or(`user_id.eq.${q},workspace_id.eq.${q}`)
+      : query.or(`email.ilike.%${q}%,message.ilike.%${q}%,page.ilike.%${q}%,endpoint.ilike.%${q}%`);
+  }
+  const [list, recent] = await Promise.all([query, db.from("app_errors").select("kind, created_at").gte("created_at", daysAgoIso(7)).limit(10_000)]);
+  const counts: Record<string, { day: number; week: number }> = {};
+  const dayAgo = Date.now() - DAY;
+  for (const k of ERROR_KINDS) counts[k.value] = { day: 0, week: 0 };
+  for (const r of (recent.data ?? []) as { kind: string; created_at: string }[]) {
+    const c = (counts[r.kind] ??= { day: 0, week: 0 });
+    c.week++;
+    if (Date.parse(r.created_at) > dayAgo) c.day++;
+  }
+  return { rows: (list.data ?? []) as AppErrorRow[], counts, missing: Boolean(list.error) };
 }

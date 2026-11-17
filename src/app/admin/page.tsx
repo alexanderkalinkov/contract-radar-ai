@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Card, H2, PageHeader } from "@/components/ui";
 import { ago, BillingPill, day, Pill, SetupNeeded, Stat, UserStatusPill, when } from "@/components/admin/bits";
 import { getPlatformCtx } from "@/lib/server/platform";
-import { daysAgoIso, dbChecks, envChecks, loadHealth, loadUsers, loadWorkspaces } from "@/lib/server/platform-data";
+import { daysAgoIso, dbChecks, envChecks, loadErrors, loadHealth, loadUsers, loadWorkspaces } from "@/lib/server/platform-data";
 import { isTestMode, isBillingConfigured } from "@/lib/server/billing";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +13,16 @@ type ActionRow = { id: number; actor_email: string; action: string; target_label
 export default async function AdminOverview() {
   const ctx = await getPlatformCtx();
   if (!ctx) notFound();
-  const [users, workspaces, health, dbs, recent] = await Promise.all([
+  const [users, workspaces, health, dbs, recent, errs] = await Promise.all([
     loadUsers(ctx.db),
     loadWorkspaces(ctx.db),
     loadHealth(ctx.db),
     dbChecks(ctx.db),
     ctx.db.from("platform_audit_log").select("id, actor_email, action, target_label, created_at").order("created_at", { ascending: false }).limit(8),
+    loadErrors(ctx.db, { limit: 1 }),
   ]);
+  const errorsToday = Object.entries(errs.counts).filter(([k]) => k !== "not_found").reduce((n, [, c]) => n + c.day, 0);
+  const notFoundToday = errs.counts.not_found?.day ?? 0;
   const env = envChecks();
   const week = daysAgoIso(7);
   const real = workspaces.filter((w) => !w.isDemo);
@@ -70,10 +73,12 @@ export default async function AdminOverview() {
             {health.jobs.filter((j) => !j.ok).map((j) => (
               <li key={j.job}><Link href="/admin/setup" className="font-semibold text-[#B42318]">Job failed: {j.job}</Link> <span className="text-muted">{ago(j.last_run_at)}</span></li>
             ))}
+            {errorsToday > 0 && <li><Link href="/admin/setup#errors" className="font-semibold text-[#B42318]">{errorsToday} error{errorsToday === 1 ? "" : "s"} people ran into today</Link> <span className="text-muted">uploads, failed actions, crashes</span></li>}
+            {notFoundToday > 0 && <li><Link href="/admin/setup?kind=not_found#errors" className="font-semibold text-ink">{notFoundToday} visit{notFoundToday === 1 ? "" : "s"} to pages that don&apos;t exist today</Link></li>}
             {health.imports.failedItems > 0 && <li><Link href="/admin/setup" className="font-semibold text-ink">{health.imports.failedItems} bulk-import files failed</Link> <span className="text-muted">last 30 days</span></li>}
             {health.inbound.failed > 0 && <li><Link href="/admin/setup" className="font-semibold text-ink">{health.inbound.failed} emailed contracts not added</Link> <span className="text-muted">last 30 days</span></li>}
             {(health.supportOpen ?? 0) > 0 && <li><Link href="/admin/support" className="font-semibold text-ink">{health.supportOpen} open support message{health.supportOpen === 1 ? "" : "s"}</Link></li>}
-            {missingRequired === 0 && missingSql.length === 0 && by("past_due").length === 0 && trialsEnding.length === 0 && !health.jobs.some((j) => !j.ok) && !health.imports.failedItems && !health.inbound.failed && !health.supportOpen && (
+            {missingRequired === 0 && missingSql.length === 0 && by("past_due").length === 0 && trialsEnding.length === 0 && !health.jobs.some((j) => !j.ok) && !health.imports.failedItems && !health.inbound.failed && !health.supportOpen && !errorsToday && !notFoundToday && (
               <li className="text-good-dark">Nothing needs you right now.</li>
             )}
           </ul>
