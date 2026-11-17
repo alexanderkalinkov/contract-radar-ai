@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
-import { IconHelp, IconMenu, IconUser, IconX, Logo } from "./icons";
+import { IconHelp, IconMenu, IconShield, IconUser, IconX, Logo } from "./icons";
 import { tabMatches, useApprovalsBadge, useNav } from "./nav";
 import { switchWorkspace } from "./DemoWorkspaceCard";
 import { useWorkspace } from "./WorkspaceProvider";
@@ -101,6 +101,7 @@ export function Sidebar() {
           {[
             { href: `/help${path.startsWith("/help") ? "" : `?from=${encodeURIComponent(path)}`}`, match: "/help", label: "Help & support", Icon: IconHelp },
             { href: "/account", match: "/account", label: "My account", Icon: IconUser },
+            ...(ws.platformAdmin ? [{ href: "/admin", match: "/admin", label: "Platform admin", Icon: IconShield }] : []),
           ].map(({ href, match, label, Icon }) => (
             <Link
               key={match}

@@ -5,6 +5,7 @@ import { SUPPORT_ATTACHMENT_MAX, SUPPORT_ATTACHMENT_TYPES, topicLabel } from "@/
 import { getBilling } from "@/lib/server/billing";
 import { supportEmail } from "@/lib/server/help";
 import { sendEmail } from "@/lib/server/mailer";
+import { adminClient } from "@/lib/server/admin";
 import { getSession } from "@/lib/server/workspace";
 import { roleLabel } from "@/lib/roles";
 
@@ -28,7 +29,8 @@ const clip = (v: FormDataEntryValue | null, max: number) => (typeof v === "strin
 /** POST multipart form: topic, message, page, browser, errors (JSON list), optional attachment; email when signed out. */
 export async function POST(request: Request) {
   const to = supportEmail();
-  if (!to) {
+  const db = adminClient();
+  if (!to && !db) {
     return NextResponse.json({ ok: false, error: "Support email isn't set up yet. Please email us directly." }, { status: 503 });
   }
 
@@ -94,11 +96,40 @@ export async function POST(request: Request) {
     sentAt: new Date().toISOString(),
   });
 
+  // Kept for the platform admin console's Support inbox. Fails quietly before the SQL has run.
+  let storedId: string | null = null;
+  if (db) {
+    const { data, error } = await db
+      .from("support_requests")
+      .insert({
+        user_id: session?.userId ?? null,
+        email,
+        name,
+        workspace_id: session?.workspace.id ?? null,
+        workspace_name: session?.workspace.name ?? null,
+        topic,
+        message,
+        page: page || null,
+        attachment: attachmentLabel,
+      })
+      .select("id")
+      .single();
+    if (error) console.error("support request not stored", error.message);
+    storedId = (data?.id as string | undefined) ?? null;
+  }
+  const stored = Boolean(storedId);
+
+  if (!to) {
+    if (stored) return NextResponse.json({ ok: true, receipt: false });
+    return NextResponse.json({ ok: false, error: "Support email isn't set up yet. Please email us directly." }, { status: 503 });
+  }
   const sent = await sendEmail(to, mail, { replyTo: email, attachments, tags: { kind: "support" } });
   if (!sent.ok) {
     console.error("support email failed", sent.error);
+    if (stored) return NextResponse.json({ ok: true, receipt: false });
     return NextResponse.json({ ok: false, error: `We couldn't send that just now. Please email ${to} directly.` }, { status: 502 });
   }
+  if (storedId && db) await db.from("support_requests").update({ emailed: true }).eq("id", storedId);
 
   // A copy for them. Only to signed-in addresses, so the form can't be used to send mail to strangers.
   let receipt = false;

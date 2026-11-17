@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runRenewalAlerts } from "@/lib/server/renewal-alerts";
+import { recordJobRun } from "@/lib/server/platform";
 
 // Called once a day by Vercel Cron (see vercel.json). Vercel sends "Authorization: Bearer $CRON_SECRET".
 // Manual run:  curl -H "Authorization: Bearer $CRON_SECRET" "https://<app>/api/cron/renewal-alerts?dry=1"
@@ -18,13 +19,25 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const today = url.searchParams.get("today");
+  const dry = url.searchParams.get("dry") === "1";
   try {
     const report = await runRenewalAlerts({
-      dryRun: url.searchParams.get("dry") === "1",
+      dryRun: dry,
       today: today && /^\d{4}-\d{2}-\d{2}$/.test(today) ? today : undefined,
     });
+    if (!dry) {
+      const failed = report.emails.filter((e) => !e.sent).length;
+      await recordJobRun("renewal-alerts", failed === 0, {
+        workspaces: report.workspaces,
+        contractsChecked: report.contractsChecked,
+        emails: report.emails.length,
+        failed,
+        dryRun: report.dryRun,
+      });
+    }
     return NextResponse.json(report);
   } catch (e) {
+    if (!dry) await recordJobRun("renewal-alerts", false, {}, (e as Error).message);
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 }
