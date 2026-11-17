@@ -192,7 +192,7 @@ export function Dashboard() {
       )}
 
       <div className="flex flex-wrap items-start gap-6">
-        <Card label="Savings opportunities" className="flex min-w-0 flex-[999_1_740px] flex-col">
+        <Card label="Savings opportunities" className="flex min-w-0 basis-full flex-col">
           <div className="flex flex-col gap-3.5 border-b border-line-soft px-5 pt-5 pb-3.5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-col gap-0.5">
@@ -281,7 +281,7 @@ export function Dashboard() {
           </div>
         </Card>
 
-        <div className="grid min-w-0 flex-[1_1_320px] grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] content-start items-start gap-6">
+        <div className="grid min-w-0 basis-full grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] content-start items-start gap-6">
           <Card label="Upcoming notice deadlines" className="flex flex-col gap-4 p-5">
             <div className="flex items-baseline justify-between gap-2">
               <H2>Notice deadlines</H2>

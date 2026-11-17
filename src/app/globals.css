@@ -50,8 +50,8 @@ button {
   100% { transform: translateX(300%); }
 }
 
-/* Short viewports (laptops with a small window, landscape tablets): tighten the sidebar. */
-@custom-variant short (@media (max-height: 760px));
+/* Laptop-height viewports (13-14" screens, short windows): tighten the sidebar so it fits. */
+@custom-variant short (@media (max-height: 900px));
 
 /*
  * Responsive tables. Wrap a table in `.rtable-wrap` and give it `.rtable`; when the wrapper is
