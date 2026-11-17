@@ -55,13 +55,13 @@ button {
 
 /*
  * Responsive tables. Wrap a table in `.rtable-wrap` and give it `.rtable`; when the wrapper is
- * narrower than 760px each row becomes a card. Cells show their `data-label` as a small heading,
+ * narrower than 900px each row becomes a card. Cells show their `data-label` as a small heading,
  * `.rt-full` cells span the whole card, `.rt-hide` cells are dropped on narrow widths.
  */
 .rtable-wrap {
   container-type: inline-size;
 }
-@container (max-width: 759px) {
+@container (max-width: 899px) {
   .rtable {
     display: block;
     min-width: 0 !important;
@@ -111,12 +111,12 @@ button {
     align-self: end;
   }
 }
-@container (max-width: 759px) {
+@container (max-width: 899px) {
   .rtable.rtable-flush > tbody > tr {
     padding: 14px 0;
   }
 }
-@container (max-width: 759px) {
+@container (max-width: 899px) {
   .rtable > tbody > tr:has(> .rt-check) {
     position: relative;
     padding-right: 52px;
