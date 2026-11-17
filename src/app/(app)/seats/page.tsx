@@ -66,8 +66,8 @@ export default function SeatsPage() {
           <Link href="/discover" className="font-semibold text-brand">Connect a sign-in source</Link>
         </Card>
       )}
-      <Card label="Seat usage by app" className={rows.length ? "overflow-x-auto" : "hidden"}>
-        <table className="w-full min-w-[860px] border-collapse text-sm">
+      <Card label="Seat usage by app" className={rows.length ? "rtable-wrap overflow-x-auto" : "hidden"}>
+        <table className="rtable w-full min-w-[860px] border-collapse text-sm">
           <thead>
             <tr className="text-left text-xs tracking-wide text-muted uppercase">
               <th scope="col" className="px-5 py-3 font-semibold">App</th>
@@ -81,7 +81,7 @@ export default function SeatsPage() {
           <tbody>
             {rows.map(({ id, href, name, initials, hue, u, unused, waste, kind }) => (
               <tr key={`${kind}-${id}`} className="border-t border-line-soft">
-                <td className="px-5 py-3.5">
+                <td className="rt-full px-5 py-3.5">
                   <Link href={href} className="flex items-center gap-3 font-semibold text-ink">
                     <VendorLogo initials={initials} hue={hue} size={32} />
                     <span className="flex flex-col">
@@ -90,7 +90,7 @@ export default function SeatsPage() {
                     </span>
                   </Link>
                 </td>
-                <td className="w-[34%] px-3 py-3.5">
+                <td data-label="Usage" className="rt-full w-[34%] px-3 py-3.5">
                   <UsageBar u={u} />
                   <span className="mt-1 block text-xs text-muted">
                     {[
@@ -103,10 +103,10 @@ export default function SeatsPage() {
                       .join(" · ")}
                   </span>
                 </td>
-                <td className="px-3 py-3.5 whitespace-nowrap text-ink-2">{u.lastLogin ? sinceLabel(u.lastLogin) : "—"}</td>
-                <td className="px-3 py-3.5 text-right">{u.paid}</td>
-                <td className="px-3 py-3.5 text-right font-semibold">{unused}</td>
-                <td className="px-5 py-3.5 text-right font-display font-semibold text-good">{waste ? usd(waste) : "—"}</td>
+                <td data-label="Last sign-in" className="px-3 py-3.5 whitespace-nowrap text-ink-2">{u.lastLogin ? sinceLabel(u.lastLogin) : "—"}</td>
+                <td data-label="Paid" className="px-3 py-3.5 text-right">{u.paid}</td>
+                <td data-label="Unused" className="px-3 py-3.5 text-right font-semibold">{unused}</td>
+                <td data-label="Cost of unused / yr" className="px-5 py-3.5 text-right font-display font-semibold text-good">{waste ? usd(waste) : "—"}</td>
               </tr>
             ))}
           </tbody>

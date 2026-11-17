@@ -82,8 +82,8 @@ export default function AuditPage() {
         <>
           <Segmented value={filter} onChange={setFilter} options={FILTERS} label="Show" />
           {error && <p className="m-0 rounded-[10px] border border-warn-line bg-warn-soft px-4 py-3 text-[13px] text-warn-text">{error}</p>}
-          <Card label="Events" className="overflow-x-auto">
-            <table className="w-full min-w-[760px] border-collapse text-sm">
+          <Card label="Events" className="rtable-wrap overflow-x-auto">
+            <table className="rtable w-full min-w-[760px] border-collapse text-sm">
               <thead>
                 <tr className="text-left text-xs tracking-wide text-muted uppercase">
                   <th scope="col" className="px-5 py-3 font-semibold">When</th>
@@ -96,11 +96,11 @@ export default function AuditPage() {
               <tbody>
                 {entries.map((e) => (
                   <tr key={e.id} className="border-t border-line-soft align-top">
-                    <td className="px-5 py-3 whitespace-nowrap text-muted">{when(e.created_at)}</td>
-                    <td className="px-3 py-3">{e.actor_email ?? "system"}</td>
-                    <td className="px-3 py-3 font-semibold">{describeAction(e.action)}</td>
-                    <td className="px-3 py-3">{e.target_label ?? "—"}</td>
-                    <td className="max-w-[360px] px-5 py-3 text-[13px] break-words text-ink-2">{detailText(e) || "—"}</td>
+                    <td data-label="When" className="px-5 py-3 whitespace-nowrap text-muted">{when(e.created_at)}</td>
+                    <td data-label="Who" className="px-3 py-3 break-words">{e.actor_email ?? "system"}</td>
+                    <td data-label="What" className="px-3 py-3 font-semibold">{describeAction(e.action)}</td>
+                    <td data-label="On" className="px-3 py-3">{e.target_label ?? "—"}</td>
+                    <td data-label="Details" className="rt-full max-w-[360px] px-5 py-3 text-[13px] break-words text-ink-2">{detailText(e) || "—"}</td>
                   </tr>
                 ))}
                 {!loading && entries.length === 0 && !error && (

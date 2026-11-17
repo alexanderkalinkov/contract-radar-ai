@@ -138,8 +138,8 @@ export default function TeamPage() {
           <H2>People</H2>
           <span className="text-[13px] text-muted">Everyone here sees the same workspace. Admins choose each person&apos;s department and role.</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[620px] border-collapse text-sm">
+        <div className="rtable-wrap overflow-x-auto">
+          <table className="rtable rtable-flush w-full min-w-[620px] border-collapse text-sm">
             <thead>
               <tr className="text-left text-xs tracking-wide text-muted uppercase">
                 <th scope="col" className="py-2 pr-3 font-semibold">Person</th>
@@ -150,12 +150,12 @@ export default function TeamPage() {
             <tbody>
               {members.map((m) => (
                 <tr key={m.user_id} className="border-t border-line-soft">
-                  <td className="py-2.5 pr-3">
+                  <td className="rt-full py-2.5 pr-3 break-words">
                     {m.email}
                     {m.user_id === me?.user_id && <span className="text-muted"> (you)</span>}
                     {m.job_title && <span className="block text-[13px] text-muted">{m.job_title}</span>}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td data-label="Department" className="px-3 py-2.5">
                     {isAdmin ? (
                       <DepartmentSelect
                         id={`md-${m.user_id}`}
@@ -167,7 +167,7 @@ export default function TeamPage() {
                       departments.find((d) => d.id === m.department_id)?.name ?? "—"
                     )}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td data-label="Role" className="px-3 py-2.5">
                     {isAdmin && m.user_id !== me?.user_id ? (
                       <select
                         aria-label={`Role for ${m.email}`}
@@ -189,9 +189,9 @@ export default function TeamPage() {
               ))}
               {invites.map((i) => (
                 <tr key={i.id} className="border-t border-line-soft text-muted">
-                  <td className="py-2.5 pr-3">{i.email}</td>
-                  <td className="px-3 py-2.5">{departments.find((d) => d.id === i.department_id)?.name ?? "—"}</td>
-                  <td className="px-3 py-2.5">
+                  <td className="rt-full py-2.5 pr-3 break-words">{i.email}</td>
+                  <td data-label="Department" className="px-3 py-2.5">{departments.find((d) => d.id === i.department_id)?.name ?? "—"}</td>
+                  <td data-label="Status" className="rt-full px-3 py-2.5">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-semibold text-warn-text">
                         Invited · {roleLabel({ role: i.role, department_id: i.department_id ?? "" })}

@@ -196,8 +196,8 @@ export default function InsightsPage() {
               .map((f) => ({ value: f, label: f === "all" ? `All (${rows.length})` : `${ACTION_LABEL[f]} (${counts[f]})` }))}
           />
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[940px] border-collapse text-sm">
+        <div className="rtable-wrap overflow-x-auto">
+          <table className="rtable rtable-flush w-full min-w-[940px] border-collapse text-sm">
             <thead>
               <tr className="text-left text-xs tracking-wide text-muted uppercase">
                 <th scope="col" className="py-2 pr-3 font-semibold">Tool</th>
@@ -212,13 +212,13 @@ export default function InsightsPage() {
             <tbody>
               {shown.map((r) => (
                 <tr key={r.tool.id} className="border-t border-line-soft align-top">
-                  <td className="py-3 pr-3">
+                  <td className="rt-full py-3 pr-3">
                     <Link href={`/tools/${r.tool.id}`} className="flex flex-col text-ink hover:underline">
                       <span className="font-semibold">{r.tool.name}</span>
                       <span className="text-[13px] text-muted">{r.department}</span>
                     </Link>
                   </td>
-                  <td className="w-[130px] px-3 py-3">
+                  <td data-label="Seats used" className="w-[130px] px-3 py-3">
                     {r.usage ? (
                       <div className="flex flex-col gap-1" title={`${r.usage.source} sign-ins, last ${activeLabel(r.usage)}${r.usage.lastLogin ? ` · latest ${sinceLabel(r.usage.lastLogin)}` : ""}`}>
                         <span className="font-semibold">
@@ -231,11 +231,11 @@ export default function InsightsPage() {
                       <span className="text-muted">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-3"><ActionChip action={r.recommendation.action} /></td>
-                  <td className="max-w-[360px] px-3 py-3 text-ink-2">{r.recommendation.reason}</td>
-                  <td className="px-3 py-3 text-right">{r.tool.annual_cost != null ? usd(r.tool.annual_cost) : "—"}</td>
-                  <td className="px-3 py-3">{r.tool.renewal_date ? shortDate(r.tool.renewal_date) : "—"}</td>
-                  <td className="py-3 pl-3 text-right font-semibold text-good-dark">{r.recommendation.savings ? usd(r.recommendation.savings) : "—"}</td>
+                  <td data-label="Do this" className="px-3 py-3"><ActionChip action={r.recommendation.action} /></td>
+                  <td data-label="Why" className="rt-full max-w-[360px] px-3 py-3 text-ink-2">{r.recommendation.reason}</td>
+                  <td data-label="Cost" className="px-3 py-3 text-right">{r.tool.annual_cost != null ? usd(r.tool.annual_cost) : "—"}</td>
+                  <td data-label="Renews" className="px-3 py-3">{r.tool.renewal_date ? shortDate(r.tool.renewal_date) : "—"}</td>
+                  <td data-label="Est. saving" className="py-3 pl-3 text-right font-semibold text-good-dark">{r.recommendation.savings ? usd(r.recommendation.savings) : "—"}</td>
                 </tr>
               ))}
             </tbody>

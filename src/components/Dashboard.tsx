@@ -192,7 +192,7 @@ export function Dashboard() {
       )}
 
       <div className="flex flex-wrap items-start gap-6">
-        <Card label="Savings opportunities" className="flex min-w-0 flex-[999_1_560px] flex-col">
+        <Card label="Savings opportunities" className="flex min-w-0 flex-[999_1_740px] flex-col">
           <div className="flex flex-col gap-3.5 border-b border-line-soft px-5 pt-5 pb-3.5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-col gap-0.5">
@@ -232,8 +232,8 @@ export function Dashboard() {
               })}
             </div>
           </div>
-          <div className="relative overflow-x-auto">
-            <table className="w-full min-w-[800px] border-collapse text-sm">
+          <div className="rtable-wrap relative overflow-x-auto">
+            <table className="rtable w-full min-w-[700px] border-collapse text-sm">
               <thead>
                 <tr className="text-left text-xs tracking-wide text-muted uppercase">
                   <th scope="col" className="px-5 py-3 font-semibold">Vendor &amp; finding</th>
@@ -281,7 +281,7 @@ export function Dashboard() {
           </div>
         </Card>
 
-        <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-6">
+        <div className="grid min-w-0 flex-[1_1_320px] grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] content-start items-start gap-6">
           <Card label="Upcoming notice deadlines" className="flex flex-col gap-4 p-5">
             <div className="flex items-baseline justify-between gap-2">
               <H2>Notice deadlines</H2>
@@ -405,7 +405,7 @@ function OppRow({
   const done = status === "won";
   return (
     <tr className={cx("border-t border-line-soft hover:bg-[#F8FAFC]", done && "opacity-60")}>
-      <td className="min-w-[280px] px-5 py-3.5">
+      <td className="rt-full min-w-[240px] px-5 py-3.5">
         <Link href={`/contracts/${o.contractId}`} className="flex items-center gap-3 text-ink">
           <VendorLogo initials={o.initials} hue={o.hue} />
           <div className="flex flex-col gap-0.5">
@@ -421,12 +421,12 @@ function OppRow({
           </div>
         </Link>
       </td>
-      <td className="px-3 py-3.5 whitespace-nowrap">
+      <td data-label="Lever" className="px-3 py-3.5 whitespace-nowrap">
         <span className={cx("inline-block rounded-full px-2.5 py-1 text-xs font-semibold", LEVERS[o.lever].className)}>
           {LEVERS[o.lever].label}
         </span>
       </td>
-      <td className="px-3 py-3.5 text-right whitespace-nowrap">
+      <td data-label="Savings / yr" className="px-3 py-3.5 text-right whitespace-nowrap">
         {o.annualSavings > 0 ? (
           <span className="font-display text-base font-semibold text-good" title={"basis" in o ? String(o.basis) : undefined}>
             {o.estimate ? "up to " : ""}
@@ -436,7 +436,7 @@ function OppRow({
           <span className="text-[13px] text-muted" title={"basis" in o ? String(o.basis) : undefined}>Fee not in contract</span>
         )}
       </td>
-      <td className="px-3 py-3.5 whitespace-nowrap">
+      <td data-label="Act by" className="px-3 py-3.5 whitespace-nowrap">
         {o.actBy ? (
           <div className="flex flex-col gap-1">
             <span className="font-medium">{shortDate(o.actBy)}</span>
@@ -446,7 +446,7 @@ function OppRow({
           <span className="text-[13px] text-muted">Date not found</span>
         )}
       </td>
-      <td className="relative px-5 py-3.5 text-right whitespace-nowrap">
+      <td className="relative px-5 py-3.5 text-right whitespace-nowrap rt-end">
         <div className="inline-flex items-center gap-1">
           <Link href={`/contracts/${o.contractId}`} className={btnSoft}>
             {o.action}

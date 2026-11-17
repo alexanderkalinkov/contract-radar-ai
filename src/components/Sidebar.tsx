@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
 import { IconCal, IconCard, IconChart, IconCheck, IconDoc, IconGear, IconHelp, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUser, IconUsers, IconX, Logo } from "./icons";
@@ -36,13 +36,35 @@ export function Sidebar() {
   const queue = useRenewalQueue();
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
+  // Close the phone menu on navigation, Escape, or when the window grows to desktop width,
+  // and stop the page behind it from scrolling while it is open.
+  useEffect(() => setOpen(false), [path]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onMq = () => mq.matches && setOpen(false);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    mq.addEventListener("change", onMq);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+      mq.removeEventListener("change", onMq);
+    };
+  }, [open]);
+
   return (
-    <div className="bg-navy lg:w-[232px] lg:flex-none">
+    <div className="sticky top-0 z-40 bg-navy lg:static lg:w-[232px] lg:flex-none">
     <nav
       aria-label="Main"
-      className="flex flex-col gap-7 px-4 py-4 text-white lg:sticky lg:top-0 lg:h-screen lg:py-6"
+      className={cx(
+        "flex flex-col gap-7 bg-navy px-4 py-3 text-white lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto lg:overscroll-contain lg:py-6 short:gap-4 short:lg:py-4",
+        open && "fixed inset-0 z-50 overflow-y-auto overscroll-contain pb-8 lg:static",
+      )}
     >
-      <div className="flex items-center justify-between px-2">
+      <div className="flex flex-none items-center justify-between px-2">
         <Link href="/" className="flex items-center gap-2.5 text-white">
           <Logo />
           <span className="font-display text-lg font-bold tracking-tight">Contract Radar</span>
@@ -57,7 +79,7 @@ export function Sidebar() {
           {open ? <IconX /> : <IconMenu />}
         </button>
       </div>
-      <div className={cx("flex-col gap-1 text-sm font-medium lg:flex", open ? "flex" : "hidden")}>
+      <div className={cx("flex-col gap-1 text-sm font-medium lg:flex short:gap-0.5", open ? "flex" : "hidden")}>
         {NAV.filter((n) => !("cloudOnly" in n && n.cloudOnly && !ws.billing?.enabled) && !("cloudOnlyAlways" in n && ws.mode === "demo") && (!("adminOnly" in n && n.adminOnly) || ws.mode === "demo" || ws.role === "owner") && (!("leadersOnly" in n && n.leadersOnly) || ws.mode === "demo" || canApproveRenewals(ws.role))).map(({ href, label, Icon }) => (
           <Link
             key={href}
@@ -65,7 +87,7 @@ export function Sidebar() {
             onClick={() => setOpen(false)}
             aria-current={isActive(href) ? "page" : undefined}
             className={cx(
-              "flex min-h-11 items-center gap-2.5 rounded-lg px-3",
+              "flex min-h-11 flex-none items-center gap-2.5 rounded-lg px-3 short:lg:min-h-9",
               isActive(href) ? "bg-navy-active text-white" : "text-navy-text hover:bg-navy-hover hover:text-white",
             )}
           >
@@ -79,8 +101,8 @@ export function Sidebar() {
           </Link>
         ))}
       </div>
-      <div className={cx("mt-auto flex-col gap-2 lg:flex", open ? "flex" : "hidden")}>
-        {ws.showSample && <div className="flex flex-col gap-1.5 rounded-xl bg-navy-2 p-4">
+      <div className={cx("mt-auto flex-none flex-col gap-2 lg:flex", open ? "flex" : "hidden")}>
+        {ws.showSample && <div className="flex flex-col gap-1.5 rounded-xl bg-navy-2 p-4 short:lg:hidden">
         <span className="text-xs font-medium text-navy-muted">Spend under management</span>
         <span className="font-display text-[22px] font-semibold">{usdShort(COMPANY.spendUnderManagement)} / yr</span>
         <span className="text-xs text-navy-muted">
@@ -99,7 +121,7 @@ export function Sidebar() {
               onClick={() => setOpen(false)}
               aria-current={path.startsWith(match) ? "page" : undefined}
               className={cx(
-                "flex min-h-10 items-center gap-2.5 rounded-lg px-3",
+                "flex min-h-10 items-center gap-2.5 rounded-lg px-3 short:lg:min-h-9",
                 path.startsWith(match) ? "bg-navy-active text-white" : "text-navy-text hover:bg-navy-hover hover:text-white",
               )}
             >
