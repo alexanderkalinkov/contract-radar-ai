@@ -1,15 +1,15 @@
 # Onboarding video
 
-A 6-minute guided tour for new users, recorded from the real app with a test account and the Northwind demo workspace.
+A 6½-minute guided tour for new users (re-recorded 2026-11-17 for the grouped sidebar, first sign-in tour and Help & support), recorded from the real app with a test account and the Northwind demo workspace.
 
-- **Video:** `contract-radar-onboarding.mp4` (1440x900, about 22 MB). Kept out of git because of its size. It lives in the project files (`onboarding-video/`) and on Alex's Mac in `Claude Code/onboarding-video/`.
+- **Video:** `contract-radar-onboarding.mp4` (1440x900). Kept out of git because of its size. The Help page and the first sign-in tour play it from the public Supabase Storage bucket `help` (`help/contract-radar-onboarding.mp4`, a 34 MB crf 22 copy). A 24 MB sharing copy and the edit scripts (`edit/build.py`, `edit/upload.mjs`) are on Alex's Mac in `Claude Code/onboarding-video/`.
 - **Voice:** Kokoro text-to-speech (voice `af_heart`), one clip per scene.
 - **Script:** below. The voiceover follows it word for word.
 
 ## How it was made
 1. The screens were recorded with Playwright on localhost (fake cursor overlay, typed input, one clip per scene). Local "setup needed" notices for keys that only exist in production were hidden with CSS.
 2. The clips were trimmed and sped up (1.2x to 2.2x) to fit each voiceover paragraph, with a scene caption bottom right and title cards at both ends (ffmpeg).
-3. Re-record a scene when its screen changes a lot, then re-run the edit. The recorder scripts are in `Claude Code/onboarding-video/recorder/` on Alex's Mac.
+3. Re-record a scene when its screen changes a lot, re-run the edit, then upload the new file to the `help` bucket (upsert) and refresh `public/help/tour-poster.jpg`. The recorder scripts are in `Claude Code/onboarding-video/recorder/` on Alex's Mac.
 
 Known gaps: on the recording, the "Email contracts in" card shows no inbox address, reminders show Off and Billing shows no trial status, because the local copy has no Resend or Stripe keys.
 
@@ -30,7 +30,7 @@ Welcome to Contract Radar. In the next few minutes you'll see how to go from a b
 ## 2. Create your account (0:20)
 **Screen:** Create account form: name, work email, password, company name. Confirmation email, then first sign-in.
 
-Start by creating your account with your work email. Contract Radar creates a private workspace for your company, and you become its admin. Confirm your email, sign in, and you land on the setup screen.
+Start by creating your account with your work email. Contract Radar creates a private workspace for your company, and you become its admin. Confirm your email and sign in. The first time you do, this tour offers to play, and you can always come back to it from Help.
 
 ## 3. Set up your company (0:40)
 **Screen:** Setup wizard: company step, connect step, departments, invite owners, add tools, done.
@@ -58,9 +58,9 @@ Now the most important step: your contracts. There are three ways to add them. D
 Within seconds, Claude reads each contract and pulls out the terms that cost you money: the renewal date, the notice deadline, auto-renewal, the price uplift cap, seat reduction rights and the annual fee. Every term comes with the exact sentence from the contract and the page it's on, so you never have to take the AI's word for it. If something looks wrong, click Correct, or click Confirm to mark it checked.
 
 ## 8. The dashboard (3:35)
-**Screen:** Savings overview: savings tile, at-stake, unused seats, captured; auto-renew alert; opportunities list; notice deadlines.
+**Screen:** Savings overview with the grouped sidebar and section tabs: savings tile, at-stake, unused seats, captured; auto-renew alert; opportunities list; notice deadlines.
 
-This is your savings overview. At the top you see identified savings, how much is up for renewal in the next thirty days, seats nobody uses, and the savings you've already captured. Urgent alerts, like a tool that auto-renews in five days, appear right here with a button to act on them.
+This is your savings overview. The sidebar groups everything into a few sections: contracts, renewals, tools and seats, and settings, with tabs across the top of each page. At the top you see identified savings, how much is up for renewal in the next thirty days, seats nobody uses, and the savings you've already captured. Urgent alerts, like a tool that auto-renews in a few days, appear right here with a button to act on them.
 
 ## 9. Savings ideas and pushback emails (4:00)
 **Screen:** Opportunities list, open Salesforce, "Draft pushback email", email appears.
@@ -92,7 +92,7 @@ Admins also get the leadership view: total spend tracked, estimated savings, sur
 
 The audit log records every change in your workspace, and you can export it to CSV for your auditors. In Workspace settings you can add your legal entities, currencies and cost centres, set up single sign-on for your team, and choose who gets reminder emails.
 
-## 15. Billing and wrap-up (6:40)
-**Screen:** Billing page (plans, trial), then back to the dashboard.
+## 15. Billing, help and wrap-up (6:40)
+**Screen:** Billing page (plans), then Help & support (tour video, contact form), then back to the dashboard.
 
-Your first fourteen days are a free trial, and you can choose a plan any time from Billing. That's it. Create your account, invite your department owners, upload your contracts, and Contract Radar will show you where your money is going and help you get it back. Welcome aboard.
+Billing shows the plans, and you can pick one any time. If you ever get stuck, open Help and support at the bottom of the sidebar. You can watch this tour again, or send us a message and we'll get back to you. That's it. Create your account, invite your department owners, upload your contracts, and Contract Radar will show you where your money is going and help you get it back. Welcome aboard.
