@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { Activity } from "@/components/Activity";
 import { AuthHashForwarder } from "@/components/AuthHashForwarder";
 import { WorkspaceProvider } from "@/components/WorkspaceProvider";
 import { getBilling } from "@/lib/server/billing";
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="en">
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
         <AuthHashForwarder />
+        <Activity />
         <WorkspaceProvider cloud={cloud} helpVideoUrl={helpVideoUrl()}>{children}</WorkspaceProvider>
       </body>
     </html>
