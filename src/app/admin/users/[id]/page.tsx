@@ -42,6 +42,8 @@ export default async function AdminUser({ params }: { params: Promise<{ id: stri
       <PageHeader eyebrow="User" title={u.email}>
         <UserStatusPill status={u.status} />
         {u.platformAdmin && <Pill tone="brand">Platform admin</Pill>}
+        <Link href={`/admin/setup?q=${u.id}#errors`} className="text-sm font-semibold text-brand">Errors</Link>
+        <Link href={`/admin/support?status=all&q=${u.id}`} className="text-sm font-semibold text-brand">Support messages</Link>
       </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

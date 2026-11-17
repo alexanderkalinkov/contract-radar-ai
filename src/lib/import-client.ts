@@ -4,6 +4,7 @@
 // workspace already has, and upload the rest straight to private storage. Uploads keep going while the
 // person moves around the app (they live in this module, not in a component). Closing the tab stops them;
 // the import page can resume by picking the same ZIP or folder again.
+import { reportError } from "@/components/help/ErrorTrail";
 import { useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CONTRACTS_BUCKET } from "@/lib/supabase/config";
@@ -167,7 +168,10 @@ export async function startUpload(jobId: string, workspaceId: string, files: { i
         }),
       );
       if (ok.length) await post(jobId, { action: "uploaded", ids: ok });
-      if (broken.length) await post(jobId, { action: "failed", items: broken });
+      if (broken.length) {
+        await post(jobId, { action: "failed", items: broken });
+        for (const b of broken.slice(0, 3)) reportError({ kind: "upload", message: b.error, details: { importJob: jobId, file: batch.find((x) => x.id === b.id)?.entry.path } });
+      }
       sent += ok.length;
       failed += broken.length;
       patch(jobId, { sent, duplicates, failed });
@@ -176,6 +180,7 @@ export async function startUpload(jobId: string, workspaceId: string, files: { i
     patch(jobId, { done: true });
   } catch (e) {
     patch(jobId, { done: true, error: (e as Error).message });
+    reportError({ kind: "upload", message: (e as Error).message, details: { importJob: jobId } });
   }
 }
 

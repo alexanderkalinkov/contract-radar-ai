@@ -39,3 +39,14 @@ Platform admins see a **Platform admin** link in the sidebar, under My account.
 - You can't disable, delete or remove platform admin access from your own account, and role changes or removals that
   would leave a workspace without an admin are refused.
 - Plan changes, refunds and card updates stay in Stripe (each workspace links to its Stripe customer).
+
+## Error log and support details (error-log.sql)
+
+- **Errors people ran into** (Setup & health, top): every failed API call (except "not signed in"), upload that didn't go
+  through (single PDFs and bulk import), page crash, and visit to a page that doesn't exist. Recorded from the browser via
+  `POST /api/errors` (rate limited) into `app_errors`, with who, workspace, page, endpoint, status, the message the person
+  saw and their browser. Filter by kind, or search by email, message, page, user id or workspace id.
+- **Support** keeps everything the support email has: role, plan, browser, user and workspace ids, the person's recent
+  errors, and the attachment itself (private `support` storage bucket, opened through a 1-hour signed link).
+- **Search** in the console header: an exact user or workspace id jumps straight to it; anything else lists matching users
+  and workspaces. Users, Workspaces, Support and the error log also search by id.

@@ -2,7 +2,6 @@ import { BillingGate } from "@/components/billing/BillingGate";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { SectionTabs } from "@/components/nav";
-import { ErrorTrail } from "@/components/help/ErrorTrail";
 import { TourModal } from "@/components/help/Tour";
 import { getSession } from "@/lib/server/workspace";
 
@@ -17,7 +16,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <BillingGate>{children}</BillingGate>
       </main>
       <TourModal />
-      <ErrorTrail />
     </div>
   );
 }

@@ -1,8 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Card, H2, PageHeader } from "@/components/ui";
-import { ago, Pill, when } from "@/components/admin/bits";
+import { btnGhost, Card, H2, PageHeader } from "@/components/ui";
+import { ago, Pill, SetupNeeded, when } from "@/components/admin/bits";
 import { getPlatformCtx } from "@/lib/server/platform";
-import { dbChecks, envChecks, loadHealth, workspaceNames } from "@/lib/server/platform-data";
+import { dbChecks, envChecks, ERROR_KINDS, loadErrors, loadHealth, workspaceNames } from "@/lib/server/platform-data";
 
 export const dynamic = "force-dynamic";
 
@@ -11,16 +12,87 @@ const JOBS: Record<string, { label: string; schedule: string }> = {
   "import-worker": { label: "Bulk import worker", schedule: "on demand + daily 06:30 UTC" },
 };
 
-export default async function AdminSetup() {
+const KIND_LABEL = Object.fromEntries(ERROR_KINDS.map((k) => [k.value, k.label]));
+
+function errorDetails(d: Record<string, unknown> | null): string {
+  if (!d) return "";
+  return Object.entries(d)
+    .filter(([, v]) => v != null && v !== "")
+    .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
+    .join(" · ");
+}
+
+export default async function AdminSetup({ searchParams }: { searchParams: Promise<{ kind?: string; q?: string }> }) {
   const ctx = await getPlatformCtx();
   if (!ctx) notFound();
-  const [dbs, health, names] = await Promise.all([dbChecks(ctx.db), loadHealth(ctx.db), workspaceNames(ctx.db)]);
+  const sp = await searchParams;
+  const kind = sp.kind ?? "";
+  const q = (sp.q ?? "").trim();
+  const [dbs, health, names, errors] = await Promise.all([dbChecks(ctx.db), loadHealth(ctx.db), workspaceNames(ctx.db), loadErrors(ctx.db, { kind, q })]);
+  const qs = (k: string) => {
+    const p = new URLSearchParams();
+    if (k) p.set("kind", k);
+    if (q) p.set("q", q);
+    const s = p.toString();
+    return `/admin/setup${s ? `?${s}` : ""}#errors`;
+  };
   const env = envChecks();
   const groups = [...new Set(env.map((e) => e.group))];
 
   return (
     <>
       <PageHeader eyebrow="Platform admin" title="Setup & health" />
+
+      <Card label="Errors people ran into" className="flex scroll-mt-32 flex-col gap-4 p-5">
+        <div id="errors" className="flex flex-col gap-1">
+          <H2>Errors people ran into</H2>
+          <span className="text-sm text-muted">Failed uploads and actions, page crashes and links to pages that don&apos;t exist, recorded from people&apos;s browsers as they happen. Each one shows who, where and what the app told them.</span>
+        </div>
+        {errors.missing ? (
+          <SetupNeeded>Run <b>error-log.sql</b> in the Supabase SQL editor to start recording errors.</SetupNeeded>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {ERROR_KINDS.map((k) => (
+                <Link key={k.value} href={qs(kind === k.value ? "" : k.value)} aria-current={kind === k.value ? "true" : undefined} className={"flex flex-col rounded-xl border p-3 transition-colors " + (kind === k.value ? "border-brand bg-brand-soft" : "border-line hover:border-brand-line")}>
+                  <span className="text-xs font-semibold tracking-wide text-muted uppercase">{k.label}</span>
+                  <span className={"font-display text-[22px] font-semibold " + (errors.counts[k.value]?.day ? "text-[#B42318]" : "text-ink")}>{errors.counts[k.value]?.day ?? 0}</span>
+                  <span className="text-xs text-muted">today · {errors.counts[k.value]?.week ?? 0} this week</span>
+                </Link>
+              ))}
+            </div>
+            <form action="/admin/setup" className="flex flex-wrap items-center gap-2">
+              {kind && <input type="hidden" name="kind" value={kind} />}
+              <input name="q" defaultValue={q} placeholder="Email, message, page, user or workspace id" aria-label="Search errors" className="min-h-10 w-full max-w-sm rounded-[10px] border border-[#D0D5DD] bg-white px-3 text-sm" />
+              <button type="submit" className={btnGhost}>Search</button>
+              {(kind || q) && <Link href="/admin/setup#errors" className="text-sm font-semibold text-brand">Clear</Link>}
+              <span className="text-sm text-muted">Latest {errors.rows.length}</span>
+            </form>
+            {errors.rows.length === 0 ? (
+              <p className="m-0 text-sm text-muted">Nothing recorded{kind || q ? " for this filter" : " yet"}.</p>
+            ) : (
+              <ul className="m-0 flex list-none flex-col divide-y divide-line-soft p-0 text-sm">
+                {errors.rows.map((e) => (
+                  <li key={e.id} className="flex flex-col gap-1 py-3">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Pill tone={e.kind === "not_found" ? "muted" : e.kind === "crash" || (e.status ?? 0) >= 500 ? "bad" : "warn"}>{KIND_LABEL[e.kind] ?? e.kind}{e.status ? ` · ${e.status}` : ""}</Pill>
+                      <b className="break-words">{e.message}</b>
+                    </span>
+                    <span className="text-xs text-ink-2">
+                      {e.user_id ? <Link href={`/admin/users/${e.user_id}`} className="font-semibold text-brand">{e.email ?? "user"}</Link> : <span>Signed out</span>}
+                      {e.workspace_id && <> in <Link href={`/admin/workspaces/${e.workspace_id}`} className="font-semibold text-brand">{names.get(e.workspace_id) ?? "workspace"}</Link></>}
+                      {" · "}on <code>{e.page ?? "—"}</code>
+                      {e.endpoint && <> · <code>{e.endpoint}</code></>}
+                    </span>
+                    {errorDetails(e.details) && <span className="text-xs break-words text-muted">{errorDetails(e.details)}</span>}
+                    <span className="text-xs text-muted">{when(e.created_at)} · {e.browser ?? "unknown browser"}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card label="Scheduled jobs" className="flex flex-col gap-3 p-5">
