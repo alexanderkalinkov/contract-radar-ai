@@ -5,36 +5,19 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { COMPANY } from "@/lib/seed";
 import { usdShort } from "@/lib/format";
-import { IconCal, IconCard, IconChart, IconCheck, IconDoc, IconGear, IconHelp, IconHome, IconList, IconMenu, IconPlug, IconSpark, IconTeam, IconTrend, IconUser, IconUsers, IconX, Logo } from "./icons";
+import { IconHelp, IconMenu, IconUser, IconX, Logo } from "./icons";
+import { tabMatches, useApprovalsBadge, useNav } from "./nav";
 import { switchWorkspace } from "./DemoWorkspaceCard";
 import { useWorkspace } from "./WorkspaceProvider";
-import { useRenewalQueue } from "@/lib/useRenewalQueue";
 import { cx } from "./ui";
-import { canApproveRenewals } from "@/lib/roles";
 
-const NAV = [
-  { href: "/", label: "Savings", Icon: IconHome },
-  { href: "/insights", label: "Leadership view", Icon: IconChart, leadersOnly: true },
-  { href: "/tools", label: "Tools & survey", Icon: IconList },
-  { href: "/discover", label: "Discovered tools", Icon: IconSpark },
-  { href: "/contracts", label: "Contracts", Icon: IconDoc },
-  { href: "/calendar", label: "Renewal calendar", Icon: IconCal },
-  { href: "/approvals", label: "Renewal approvals", Icon: IconCheck },
-  { href: "/seats", label: "Seats & usage", Icon: IconUsers },
-  { href: "/price-changes", label: "Price changes", Icon: IconTrend },
-  { href: "/sources", label: "Sources", Icon: IconPlug },
-  { href: "/team", label: "Team", Icon: IconTeam },
-  { href: "/settings", label: "Workspace", Icon: IconGear },
-  { href: "/audit", label: "Audit log", Icon: IconList, leadersOnly: true, cloudOnlyAlways: true },
-  { href: "/billing", label: "Billing", Icon: IconCard, adminOnly: true, cloudOnly: true },
-];
 
 export function Sidebar() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const ws = useWorkspace();
-  const queue = useRenewalQueue();
-  const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const sections = useNav();
+  const actionable = useApprovalsBadge();
 
   // Close the phone menu on navigation, Escape, or when the window grows to desktop width,
   // and stop the page behind it from scrolling while it is open.
@@ -80,26 +63,30 @@ export function Sidebar() {
         </button>
       </div>
       <div className={cx("flex-col gap-1 text-sm font-medium lg:flex short:gap-0.5", open ? "flex" : "hidden")}>
-        {NAV.filter((n) => !("cloudOnly" in n && n.cloudOnly && !ws.billing?.enabled) && !("cloudOnlyAlways" in n && ws.mode === "demo") && (!("adminOnly" in n && n.adminOnly) || ws.mode === "demo" || ws.role === "owner") && (!("leadersOnly" in n && n.leadersOnly) || ws.mode === "demo" || canApproveRenewals(ws.role))).map(({ href, label, Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            onClick={() => setOpen(false)}
-            aria-current={isActive(href) ? "page" : undefined}
-            className={cx(
-              "flex min-h-11 flex-none items-center gap-2.5 rounded-lg px-3 short:lg:min-h-9",
-              isActive(href) ? "bg-navy-active text-white" : "text-navy-text hover:bg-navy-hover hover:text-white",
-            )}
-          >
-            <Icon />
-            {label}
-            {href === "/approvals" && queue.actionable > 0 && (
-              <span className="ml-auto rounded-full bg-[#FFB27A] px-2 py-0.5 text-[11px] font-bold text-navy" aria-label={`${queue.actionable} need action`}>
-                {queue.actionable}
-              </span>
-            )}
-          </Link>
-        ))}
+        {sections.map(({ label, Icon, tabs }) => {
+          const active = tabs.some((t) => tabMatches(path, t));
+          const badge = tabs.some((t) => t.badge === "approvals") ? actionable : 0;
+          return (
+            <Link
+              key={label}
+              href={tabs[0].href}
+              onClick={() => setOpen(false)}
+              aria-current={active ? "page" : undefined}
+              className={cx(
+                "flex min-h-11 flex-none items-center gap-2.5 rounded-lg px-3 short:lg:min-h-10",
+                active ? "bg-navy-active text-white" : "text-navy-text hover:bg-navy-hover hover:text-white",
+              )}
+            >
+              <Icon />
+              {label}
+              {badge > 0 && (
+                <span className="ml-auto rounded-full bg-[#FFB27A] px-2 py-0.5 text-[11px] font-bold text-navy" aria-label={`${badge} renewals need action`}>
+                  {badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </div>
       <div className={cx("mt-auto flex-none flex-col gap-2 lg:flex", open ? "flex" : "hidden")}>
         {ws.showSample && <div className="flex flex-col gap-1.5 rounded-xl bg-navy-2 p-4 short:lg:hidden">

@@ -1,6 +1,7 @@
 import { BillingGate } from "@/components/billing/BillingGate";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
+import { SectionTabs } from "@/components/nav";
 import { ErrorTrail } from "@/components/help/ErrorTrail";
 import { TourModal } from "@/components/help/Tour";
 import { getSession } from "@/lib/server/workspace";
@@ -12,6 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen flex-col lg:flex-row">
       <Sidebar />
       <main className="mx-auto flex w-full min-w-0 max-w-[1240px] flex-1 flex-col gap-6 px-4 pt-7 pb-12 sm:px-8">
+        <SectionTabs />
         <BillingGate>{children}</BillingGate>
       </main>
       <TourModal />
