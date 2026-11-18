@@ -53,13 +53,14 @@ You can start right away on Resend's own receiving domain and move to your real 
   Add it under **Domains**, turn on **Receiving**, and add the MX record exactly as Resend shows it (it must be the
   lowest priority MX for that subdomain). Then set `INBOUND_EMAIL_DOMAIN=in.yourdomain.com`.
 
-Changing the domain changes everyone's inbox address, so tell the team when you switch.
+Changing the domain changes everyone's inbox address, so tell the team when you switch. Put the old domain in
+`INBOUND_EMAIL_OLD_DOMAINS` (comma separated) so mail sent to addresses people already saved still arrives.
 
 ### 3. Add the webhook
 
 Resend dashboard → **Webhooks → Add webhook**:
 
-- Endpoint: `https://<your app>/api/inbound/resend` (now `https://contract-radar-ai.vercel.app/api/inbound/resend`)
+- Endpoint: `https://<your app>/api/inbound/resend` (now `https://outflow.radivarius.com/api/inbound/resend`)
 - Event: `email.received`
 
 Open the webhook and copy its **signing secret** (`whsec_…`).

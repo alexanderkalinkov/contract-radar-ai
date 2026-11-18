@@ -21,7 +21,7 @@ switch the body to **Source**, replace everything with the file's contents and s
 ${list.map((t) => `| ${t.label} | ${t.subject} | [${t.file}](./${t.file}) |`).join("\n")}
 
 The logo and footer links use \`{{ .SiteURL }}\`, so set **Authentication → URL Configuration → Site URL** to
-the app's address (today https://contract-radar-ai.vercel.app, later your real domain). Nothing else needs changing
+the app's address (https://outflow.radivarius.com). Nothing else needs changing
 when the domain changes.
 `;
 writeFileSync(join(dir, "README.md"), readme);

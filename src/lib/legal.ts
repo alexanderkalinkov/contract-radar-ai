@@ -16,7 +16,7 @@ export const LEGAL = {
   /** Where privacy, legal and data-protection requests go. */
   email: env("LEGAL_EMAIL", "[privacy@your-domain.com]"),
   /** The app's public address. Falls back to the current Vercel URL. */
-  appUrl: (process.env.APP_URL?.trim() || "https://contract-radar-ai.vercel.app").replace(/\/$/, ""),
+  appUrl: (process.env.APP_URL?.trim() || "https://outflow.radivarius.com").replace(/\/$/, ""),
   /** Date shown as "Last updated". Change it whenever a page changes in substance. */
   lastUpdated: "16 November 2026",
   /** Shown as a banner on every legal page until a lawyer has reviewed them. Set LEGAL_REVIEWED=true to hide it. */

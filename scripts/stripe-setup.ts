@@ -2,7 +2,7 @@
 // Safe to run again: anything that already exists is left alone.
 //
 //   npm run stripe:setup                                   products, prices and portal
-//   npm run stripe:setup -- https://contract-radar-ai.vercel.app    also creates the webhook and prints its secret
+//   npm run stripe:setup -- https://outflow.radivarius.com    also creates the webhook and prints its secret
 //
 // Reads STRIPE_SECRET_KEY from .env.local. Use the test key (sk_test_...) until you go live, then run it again
 // with the live key: test and live mode have separate products, prices, portal settings and webhooks.
@@ -110,7 +110,7 @@ async function main() {
     }
   } else {
     console.log("\nNo app URL given, so no webhook was created. Run again with your URL to add it, for example:");
-    console.log("  npm run stripe:setup -- https://contract-radar-ai.vercel.app");
+    console.log("  npm run stripe:setup -- https://outflow.radivarius.com");
   }
   console.log("\nDone.");
 }

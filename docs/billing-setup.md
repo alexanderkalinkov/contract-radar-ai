@@ -33,7 +33,7 @@ amount straight away; existing subscribers keep their old price. Limits and feat
 4. **Plans, portal and webhook.** On your Mac, in the project folder:
    ```bash
    npm install
-   npm run stripe:setup -- https://contract-radar-ai.vercel.app
+   npm run stripe:setup -- https://outflow.radivarius.com
    ```
    It creates the 3 products and 6 prices, sets up the Customer Portal (switch plan, update card, invoices, cancel at period end)
    and a webhook to `/api/stripe/webhook`, then prints the webhook's signing secret (`whsec_...`). Safe to run again.

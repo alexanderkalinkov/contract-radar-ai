@@ -21,7 +21,7 @@ Register **both** redirect URLs with every provider:
 
 ```
 http://localhost:3000/api/connect/<provider>/callback
-https://contract-radar-ai.vercel.app/api/connect/<provider>/callback
+https://outflow.radivarius.com/api/connect/<provider>/callback
 ```
 
 where `<provider>` is `quickbooks`, `xero`, `google` or `microsoft`.
@@ -48,7 +48,7 @@ where `<provider>` is `quickbooks`, `xero`, `google` or `microsoft`.
 ### 2. Xero (about 5 minutes)
 
 1. Go to https://developer.xero.com/app/manage → **New app** → **Web app**.
-2. Company or application URL: `https://contract-radar-ai.vercel.app`. Redirect URI: the `xero` URLs above (add the second one after creating).
+2. Company or application URL: `https://outflow.radivarius.com`. Redirect URI: the `xero` URLs above (add the second one after creating).
 3. **Configuration → Generate a secret**. Copy the client ID and secret into `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET`.
 4. The free Starter tier allows 5 connected organisations, plenty for testing.
 
@@ -92,7 +92,7 @@ MICROSOFT_CLIENT_SECRET=...
 Restart `npm run dev`. On Vercel: **Project → Settings → Environment Variables**, add the same names, then
 **Deployments → ⋯ → Redeploy**.
 
-Optional: `APP_URL=https://contract-radar-ai.vercel.app` forces the redirect URL base (useful behind a custom domain).
+Optional: `APP_URL=https://outflow.radivarius.com` forces the redirect URL base (useful behind a custom domain).
 `ANTHROPIC_API_KEY`, which you already have, lets Claude clean up vendor names and drop non-software spend.
 
 ## How it works
