@@ -4,6 +4,7 @@ import { importContext, importError } from "@/lib/server/import/context";
 import { findDriveConnection, isDriveProvider } from "@/lib/server/import/drives";
 import { createUploadJob, listJobs, type NewFile } from "@/lib/server/import/jobs";
 import { kickWorker, workerOrigin } from "@/lib/server/import/worker";
+import { allow } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,6 +28,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const ctx = await importContext({ write: true });
   if (ctx instanceof NextResponse) return ctx;
+  if (!(await allow(`import:user:${ctx.session.userId}`, 20, 3600))) {
+    return NextResponse.json({ error: "Too many imports started in a short time. Wait a while and try again." }, { status: 429 });
+  }
   const body = (await req.json().catch(() => null)) as { source?: ImportSource; name?: string; files?: NewFile[]; folder?: { id?: string; name?: string } } | null;
   const source = body?.source;
   try {

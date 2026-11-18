@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { limitReason } from "@/lib/server/billing";
+import { appOrigin, limitReason } from "@/lib/server/billing";
 import { requireSession } from "@/lib/server/api";
+import { allowAll } from "@/lib/server/rate-limit";
 import { sendInviteEmail } from "@/lib/server/invite-email";
 import { canInviteRole, canWrite, isRole, parseRole, roleRank } from "@/lib/roles";
 import { guessCategory, type OpResult, type TeamData, type TeamOp, type ToolInput } from "@/lib/team/types";
@@ -135,7 +136,7 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as TeamOp | null;
   if (!body || typeof body.op !== "string") return NextResponse.json({ ok: false, error: "Bad request." }, { status: 400 });
   try {
-    const result = await run(ctx, body, new URL(req.url).origin);
+    const result = await run(ctx, body, appOrigin(req));
     return NextResponse.json(result, { status: result.ok ? 200 : 400 });
   } catch (e) {
     return NextResponse.json({ ok: false, error: missingTables((e as Error).message) }, { status: 500 });
@@ -211,6 +212,10 @@ async function run(ctx: Ctx, body: TeamOp, origin: string): Promise<OpResult> {
     case "invite": {
       const email = String(body.email ?? "").trim().toLowerCase();
       if (!EMAIL.test(email)) return { ok: false, error: "Enter a valid email address." };
+      // Invites send email from our domain: cap them so an account can't be used to spam.
+      if (!(await allowAll([[`invite:user:${session.userId}`, 50, 3600], [`invite:ws:${ws}`, 200, 86400]]))) {
+        return { ok: false, error: "That's a lot of invites in a short time. Wait a while and try again." };
+      }
       const role = parseRole(body.role);
       if (!canInviteRole(session.role, role)) {
         return { ok: false, error: `Only admins can invite ${role === "owner" ? "another admin" : "an approver"}.` };

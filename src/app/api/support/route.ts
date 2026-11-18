@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { allow } from "@/lib/server/rate-limit";
 import { brand } from "@/lib/email/brand";
 import { supportReceiptEmail, supportRequestEmail } from "@/lib/email/templates";
 import { SUPPORT_ATTACHMENT_MAX, SUPPORT_ATTACHMENT_TYPES, topicLabel } from "@/lib/help";
@@ -12,17 +13,6 @@ import { roleLabel } from "@/lib/roles";
 export const runtime = "nodejs";
 
 // A light brake against someone (or a stuck script) flooding the inbox. Per server instance, which is enough here.
-const recent = new Map<string, number[]>();
-const LIMIT = 5;
-const WINDOW_MS = 10 * 60 * 1000;
-function tooMany(key: string): boolean {
-  const now = Date.now();
-  const list = (recent.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (list.length >= LIMIT) return true;
-  list.push(now);
-  recent.set(key, list);
-  return false;
-}
 
 const clip = (v: FormDataEntryValue | null, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
@@ -50,7 +40,7 @@ export async function POST(request: Request) {
   if (message.length < 5) return NextResponse.json({ ok: false, error: "Tell us a little more about what happened." }, { status: 400 });
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (tooMany(session?.userId ?? `ip:${ip}`)) {
+  if (!(await allow(`support:${session?.userId ?? `ip:${ip}`}`, 5, 600))) {
     return NextResponse.json({ ok: false, error: "You've sent a few messages in a row. Please wait a few minutes, or reply to our last email." }, { status: 429 });
   }
 

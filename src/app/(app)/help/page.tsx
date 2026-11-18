@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { Card, H2, PageHeader } from "@/components/ui";
 import { HelpVideo } from "@/components/help/HelpVideo";
 import { SupportForm } from "@/components/help/SupportForm";
@@ -16,7 +17,7 @@ const GUIDES = [
 /** Help: the onboarding tour, a few quick answers, and a form that emails support. */
 export default async function HelpPage({ searchParams }: { searchParams: Promise<{ from?: string; topic?: string }> }) {
   const { from, topic } = await searchParams;
-  const fromPage = from && from.startsWith("/") && !from.startsWith("//") ? from.slice(0, 300) : undefined;
+  const fromPage = from ? safeNextPath(from, "").slice(0, 300) || undefined : undefined;
   const inbox = supportEmail();
   return (
     <>
