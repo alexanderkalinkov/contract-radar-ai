@@ -23,6 +23,10 @@ export default async function ResetPasswordPage() {
       </AuthShell>
     );
   }
+  // Supabase only lets a two-step (aal2) session change the password, and a reset link signs in at aal1.
+  // So people with two-step sign-in enter their authenticator code first, then come back here.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") redirect(`/login/mfa?next=${encodeURIComponent("/login/reset")}`);
   return (
     <AuthShell title="Choose a new password" subtitle={`For ${data.user.email}`}>
       <ResetForm />
