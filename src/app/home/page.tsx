@@ -7,9 +7,9 @@ import { getSession } from "@/lib/server/workspace";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const metadata: Metadata = {
-  title: "Contract Radar: stop overpaying for SaaS",
+  title: "Outflow: stop overpaying for SaaS",
   description:
-    "Contract Radar finds every tool your company pays for, catches auto-renewals and price hikes before the notice deadline, and tells the C-level what to keep, cut or renegotiate.",
+    "Outflow finds every tool your company pays for, catches auto-renewals and price hikes before the notice deadline, and tells the C-level what to keep, cut or renegotiate.",
 };
 
 // Public marketing page. Signed-out visitors to / are rewritten here by the middleware.
@@ -43,7 +43,7 @@ function SiteHeader({ signedIn, startHref, startLabel }: { signedIn: boolean; st
       <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-4 py-4 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5 text-white">
           <Logo />
-          <span className="font-display text-lg font-bold">Contract Radar</span>
+          <span className="font-brand text-lg font-semibold">Outflow</span>
         </Link>
         <nav aria-label="Main" className="flex items-center gap-2 sm:gap-5">
           <a href="#how" className="hidden text-sm text-navy-text hover:text-white md:inline">How it works</a>
@@ -75,7 +75,7 @@ function Hero({ startHref, startLabel }: { startHref: string; startLabel: string
             Stop paying for SaaS <span className="text-[#FFB27A]">nobody</span> asked you to renew.
           </h1>
           <p className="m-0 max-w-[560px] text-[17px] leading-relaxed text-navy-text">
-            Contract Radar finds every tool your company pays for, reads the contracts, and warns you before auto-renewals and price
+            Outflow finds every tool your company pays for, reads the contracts, and warns you before auto-renewals and price
             hikes lock in. Each renewal comes with a clear call: keep, cut seats, consolidate or renegotiate.
           </p>
           <div className="flex flex-wrap items-center gap-3">
@@ -104,11 +104,11 @@ function HeroCard() {
     good: "bg-good-soft text-good-dark",
   };
   return (
-    <div aria-label="Example of what Contract Radar finds" className="rounded-2xl bg-white p-5 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.35)] sm:p-6">
+    <div aria-label="Example of what Outflow finds" className="rounded-2xl bg-white p-5 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.35)] sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="m-0 text-[13px] font-semibold text-muted">Before your next renewals</p>
-          <p className="m-0 font-display text-[24px] leading-tight font-bold">What Radar flags</p>
+          <p className="m-0 font-display text-[24px] leading-tight font-bold">What Outflow flags</p>
         </div>
         <span className="rounded-full bg-chip px-2.5 py-1 text-xs font-semibold text-ink-2">Example</span>
       </div>
@@ -247,13 +247,13 @@ function HowItWorks() {
     {
       who: "Admin",
       title: "Invite department owners",
-      body: "Invite one head per department: Sales, Marketing, Engineering and so on. Radar pre-assigns tools to departments based on who uses them.",
+      body: "Invite one head per department: Sales, Marketing, Engineering and so on. Outflow pre-assigns tools to departments based on who uses them.",
       result: "Each owner sees: “Here are the 14 tools we think your team uses. Confirm them.”",
     },
     {
       who: "Department owners · a few minutes per tool",
       title: "Fill the gaps",
-      body: "Upload the contract or forward it to your company's Radar address, and Claude extracts the terms. Then answer 4 quick questions per tool.",
+      body: "Upload the contract or forward it to your company's Outflow address, and Claude extracts the terms. Then answer 4 quick questions per tool.",
       result: "What you use it for, how critical it is (1–5), what you'd use instead, and whether all the seats are needed.",
     },
     {
@@ -269,7 +269,7 @@ function HowItWorks() {
         <SectionHead
           eyebrow="How it works"
           title="Pulled in automatically, confirmed by the people who use it"
-          sub="No one types in a tool list. Radar builds it from your books and your logins, then asks each team only to confirm and explain."
+          sub="No one types in a tool list. Outflow builds it from your books and your logins, then asks each team only to confirm and explain."
         />
         <ol className="m-0 mt-10 grid list-none gap-4 p-0 md:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
@@ -350,7 +350,7 @@ function Extras() {
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy-2 text-[#FFB27A]"><IconSpark size={20} /></span>
           <h3 className="m-0 font-display text-xl font-semibold">Savings on day one</h3>
           <p className="m-0 text-[15px] leading-relaxed text-navy-text">
-            Radar shows the first savings from your accounting and login data before any department owner lifts a finger.
+            Outflow shows the first savings from your accounting and login data before any department owner lifts a finger.
           </p>
         </div>
         <div className="flex flex-col gap-3 rounded-2xl border border-line bg-canvas p-7">

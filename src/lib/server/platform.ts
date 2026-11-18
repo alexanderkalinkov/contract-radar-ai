@@ -6,7 +6,7 @@ import { adminClient } from "./admin";
 import { getSession, type SessionInfo } from "./workspace";
 
 /**
- * Platform admins run Contract Radar itself (the /admin console), across every workspace. This is a
+ * Platform admins run Outflow itself (the /admin console), across every workspace. This is a
  * different thing from a workspace's own Admin role. Someone is a platform admin when their email is in
  * PLATFORM_ADMIN_EMAILS (comma separated) or they have a row in public.platform_admins.
  * Every check runs on the server with the service role key; the browser only ever sees a yes/no.

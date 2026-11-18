@@ -62,14 +62,29 @@ export const IconCard = ({ size = 18, className }: P) => (
   <svg {...base(size)} className={className}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></svg>
 );
 
-export const Logo = ({ size = 28 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 28 28" fill="none" aria-hidden="true">
-    <circle cx="14" cy="14" r="12" stroke="#7CA3FF" strokeWidth="2" />
-    <circle cx="14" cy="14" r="6.5" stroke="#7CA3FF" strokeWidth="2" opacity="0.6" />
-    <path d="M14 14 L23 7" stroke="#FFB27A" strokeWidth="2.4" strokeLinecap="round" />
-    <circle cx="14" cy="14" r="2" fill="#FFFFFF" />
-  </svg>
-);
+/**
+ * The Outflow mark: a radar sweep catching one contract. Brand files live in the project's brand folder.
+ * tone="dark" (default) is for navy backgrounds, tone="light" for white or canvas.
+ */
+export const Logo = ({ size = 28, tone = "dark" }: { size?: number; tone?: "dark" | "light" }) => {
+  const id = `outflow-mark-${tone}`;
+  const [a, b] = tone === "dark" ? ["#5B8CFF", "#3FE0D8"] : ["#1B3F8F", "#14B8C8"];
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={id} gradientUnits="userSpaceOnUse" x1="6" y1="58" x2="58" y2="6">
+          <stop offset="0" stopColor={a} />
+          <stop offset="1" stopColor={b} />
+        </linearGradient>
+      </defs>
+      <path d="M32 32 25.27 6.89A26 26 0 0 1 51.92 15.29Z" fill={`url(#${id})`} opacity="0.28" />
+      <circle cx="32" cy="32" r="26" stroke={`url(#${id})`} strokeWidth="4.6" />
+      <path d="M32 32 51.92 15.29" stroke={`url(#${id})`} strokeWidth="4.6" strokeLinecap="round" />
+      <circle cx="32" cy="32" r="2.6" fill={`url(#${id})`} />
+      <circle cx="20.53" cy="40.03" r="3.1" fill={`url(#${id})`} />
+    </svg>
+  );
+};
 export const IconChart = ({ size = 18, className }: P) => (
   <svg {...base(size)} className={className}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
 );

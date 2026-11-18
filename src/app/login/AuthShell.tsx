@@ -7,7 +7,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-navy px-4 py-10">
       <Link href="/" className="flex items-center gap-2.5 text-white">
         <Logo size={32} />
-        <span className="font-display text-xl font-bold">Contract Radar</span>
+        <span className="font-brand text-xl font-semibold">Outflow</span>
       </Link>
       <div className="cr-card-in flex w-full max-w-[400px] flex-col gap-5 rounded-2xl bg-white p-7">
         <div className="flex flex-col gap-1">

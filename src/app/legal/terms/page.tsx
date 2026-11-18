@@ -4,8 +4,8 @@ import { TRIAL_DAYS } from "@/lib/billing/plans";
 import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Terms of service · Contract Radar",
-  description: "The agreement between Contract Radar and the businesses that use it.",
+  title: "Terms of service · Outflow",
+  description: "The agreement between Outflow and the businesses that use it.",
 };
 
 export default function TermsPage() {
@@ -13,11 +13,11 @@ export default function TermsPage() {
     <LegalShell
       current="/legal/terms"
       title="Terms of service"
-      intro={`These terms are an agreement between ${LEGAL.companyName} ("we", "us") and the business that creates a Contract Radar workspace ("Customer", "you"). By creating an account or clicking to accept, you confirm that you have authority to bind that business.`}
+      intro={`These terms are an agreement between ${LEGAL.companyName} ("we", "us") and the business that creates an Outflow workspace ("Customer", "you"). By creating an account or clicking to accept, you confirm that you have authority to bind that business.`}
     >
       <H id="service">1. The Service</H>
       <P>
-        Contract Radar (the &quot;Service&quot;) helps businesses track their software contracts: it reads uploaded contracts, finds tools
+        Outflow (the &quot;Service&quot;) helps businesses track their software contracts: it reads uploaded contracts, finds tools
         in connected systems, reminds you of renewal and notice dates, flags price increases, and suggests savings. We may improve and
         change the Service over time, and will not materially reduce its core features during a paid term.
       </P>

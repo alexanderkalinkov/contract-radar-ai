@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     return new NextResponse(body, {
       headers: {
         "content-type": "text/csv; charset=utf-8",
-        "content-disposition": `attachment; filename="contract-radar-audit-${stamp}.csv"`,
+        "content-disposition": `attachment; filename="outflow-audit-${stamp}.csv"`,
         "cache-control": "no-store",
       },
     });

@@ -215,7 +215,7 @@ export function ContractDetail({ contract: c }: { contract: Contract }) {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-[18px]">
             <div className="flex flex-col gap-0.5">
               <H2>{c.quote ? "Pushback email" : "Renewal notice email"}</H2>
-              <span className="text-[13px] text-muted">Drafted by Contract Radar, cites your contract</span>
+              <span className="text-[13px] text-muted">Drafted by Outflow, cites your contract</span>
             </div>
             <Segmented
               label="Tone"

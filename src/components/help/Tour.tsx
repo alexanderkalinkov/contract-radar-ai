@@ -142,7 +142,7 @@ export function TourModal() {
                 Ask a question
               </Link>
               <button type="button" onClick={close} className={btnPrimary}>
-                {auto ? "Start using Contract Radar" : "Close"}
+                {auto ? "Start using Outflow" : "Close"}
               </button>
             </div>
           </div>

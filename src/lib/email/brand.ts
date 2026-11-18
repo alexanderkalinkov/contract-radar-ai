@@ -1,9 +1,9 @@
 // Everything an email needs to know about the brand and where the app lives.
 // Nothing here is hard-coded to a domain: set these in .env.local / Vercel when the real domain is live.
 //
-//   EMAIL_FROM        "Contract Radar <alerts@yourdomain.com>"  (a sender verified in Resend)
+//   EMAIL_FROM        "Outflow <alerts@yourdomain.com>"  (a sender verified in Resend)
 //   EMAIL_REPLY_TO    optional, e.g. "support@yourdomain.com"
-//   EMAIL_BRAND_NAME  optional, defaults to "Contract Radar"
+//   EMAIL_BRAND_NAME  optional, defaults to "Outflow"
 //   APP_URL           https://app.yourdomain.com (links in emails point here)
 
 export interface Brand {
@@ -27,7 +27,7 @@ export function appUrl(fallbackOrigin?: string): string {
 }
 
 export function brand(fallbackOrigin?: string): Brand {
-  const name = process.env.EMAIL_BRAND_NAME?.trim() || "Contract Radar";
+  const name = process.env.EMAIL_BRAND_NAME?.trim() || "Outflow";
   const url = appUrl(fallbackOrigin);
   return {
     name,

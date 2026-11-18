@@ -7,7 +7,7 @@ Status as of 2026-11-15: steps 1 to 4 are built (see "What's in the app"). Accou
 
 | Role | Who | What they do |
 | --- | --- | --- |
-| **Admin (C-level)** | CFO, COO or CEO who buys Contract Radar. Can be several. | Sets up the workspace, adds departments, invites owners, sees the leadership view. |
+| **Admin (C-level)** | CFO, COO or CEO who buys Outflow. Can be several. | Sets up the workspace, adds departments, invites owners, sees the leadership view. |
 | **Department owner** | One head per department (Sales, Marketing, Engineering…) | Confirms which tools are theirs, uploads contracts, answers 4 questions per tool. |
 
 In the database an admin is `workspace_members.role = 'owner'`; a department owner is `role = 'member'` with a `department_id`.
@@ -17,7 +17,7 @@ In the database an admin is `workspace_members.role = 'owner'`; a department own
 ### 1. Admin setup (about 10 minutes): `/setup`
 
 1. **Company**: workspace name, company size, the admin's own role (budget owner).
-2. **Connect** accounting (QuickBooks, Xero) and sign-in (Google Workspace, Microsoft 365). *Coming soon.* Once live, Radar drafts the list of every tool the company pays for, with spend and active users, and pre-assigns each to a department by who uses it. Today this step explains that and moves on.
+2. **Connect** accounting (QuickBooks, Xero) and sign-in (Google Workspace, Microsoft 365). *Coming soon.* Once live, Outflow drafts the list of every tool the company pays for, with spend and active users, and pre-assigns each to a department by who uses it. Today this step explains that and moves on.
 3. **Departments**: pick from presets or add your own.
 4. **Invite owners**: one email per department, plus optional extra admins.
 5. **Add tools**: a quick-add row (name, department, cost, seats) and a link to upload contracts.

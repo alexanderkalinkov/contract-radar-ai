@@ -3,8 +3,8 @@ import { A, ContactEmail, H, LegalShell, P, UL } from "@/components/legal/LegalS
 import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Data processing agreement · Contract Radar",
-  description: "Contract Radar's GDPR Article 28 data processing agreement for business customers.",
+  title: "Data processing agreement · Outflow",
+  description: "Outflow's GDPR Article 28 data processing agreement for business customers.",
 };
 
 export default function DpaPage() {
@@ -12,7 +12,7 @@ export default function DpaPage() {
     <LegalShell
       current="/legal/dpa"
       title="Data processing agreement"
-      intro={`This data processing agreement ("DPA") forms part of the Terms of service between ${LEGAL.companyName} ("Processor", "we") and the Customer ("Controller", "you"). It applies when we process personal data on your behalf in providing Contract Radar, and sets out the terms required by Article 28 of the EU General Data Protection Regulation (GDPR).`}
+      intro={`This data processing agreement ("DPA") forms part of the Terms of service between ${LEGAL.companyName} ("Processor", "we") and the Customer ("Controller", "you"). It applies when we process personal data on your behalf in providing Outflow, and sets out the terms required by Article 28 of the EU General Data Protection Regulation (GDPR).`}
     >
       <H id="definitions">1. Definitions</H>
       <P>

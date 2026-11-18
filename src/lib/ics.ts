@@ -24,7 +24,7 @@ export function buildIcs(events: IcsEvent[], opts: { name: string; reminderDays:
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Contract Radar//Renewal calendar//EN",
+    "PRODID:-//Outflow//Renewal calendar//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${esc(opts.name)}`,

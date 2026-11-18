@@ -15,7 +15,7 @@ Known gaps: on the recording, the "Email contracts in" card shows no inbox addre
 
 ---
 
-# Contract Radar: getting started (onboarding video script)
+# Outflow: getting started (onboarding video script)
 
 Length: about 7 minutes. Narrator: one calm voice, second person ("you"). Each scene lists what's on screen, then the voiceover.
 Sample company on screen: Northwind Logistics (fictional). No real customer data.
@@ -25,17 +25,17 @@ Sample company on screen: Northwind Logistics (fictional). No real customer data
 ## 1. Welcome (0:00)
 **Screen:** Landing page, then click "Start free audit".
 
-Welcome to Contract Radar. In the next few minutes you'll see how to go from a brand new account to a clear keep, cut or renegotiate decision on every software tool your company pays for. We'll use a sample company, Northwind Logistics, so you can see the whole platform with real-looking data.
+Welcome to Outflow. In the next few minutes you'll see how to go from a brand new account to a clear keep, cut or renegotiate decision on every software tool your company pays for. We'll use a sample company, Northwind Logistics, so you can see the whole platform with real-looking data.
 
 ## 2. Create your account (0:20)
 **Screen:** Create account form: name, work email, password, company name. Confirmation email, then first sign-in.
 
-Start by creating your account with your work email. Contract Radar creates a private workspace for your company, and you become its admin. Confirm your email and sign in. The first time you do, this tour offers to play, and you can always come back to it from Help.
+Start by creating your account with your work email. Outflow creates a private workspace for your company, and you become its admin. Confirm your email and sign in. The first time you do, this tour offers to play, and you can always come back to it from Help.
 
 ## 3. Set up your company (0:40)
 **Screen:** Setup wizard: company step, connect step, departments, invite owners, add tools, done.
 
-Setup takes about ten minutes, and you can change everything later. First, tell us about your company. Next, you can connect your accounting and sign-in tools, like QuickBooks, Xero, Google Workspace or Microsoft 365, so Radar can find every tool you pay for automatically. Then pick the departments that buy software, and invite one owner for each. Owners get an email, sign in straight into their department, and confirm their tools. Finally, add a few tools by hand if you like, and you're set up.
+Setup takes about ten minutes, and you can change everything later. First, tell us about your company. Next, you can connect your accounting and sign-in tools, like QuickBooks, Xero, Google Workspace or Microsoft 365, so Outflow can find every tool you pay for automatically. Then pick the departments that buy software, and invite one owner for each. Owners get an email, sign in straight into their department, and confirm their tools. Finally, add a few tools by hand if you like, and you're set up.
 
 ## 4. Roles (1:25)
 **Screen:** Team page: the four roles, departments, people with their role dropdowns, invite row.
@@ -50,7 +50,7 @@ Each department owner sees the tools filed under their team and answers four qui
 ## 6. Add your contracts (2:20)
 **Screen:** Upload page, drop a PDF, extraction appears. Then Workspace settings, "Email contracts in" card. Then Bulk import.
 
-Now the most important step: your contracts. There are three ways to add them. Drop a PDF or Word file on the Upload page. Or forward a contract to your workspace's own email inbox, which you'll find in Workspace settings; anything a team member sends there is read and filed automatically. And if you have hundreds of contracts in a folder, use Bulk import: drop a ZIP or a whole folder, and Radar reads them in the background, skips duplicates, and lets you review everything before it's added.
+Now the most important step: your contracts. There are three ways to add them. Drop a PDF or Word file on the Upload page. Or forward a contract to your workspace's own email inbox, which you'll find in Workspace settings; anything a team member sends there is read and filed automatically. And if you have hundreds of contracts in a folder, use Bulk import: drop a ZIP or a whole folder, and Outflow reads them in the background, skips duplicates, and lets you review everything before it's added.
 
 ## 7. AI extraction with source quotes (3:00)
 **Screen:** Contract page: extracted terms with quotes and page numbers, Confirm and Correct buttons.
@@ -65,12 +65,12 @@ This is your savings overview. The sidebar groups everything into a few sections
 ## 9. Savings ideas and pushback emails (4:00)
 **Screen:** Opportunities list, open Salesforce, "Draft pushback email", email appears.
 
-Below that, every savings opportunity is ranked: unused seats, price increases, duplicate tools and terms changes. Open one and Contract Radar shows the numbers behind it. Click Draft email and Claude writes a pushback email to the vendor, citing the exact clause in your contract. Edit it, copy it, and send it from your own inbox.
+Below that, every savings opportunity is ranked: unused seats, price increases, duplicate tools and terms changes. Open one and Outflow shows the numbers behind it. Click Draft email and Claude writes a pushback email to the vendor, citing the exact clause in your contract. Edit it, copy it, and send it from your own inbox.
 
 ## 10. Price-hike tracking (4:35)
 **Screen:** Price changes page: quotes vs previous term, over-cap amounts; pricing & terms radar.
 
-When a renewal quote arrives, upload it too. Radar matches it to the current contract, compares the new price with what you pay today, and checks it against your uplift cap. Anything over the cap is flagged in red with the dollar amount, ready for a pushback email.
+When a renewal quote arrives, upload it too. Outflow matches it to the current contract, compares the new price with what you pay today, and checks it against your uplift cap. Anything over the cap is flagged in red with the dollar amount, ready for a pushback email.
 
 ## 11. Renewal alerts and calendar (5:00)
 **Screen:** Renewal calendar month grid, "Add to my calendar", reminder settings.
@@ -95,4 +95,4 @@ The audit log records every change in your workspace, and you can export it to C
 ## 15. Billing, help and wrap-up (6:40)
 **Screen:** Billing page (plans), then Help & support (tour video, contact form), then back to the dashboard.
 
-Billing shows the plans, and you can pick one any time. If you ever get stuck, open Help and support at the bottom of the sidebar. You can watch this tour again, or send us a message and we'll get back to you. That's it. Create your account, invite your department owners, upload your contracts, and Contract Radar will show you where your money is going and help you get it back. Welcome aboard.
+Billing shows the plans, and you can pick one any time. If you ever get stuck, open Help and support at the bottom of the sidebar. You can watch this tour again, or send us a message and we'll get back to you. That's it. Create your account, invite your department owners, upload your contracts, and Outflow will show you where your money is going and help you get it back. Welcome aboard.

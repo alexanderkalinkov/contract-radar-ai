@@ -6,7 +6,7 @@ import { authTemplates } from "../src/lib/email/auth-templates";
 
 const dir = join(process.cwd(), "supabase", "templates");
 mkdirSync(dir, { recursive: true });
-const list = authTemplates(process.env.EMAIL_BRAND_NAME || "Contract Radar");
+const list = authTemplates(process.env.EMAIL_BRAND_NAME || "Outflow");
 for (const t of list) writeFileSync(join(dir, t.file), t.html + "\n");
 
 const readme = `# Supabase Auth email templates

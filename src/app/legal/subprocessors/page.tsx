@@ -3,8 +3,8 @@ import { A, ContactEmail, H, LegalShell, P, ProcessorTable } from "@/components/
 import { INTEGRATIONS, SUBPROCESSORS } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Subprocessors · Contract Radar",
-  description: "The service providers that process customer data for Contract Radar, what for and where.",
+  title: "Subprocessors · Outflow",
+  description: "The service providers that process customer data for Outflow, what for and where.",
 };
 
 export default function SubprocessorsPage() {
@@ -12,7 +12,7 @@ export default function SubprocessorsPage() {
     <LegalShell
       current="/legal/subprocessors"
       title="Subprocessors"
-      intro="These are the service providers that may process Customer Data on our behalf to run Contract Radar. Each one is bound by a written data processing agreement with protections at least as strong as those in our DPA."
+      intro="These are the service providers that may process Customer Data on our behalf to run Outflow. Each one is bound by a written data processing agreement with protections at least as strong as those in our DPA."
     >
       <H id="core">Core subprocessors</H>
       <P>These are used for every workspace.</P>

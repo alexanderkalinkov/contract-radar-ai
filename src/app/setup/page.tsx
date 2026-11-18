@@ -214,7 +214,7 @@ export default function SetupPage() {
         <Card label="Connect" className="flex flex-col gap-5 p-6">
           <Intro
             title="Connect accounting and sign-in"
-            sub="Radar pulls a draft list of every tool you pay for (QuickBooks or Xero) and who uses it (Google Workspace or Microsoft). After you add departments, each tool is filed under the team that uses it."
+            sub="Outflow pulls a draft list of every tool you pay for (QuickBooks or Xero) and who uses it (Google Workspace or Microsoft). After you add departments, each tool is filed under the team that uses it."
           />
           <ConnectionCards disc={disc} returnTo="/setup?step=1" onMessage={setConnectMsg} />
           <Notice msg={connectMsg} />
@@ -391,7 +391,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <header className="flex flex-wrap items-center justify-between gap-4 bg-navy px-4 py-4 text-white sm:px-8">
         <Link href="/" className="flex items-center gap-2.5 text-white">
           <Logo />
-          <span className="font-display text-lg font-bold">Contract Radar</span>
+          <span className="font-brand text-lg font-semibold">Outflow</span>
         </Link>
         <Link href="/" className="min-h-9 text-[13px] font-semibold text-navy-text hover:text-white">Exit setup</Link>
       </header>

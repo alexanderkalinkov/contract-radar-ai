@@ -1,6 +1,6 @@
 # Custom domain: outflow.radivarius.com
 
-Contract Radar lives at **https://outflow.radivarius.com**. The apex `radivarius.com` and every other
+Outflow lives at **https://outflow.radivarius.com**. The apex `radivarius.com` and every other
 subdomain stay free for other projects: everything below only touches names under `outflow.`
 (plus one optional DMARC record on the apex that covers all subdomains).
 
@@ -52,7 +52,7 @@ people to the new one. Also change `APP_URL` in `.env.local` on the Mac.
 
 ### 4. Re-point the webhooks
 
-- **Stripe** (test mode now, live later): Dashboard → **Developers → Webhooks** → the Contract Radar endpoint →
+- **Stripe** (test mode now, live later): Dashboard → **Developers → Webhooks** → the Outflow endpoint →
   **⋯ → Update details** → URL `https://outflow.radivarius.com/api/stripe/webhook`. Editing keeps the same signing
   secret, so `STRIPE_WEBHOOK_SECRET` stays. (When you go live, run
   `npm run stripe:setup -- https://outflow.radivarius.com` with the live key, as in docs/billing-setup.md.)
@@ -77,7 +77,7 @@ Use the subdomain `outflow.radivarius.com` as the sending domain, so other proje
    Older Resend setups used an MX + SPF TXT on `send.` instead; follow whatever Resend shows. GoDaddy already
    adds its own `_dmarc` record, and only one DMARC record is allowed, so don't add a second one.
 3. Click **Verify** and wait for **Verified**.
-4. Vercel env: `EMAIL_FROM` = `Contract Radar <alerts@outflow.radivarius.com>`. Redeploy.
+4. Vercel env: `EMAIL_FROM` = `Outflow <alerts@outflow.radivarius.com>`. Redeploy.
 5. Supabase → **Authentication → Emails → SMTP Settings** → Sender email `alerts@outflow.radivarius.com`
    (the Resend SMTP password stays the same).
 6. Keep `degenbuddies.com` verified in Resend until you have seen a reminder and an invite arrive from the new

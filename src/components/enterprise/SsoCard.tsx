@@ -86,12 +86,12 @@ export function SsoCard() {
         <>
           {!d.enabled && (
             <p className="m-0 rounded-[10px] border border-warn-line bg-warn-soft px-4 py-3 text-[13px] text-warn-text">
-              SSO isn&apos;t switched on for Contract Radar yet. You can still send your request now; we activate it once your identity provider is ready.
+              SSO isn&apos;t switched on for Outflow yet. You can still send your request now; we activate it once your identity provider is ready.
             </p>
           )}
           {d.serviceProvider && (
             <div className="flex flex-col gap-2.5 rounded-xl border border-line-soft p-4">
-              <span className="text-sm font-semibold">1. Add Contract Radar as an app in your identity provider</span>
+              <span className="text-sm font-semibold">1. Add Outflow as an app in your identity provider</span>
               <Copy label="Entity ID (Audience URI)" value={d.serviceProvider.entityId} />
               <Copy label="ACS URL (Reply / Single sign-on URL)" value={d.serviceProvider.acsUrl} />
               <span className="text-[13px] text-muted">Name ID format: email address. Send the user&apos;s email as the NameID.</span>

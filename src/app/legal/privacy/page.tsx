@@ -3,8 +3,8 @@ import { A, ContactEmail, H, LegalShell, P, UL } from "@/components/legal/LegalS
 import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Privacy policy · Contract Radar",
-  description: "How Contract Radar collects, uses and protects personal data, under the EU GDPR.",
+  title: "Privacy policy · Outflow",
+  description: "How Outflow collects, uses and protects personal data, under the EU GDPR.",
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <LegalShell
       current="/legal/privacy"
       title="Privacy policy"
-      intro={`This policy explains how ${LEGAL.companyName} ("we", "us") handles personal data when you visit ${LEGAL.appUrl}, create an account, or use Contract Radar (the "Service"). Contract Radar is a business tool sold to companies. It is not intended for consumers.`}
+      intro={`This policy explains how ${LEGAL.companyName} ("we", "us") handles personal data when you visit ${LEGAL.appUrl}, create an account, or use Outflow (the "Service"). Outflow is a business tool sold to companies. It is not intended for consumers.`}
     >
       <H id="who">1. Who we are</H>
       <P>
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
           <strong>Processor</strong> for the data our customers put into their workspace (&quot;Customer Data&quot;): uploaded contracts,
           vendor and tool lists, team members, and data read from connected accounting or sign-in systems. We process Customer Data only
           on the customer&apos;s instructions, under our <A href="/legal/dpa">Data processing agreement</A>. If your employer uses
-          Contract Radar and you have a question about your data in their workspace, please contact your employer first.
+          Outflow and you have a question about your data in their workspace, please contact your employer first.
         </li>
       </UL>
 
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
 
       <H id="ai">4. AI features</H>
       <P>
-        Contract Radar uses Claude, an AI model from Anthropic, to read uploaded contracts, pull out terms such as renewal dates and price
+        Outflow uses Claude, an AI model from Anthropic, to read uploaded contracts, pull out terms such as renewal dates and price
         caps, draft renegotiation emails, and name vendors found in accounting data. Contract text is sent to Anthropic&apos;s API for this
         and is not used by Anthropic to train its models under its commercial terms. AI output can be wrong: always check important dates
         and amounts against the contract itself.
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
         encrypted, and an admin can disconnect at any time, which deletes the stored tokens.
       </P>
       <P>
-        Contract Radar&apos;s use and transfer to any other app of information received from Google APIs will adhere to the{" "}
+        Outflow&apos;s use and transfer to any other app of information received from Google APIs will adhere to the{" "}
         <A href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</A>, including the
         Limited Use requirements. We do not use Google user data to develop, improve or train AI or machine-learning models, we do not
         transfer it to third parties except as needed to provide the Service or as required by law, and no person at {LEGAL.companyName}{" "}

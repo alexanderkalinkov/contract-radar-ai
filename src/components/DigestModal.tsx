@@ -47,7 +47,7 @@ export function DigestModal({ onClose, opportunities }: { onClose: () => void; o
               {usd(thisMonth.reduce((s, o) => s + o.annualSavings, 0))} at stake before {shortDate(thisMonth.at(-1)?.actBy ?? TODAY)}
             </strong>
           </div>
-          <p className="m-0">Good morning. Here is what Contract Radar found for {COMPANY.name} this week.</p>
+          <p className="m-0">Good morning. Here is what Outflow found for {COMPANY.name} this week.</p>
           <div>
             <h3 className="m-0 mb-2 font-display text-base font-semibold">Deadlines in the next 30 days</h3>
             <ul className="m-0 flex list-none flex-col gap-1.5 p-0">

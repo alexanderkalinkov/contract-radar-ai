@@ -126,7 +126,7 @@ const xeroDate = (t: XeroTxn) => {
 export async function fetchXero(token: string, tenantId?: string | null): Promise<FetchResult> {
   const conns = await getJson<{ tenantId: string; tenantName: string; tenantType: string }[]>("https://api.xero.com/connections", token);
   const tenant = conns.find((c) => c.tenantId === tenantId) ?? conns.find((c) => c.tenantType === "ORGANISATION") ?? conns[0];
-  if (!tenant) throw new ProviderError("No Xero organisation was shared with Contract Radar. Reconnect and pick one.", 400);
+  if (!tenant) throw new ProviderError("No Xero organisation was shared with Outflow. Reconnect and pick one.", 400);
   const s = daysAgo(395);
   const dt = `DateTime(${s.getUTCFullYear()},${String(s.getUTCMonth() + 1).padStart(2, "0")},${String(s.getUTCDate()).padStart(2, "0")})`;
   const headers = { "xero-tenant-id": tenant.tenantId };

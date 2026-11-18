@@ -64,7 +64,7 @@ export default function ToolPage() {
           <H2>Is this one of your team&apos;s tools?</H2>
           <p className="m-0 text-sm text-ink-2">
             {tool.source === "import"
-              ? "Radar found it in your accounting or sign-in data and filed it under this department. If it's yours, answer the survey below to confirm it; if not, pick the department that uses it."
+              ? "Outflow found it in your accounting or sign-in data and filed it under this department. If it's yours, answer the survey below to confirm it; if not, pick the department that uses it."
               : "We found it in an uploaded contract. Pick the department that pays for it, or answer the survey below to confirm it."}
           </p>
           <div className="flex max-w-[360px] flex-col gap-1.5">

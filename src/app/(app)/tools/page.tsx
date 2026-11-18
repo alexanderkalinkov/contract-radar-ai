@@ -99,7 +99,7 @@ export default function ToolsPage() {
           <div className="flex flex-col gap-1">
             <H2>Add a tool by hand</H2>
             <span className="text-[13px] text-muted">
-              No contract handy? Add the basics now and upload the contract later, or let Radar find tools in your accounting and sign-in data.
+              No contract handy? Add the basics now and upload the contract later, or let Outflow find tools in your accounting and sign-in data.
             </span>
           </div>
           <ToolForm

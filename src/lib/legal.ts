@@ -7,7 +7,7 @@ function env(name: string, fallback: string) {
 }
 
 export const LEGAL = {
-  /** Registered legal name of the company that sells Contract Radar, e.g. "Example Ltd." (ЕООД). */
+  /** Registered legal name of the company that sells Outflow, e.g. "Example Ltd." (ЕООД). */
   companyName: env("LEGAL_COMPANY_NAME", "[Company legal name]"),
   /** Bulgarian company ID (ЕИК / UIC). */
   companyId: env("LEGAL_COMPANY_ID", "[Company ID (EIK)]"),

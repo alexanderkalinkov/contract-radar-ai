@@ -50,7 +50,7 @@ export function Sidebar() {
       <div className="flex flex-none items-center justify-between px-2">
         <Link href="/" className="flex items-center gap-2.5 text-white">
           <Logo />
-          <span className="font-display text-lg font-bold tracking-tight">Contract Radar</span>
+          <span className="font-brand text-lg font-semibold tracking-tight">Outflow</span>
         </Link>
         <button
           type="button"
