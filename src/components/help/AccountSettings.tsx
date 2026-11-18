@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useWorkspace } from "@/components/WorkspaceProvider";
 import { Card, H2, btnGhost, btnPrimary, btnSoft } from "@/components/ui";
 import { roleLabel } from "@/lib/roles";
@@ -194,6 +194,164 @@ export function HelpCard() {
         <button type="button" onClick={openTour} className={btnSoft}>Watch the tour</button>
         <Link href="/help#support" className={btnSoft}>Contact support</Link>
       </div>
+    </Card>
+  );
+}
+
+type MfaState = { enabled: boolean; factors: { id: string; name: string; created_at: string }[] };
+
+/** Two-step sign-in with an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password, …). */
+export function TwoStepCard() {
+  const ws = useWorkspace();
+  const router = useRouter();
+  const [state, setState] = useState<MfaState | null>(null);
+  const [setup, setSetup] = useState<{ factorId: string; qr: string; secret: string } | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<Status>(null);
+
+  async function load() {
+    const res = await fetch("/api/account/mfa").catch(() => null);
+    const json = (await res?.json().catch(() => null)) as (MfaState & { ok?: boolean }) | null;
+    if (json?.ok) setState({ enabled: json.enabled, factors: json.factors });
+    else setState({ enabled: false, factors: [] });
+  }
+  useEffect(() => {
+    if (!ws.viaSso) void load();
+  }, [ws.viaSso]);
+
+  if (ws.viaSso) {
+    return (
+      <Card className="flex flex-col gap-2 p-6" label="Two-step sign-in">
+        <H2>Two-step sign-in</H2>
+        <p className="m-0 text-sm text-muted">You sign in through your company&apos;s single sign-on, so extra sign-in checks are managed there.</p>
+      </Card>
+    );
+  }
+
+  async function call(body: Record<string, unknown>) {
+    setBusy(true);
+    setStatus(null);
+    const res = await fetch("/api/account/mfa", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
+    const json = (await res?.json().catch(() => ({}))) as { ok?: boolean; error?: string; factorId?: string; qr?: string; secret?: string } | undefined;
+    setBusy(false);
+    if (!res?.ok || !json?.ok) {
+      setStatus({ tone: "error", text: json?.error ?? "Something went wrong. Try again." });
+      return null;
+    }
+    return json;
+  }
+
+  async function start() {
+    const r = await call({ op: "enroll" });
+    if (r?.factorId && r.qr && r.secret) setSetup({ factorId: r.factorId, qr: r.qr, secret: r.secret });
+  }
+
+  async function confirm(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!setup) return;
+    const code = String(new FormData(e.currentTarget).get("code") ?? "");
+    const r = await call({ op: "verify", factorId: setup.factorId, code });
+    if (r) {
+      setSetup(null);
+      await load();
+      setStatus({ tone: "ok", text: "Two-step sign-in is on. Next time you sign in, we'll ask for a code from your app." });
+      router.refresh();
+    }
+  }
+
+  async function remove(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const factor = state?.factors[0];
+    if (!factor) return;
+    const code = String(new FormData(e.currentTarget).get("code") ?? "");
+    const r = await call({ op: "remove", factorId: factor.id, code });
+    if (r) {
+      setRemoving(false);
+      await load();
+      setStatus({ tone: "ok", text: "Two-step sign-in is off. Your password alone signs you in now." });
+    }
+  }
+
+  const codeInput = (
+    <input
+      name="code"
+      required
+      inputMode="numeric"
+      autoComplete="one-time-code"
+      pattern="[0-9 ]{6,7}"
+      maxLength={7}
+      placeholder="123 456"
+      aria-label="6-digit code"
+      className="min-h-11 w-40 rounded-[10px] border border-[#D0D5DD] bg-white px-3 text-center font-mono text-lg tracking-[0.25em]"
+    />
+  );
+
+  return (
+    <Card className="flex flex-col gap-5 p-6" label="Two-step sign-in">
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <H2>Two-step sign-in</H2>
+          {state?.enabled && <span className="rounded-full bg-good-soft px-2.5 py-0.5 text-xs font-semibold text-good-dark">On</span>}
+        </div>
+        <p className="m-0 text-sm text-muted">
+          Ask for a 6-digit code from an authenticator app on your phone, as well as your password. Someone who learns your password still can&apos;t get in.
+        </p>
+      </div>
+
+      {state === null && <p className="m-0 text-sm text-muted">Checking…</p>}
+
+      {state && !state.enabled && !setup && (
+        <button type="button" onClick={start} disabled={busy} className={`${btnPrimary} w-fit`}>
+          {busy ? "Starting…" : "Turn on two-step sign-in"}
+        </button>
+      )}
+
+      {setup && (
+        <div className="flex flex-col gap-4">
+          <ol className="m-0 flex flex-col gap-2 pl-5 text-sm text-ink-2">
+            <li>Open an authenticator app on your phone, such as Google Authenticator, Microsoft Authenticator or 1Password.</li>
+            <li>Add an account and scan this QR code.</li>
+            <li>Type the 6-digit code the app shows.</li>
+          </ol>
+          <div className="flex flex-wrap items-start gap-5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={setup.qr} alt="QR code to scan with your authenticator app" width={180} height={180} className="rounded-lg border border-line bg-white p-2" />
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span className={label}>Can&apos;t scan? Enter this key instead</span>
+              <code className="rounded-lg bg-chip px-3 py-2 font-mono text-sm break-all text-ink select-all">{setup.secret.replace(/(.{4})/g, "$1 ").trim()}</code>
+            </div>
+          </div>
+          <form onSubmit={confirm} className="flex flex-wrap items-center gap-3">
+            {codeInput}
+            <button type="submit" disabled={busy} className={btnPrimary}>{busy ? "Checking…" : "Confirm and turn on"}</button>
+            <button type="button" onClick={() => setSetup(null)} className={btnGhost}>Cancel</button>
+          </form>
+        </div>
+      )}
+
+      {state?.enabled && !removing && (
+        <div className="flex flex-col gap-3">
+          <p className="m-0 text-sm text-ink-2">
+            On since {new Date(state.factors[0].created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. If you change phones,
+            turn it off here first and set it up again on the new phone.
+          </p>
+          <button type="button" onClick={() => setRemoving(true)} className={`${btnGhost} w-fit`}>Turn off</button>
+        </div>
+      )}
+
+      {removing && (
+        <form onSubmit={remove} className="flex flex-col gap-3">
+          <p className="m-0 text-sm text-ink-2">Enter a current code from your app to turn two-step sign-in off.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            {codeInput}
+            <button type="submit" disabled={busy} className={btnPrimary}>{busy ? "Checking…" : "Turn off"}</button>
+            <button type="button" onClick={() => setRemoving(false)} className={btnGhost}>Cancel</button>
+          </div>
+        </form>
+      )}
+
+      <Alert status={status} />
     </Card>
   );
 }

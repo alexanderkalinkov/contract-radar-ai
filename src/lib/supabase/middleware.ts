@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config";
 
 const PUBLIC_PATHS = ["/home", "/login", "/auth", "/samples", "/legal"];
+// Reachable before the two-step code has been entered.
+const MFA_FREE_PATHS = ["/login", "/auth/signout", "/auth/callback", "/auth/confirm", "/legal", "/home", "/samples", "/api/errors", "/api/stripe/webhook", "/api/inbound/resend", "/api/imports/worker", "/api/cron"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -26,6 +28,22 @@ export async function updateSession(request: NextRequest) {
   const signedIn = Boolean(data?.claims);
 
   const path = request.nextUrl.pathname;
+
+  // Two-step sign-in: someone who turned it on but hasn't entered their code yet only reaches the code page.
+  if (signedIn && data?.claims?.aal !== "aal2" && !MFA_FREE_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+      if (path.startsWith("/api/")) {
+        return NextResponse.json({ error: "Enter your two-step sign-in code first." }, { status: 401 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = "/login/mfa";
+      url.search = `?next=${encodeURIComponent(path === "/" ? "/" : path + request.nextUrl.search)}`;
+      const redirect = NextResponse.redirect(url);
+      response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+      return redirect;
+    }
+  }
   // Signed-out visitors to / see the marketing landing page; the URL stays /.
   if (!signedIn && path === "/") {
     const url = request.nextUrl.clone();

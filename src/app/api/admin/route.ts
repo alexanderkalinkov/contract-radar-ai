@@ -76,6 +76,19 @@ async function run(ctx: PlatformCtx, b: Body, origin: string): Promise<Result> {
       await logPlatformAction(ctx, { action: "user.password_reset_sent", targetType: "user", targetId: userId, targetLabel: email });
       return { ok: true, message: `Password reset email sent to ${email}.` };
     }
+    case "user.reset_mfa": {
+      // For someone who lost their phone. Removes every authenticator; they can set one up again on the Account page.
+      const email = await userEmail(ctx, userId);
+      if (!email) return { ok: false, error: "User not found." };
+      const { data, error } = await db.auth.admin.mfa.listFactors({ userId: userId! });
+      if (error) return { ok: false, error: error.message };
+      for (const f of data?.factors ?? []) {
+        const del = await db.auth.admin.mfa.deleteFactor({ id: f.id, userId: userId! });
+        if (del.error) return { ok: false, error: del.error.message };
+      }
+      await logPlatformAction(ctx, { action: "user.two_step_reset", targetType: "user", targetId: userId, targetLabel: email });
+      return { ok: true, message: `Two-step sign-in is off for ${email}. Ask them to turn it on again from My account.` };
+    }
     case "user.resend_invite": {
       const email = await userEmail(ctx, userId);
       if (!email) return { ok: false, error: "User not found." };

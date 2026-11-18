@@ -50,9 +50,35 @@ export async function authenticate(_prev: AuthState, form: FormData): Promise<Au
   } else {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message === "Invalid login credentials" ? "Wrong email or password." : error.message };
+    // Two-step sign-in turned on: the password alone isn't enough, ask for the authenticator code next.
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") redirect(`/login/mfa?next=${encodeURIComponent(next)}`);
     await logSignIn(supabase, "password");
   }
   redirect(next);
+}
+
+/** Second step of sign-in: the 6-digit code from the person's authenticator app. */
+export async function verifyMfaSignIn(_prev: AuthState, form: FormData): Promise<AuthState> {
+  const code = String(form.get("code") ?? "").replace(/\s+/g, "");
+  const next = safeNext(form.get("next"));
+  if (!/^\d{6}$/.test(code)) return { error: "Enter the 6-digit code from your authenticator app." };
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const uid = claims?.claims?.sub;
+  if (!uid) redirect("/login");
+  if (!(await allowAll([[`mfa-login:user:${uid}`, 8, 900], [`mfa-login:ip:${await requestIp()}`, 40, 900]]))) return { error: TOO_MANY };
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const totp = (factors?.totp ?? []).filter((f) => f.status === "verified");
+  if (!totp.length) redirect(next);
+  for (const f of totp) {
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: f.id, code });
+    if (!error) {
+      await logSignIn(supabase, "password+totp");
+      redirect(next);
+    }
+  }
+  return { error: "That code didn't work. Use the newest code in your authenticator app, and check your phone's clock is set automatically." };
 }
 
 /**
