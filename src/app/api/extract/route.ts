@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { limitReason } from "@/lib/server/billing";
 import { extractContract, isExtractError, isPdf, MAX_CONTRACT_BYTES as MAX_BYTES } from "@/lib/server/extract";
 import { getSession } from "@/lib/server/workspace";
+import { allowAll, clientIp } from "@/lib/server/rate-limit";
 import { canWrite } from "@/lib/roles";
 
 export const runtime = "nodejs";
@@ -26,6 +27,11 @@ export async function POST(req: Request) {
   if (session && !canWrite(session.role)) {
     return NextResponse.json({ error: "You have read-only access to this workspace, so you can't upload contracts." }, { status: 403 });
   }
+  // Each upload is an AI call that costs money: cap it per person and per workspace (demo mode: per IP).
+  const ok = session
+    ? await allowAll([[`extract:user:${session.userId}`, 120, 3600], [`extract:ws:${session.workspace.id}`, 1000, 86400]])
+    : await allowAll([[`extract:ip:${clientIp(req.headers)}`, 20, 3600]]);
+  if (!ok) return NextResponse.json({ error: "You've read a lot of contracts in a short time. Wait a while, or use Bulk import for large batches." }, { status: 429 });
   return session ? extractFromStorage(req, session) : extractFromForm(req);
 }
 

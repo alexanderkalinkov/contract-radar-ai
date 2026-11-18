@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { allow } from "@/lib/server/rate-limit";
 import { recordAppError, type AppErrorKind } from "@/lib/server/errors";
 import { getSession } from "@/lib/server/workspace";
 
@@ -6,18 +7,6 @@ import { getSession } from "@/lib/server/workspace";
 // Anyone can report (404s happen signed out too), so input is clipped and rate limited.
 export const runtime = "nodejs";
 
-const recent = new Map<string, number[]>();
-const LIMIT = 30;
-const WINDOW_MS = 10 * 60 * 1000;
-function tooMany(key: string): boolean {
-  const now = Date.now();
-  const list = (recent.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (list.length >= LIMIT) return true;
-  list.push(now);
-  recent.set(key, list);
-  if (recent.size > 5000) recent.clear();
-  return false;
-}
 
 const KINDS: AppErrorKind[] = ["api", "upload", "crash", "not_found"];
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : null);
@@ -27,7 +16,7 @@ export async function POST(req: Request) {
   if (!body || !KINDS.includes(body.kind as AppErrorKind)) return NextResponse.json({ ok: false }, { status: 400 });
   const session = await getSession().catch(() => null);
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (tooMany(session?.userId ?? `ip:${ip}`)) return NextResponse.json({ ok: false }, { status: 429 });
+  if (!(await allow(`errors:${session?.userId ?? `ip:${ip}`}`, 30, 600))) return NextResponse.json({ ok: false }, { status: 429 });
 
   const status = Number(body.status);
   const details = body.details && typeof body.details === "object" ? (body.details as Record<string, unknown>) : {};

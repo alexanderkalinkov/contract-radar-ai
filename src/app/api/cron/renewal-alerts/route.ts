@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { runRenewalAlerts } from "@/lib/server/renewal-alerts";
 import { recordJobRun } from "@/lib/server/platform";
@@ -9,13 +10,19 @@ import { recordJobRun } from "@/lib/server/platform";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+/** Constant-time comparison, so the secret can't be guessed one character at a time from response timings. */
+function sameSecret(a: string, b: string): boolean {
+  const h = (s: string) => createHash("sha256").update(s).digest();
+  return timingSafeEqual(h(a), h(b));
+}
+
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
   if (!secret) {
     return NextResponse.json({ error: "Set CRON_SECRET in the environment to enable the renewal alert job." }, { status: 503 });
   }
-  if (auth !== `Bearer ${secret}`) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!sameSecret(auth ?? "", `Bearer ${secret}`)) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   const url = new URL(req.url);
   const today = url.searchParams.get("today");

@@ -6,6 +6,8 @@ import { createBrowserClient } from "@supabase/ssr";
 import { Logo } from "@/components/icons";
 import { btnGhost, btnPrimary, Card, H2 } from "@/components/ui";
 import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/supabase/config";
+import { safeNextPath } from "@/lib/safe-redirect";
+import { setFirstPassword } from "@/app/login/actions";
 
 // Invite and sign-in links (implicit flow) land here with tokens in the URL hash.
 // We store the session in cookies, then offer to set a password for next time.
@@ -14,8 +16,7 @@ function client() {
 }
 
 function safeNext(): string {
-  const n = new URLSearchParams(window.location.search).get("next") ?? "/tools";
-  return n.startsWith("/") && !n.startsWith("//") ? n : "/tools";
+  return safeNextPath(new URLSearchParams(window.location.search).get("next"), "/tools");
 }
 
 export default function ConfirmPage() {
@@ -79,9 +80,10 @@ export default function ConfirmPage() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 setSaving(true);
-                const { error: e2 } = await client().auth.updateUser({ password });
+                // Set on the server, so the same password rules apply as on every other page.
+                const r = await setFirstPassword(password).catch(() => ({ error: "Couldn't save your password. Try again." }));
                 setSaving(false);
-                if (e2) setError(e2.message);
+                if (r.error) setError(r.error);
                 else window.location.assign(next);
               }}
             >
