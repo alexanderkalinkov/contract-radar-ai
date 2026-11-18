@@ -25,13 +25,13 @@ It adds a `renewal_alerts` on/off switch to workspaces and a `renewal_alerts` lo
 | Variable | What to put |
 | --- | --- |
 | `RESEND_API_KEY` | Resend → API Keys → Create (Sending access). The same Resend account Supabase uses for SMTP. |
-| `EMAIL_FROM` | `Contract Radar <alerts@your-domain.com>`, on a domain verified in Resend. |
+| `EMAIL_FROM` | `Outflow <alerts@your-domain.com>`, on a domain verified in Resend. |
 | `EMAIL_REPLY_TO` | Optional, e.g. `support@your-domain.com`. |
 | `APP_URL` | The app's address, e.g. `https://outflow.radivarius.com`. Links and the logo in emails use it. |
 | `CRON_SECRET` | Any long random string (`openssl rand -hex 32`). Vercel Cron sends it to the job automatically. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API keys → service_role / secret. Server only. |
 | `RENEWAL_ALERT_DAYS` | Optional. Default `90,60,30`. Add `7` for a last-week reminder: `90,60,30,7`. |
-| `EMAIL_BRAND_NAME` | Optional. Default `Contract Radar`. |
+| `EMAIL_BRAND_NAME` | Optional. Default `Outflow`. |
 
 Redeploy after adding them. When the real domain is live: verify it in Resend, then change `EMAIL_FROM`, `APP_URL`
 and the Supabase Site URL. Nothing else.

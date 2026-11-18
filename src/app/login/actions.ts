@@ -165,7 +165,7 @@ export async function startSso(_prev: AuthState, form: FormData): Promise<AuthSt
       return { error: `Single sign-on isn't set up for ${domain} yet. Ask your admin, or sign in with your password.` };
     }
     if (error && /disabled|not enabled|sso.*plan/i.test(error.message)) {
-      return { error: "Single sign-on isn't switched on for Contract Radar yet. Sign in with your password for now." };
+      return { error: "Single sign-on isn't switched on for Outflow yet. Sign in with your password for now." };
     }
     return { error: error?.message ?? "Could not start single sign-on." };
   }

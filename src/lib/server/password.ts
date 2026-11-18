@@ -14,7 +14,7 @@ const MAX_PASSWORD = 72; // bcrypt ignores anything after 72 bytes
 
 const COMMON = new Set([
   "password", "password1", "password123", "12345678", "123456789", "1234567890", "qwerty123", "qwertyuiop",
-  "11111111", "00000000", "abc12345", "iloveyou", "letmein1", "welcome1", "admin123", "contractradar",
+  "11111111", "00000000", "abc12345", "iloveyou", "letmein1", "welcome1", "admin123", "contractradar", "outflow1",
 ]);
 
 async function breached(password: string): Promise<boolean> {

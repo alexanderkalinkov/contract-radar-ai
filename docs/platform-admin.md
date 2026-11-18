@@ -1,6 +1,6 @@
 # Platform admin console
 
-`/admin` is for the people who run Contract Radar itself. It is separate from a workspace's own **Admin** role:
+`/admin` is for the people who run Outflow itself. It is separate from a workspace's own **Admin** role:
 a platform admin sees and manages **every** workspace. Anyone else who opens `/admin` gets a plain 404.
 
 ## Who gets in

@@ -151,7 +151,7 @@ async function run(ctx: PlatformCtx, b: Body, origin: string): Promise<Result> {
     case "invite.resend": {
       const { data: inv } = await db.from("workspace_invites").select("email, role, workspace_id, workspaces(name)").eq("id", str(b.inviteId, 64)).maybeSingle();
       if (!inv) return { ok: false, error: "That invite was cancelled or already accepted." };
-      const wsName = (inv as { workspaces?: { name?: string } | null }).workspaces?.name ?? "Contract Radar";
+      const wsName = (inv as { workspaces?: { name?: string } | null }).workspaces?.name ?? "Outflow";
       const sent = await sendInviteEmail(inv.email, origin, { workspace: wsName, inviter: null, department: null, role: parseRole(inv.role) });
       if (!sent.emailed) return { ok: false, error: sent.note ?? "The email didn't send." };
       await logPlatformAction(ctx, { action: "invite.resent", targetType: "invite", targetLabel: inv.email, workspaceId: inv.workspace_id });

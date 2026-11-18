@@ -38,7 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
   if (!code) return done({ connect_error: `${name} didn't return a sign-in code. Click Connect again.` });
 
   const ctx = await requireSession();
-  if (ctx instanceof NextResponse) return done({ connect_error: "Your Contract Radar session ended. Sign in and connect again." });
+  if (ctx instanceof NextResponse) return done({ connect_error: "Your Outflow session ended. Sign in and connect again." });
   if (ctx.session.role !== "owner" || ctx.session.workspace.id !== saved.ws) return done({ connect_error: "Only the admin who started this can finish connecting." });
 
   try {

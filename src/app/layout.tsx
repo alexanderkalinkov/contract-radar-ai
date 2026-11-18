@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Sora, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Activity } from "@/components/Activity";
 import { AuthHashForwarder } from "@/components/AuthHashForwarder";
@@ -11,6 +11,7 @@ import { helpVideoUrl } from "@/lib/server/help";
 import { isPlatformAdmin } from "@/lib/server/platform";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["600"] });
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
@@ -18,8 +19,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Contract Radar",
+  title: "Outflow",
   description: "Find SaaS savings before your renewal deadlines pass.",
+  applicationName: "Outflow",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -46,7 +48,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     : null;
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${sora.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
         <AuthHashForwarder />
         <Activity />
         <ErrorTrail />

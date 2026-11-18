@@ -2,7 +2,7 @@ import "server-only";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import type { ProviderId } from "@/lib/discovery/types";
 
-// OAuth apps are registered once by us (Contract Radar), not by each customer.
+// OAuth apps are registered once by us (Outflow), not by each customer.
 // Each provider needs a client ID and secret in .env.local / Vercel; see docs/auto-discovery-setup.md.
 
 export interface ProviderConfig {

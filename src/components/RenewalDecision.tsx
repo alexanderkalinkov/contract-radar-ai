@@ -348,7 +348,7 @@ function RecommendForm({
 
       {(usage || s.reason) && (
         <div className="flex flex-col gap-0.5 rounded-lg bg-[#F8FAFC] px-3 py-2 text-[13px] text-muted">
-          <strong className="text-ink-2">What Contract Radar found</strong>
+          <strong className="text-ink-2">What Outflow found</strong>
           {usage && (
             <span>
               {usage.active} of {usage.paid} paid seats active ({usage.source}).

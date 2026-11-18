@@ -1,6 +1,6 @@
 # Price-hike tracking
 
-Contract Radar compares each renewal price with the price before it and flags increases.
+Outflow compares each renewal price with the price before it and flags increases.
 
 ## How documents are matched
 

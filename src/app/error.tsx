@@ -16,7 +16,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <p className="m-0 max-w-md text-muted">It&apos;s been logged and we&apos;ll look into it. You can try again, or go back to the start.</p>
       <div className="flex flex-wrap justify-center gap-2">
         <button type="button" onClick={reset} className={btnPrimary}>Try again</button>
-        <Link href="/" className={btnGhost}>Go to Contract Radar</Link>
+        <Link href="/" className={btnGhost}>Go to Outflow</Link>
       </div>
     </main>
   );

@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
   const code = q.get("code");
   if (!code) return done({ drive_error: `${name} didn't return a sign-in code. Try again.` });
   const ctx = await importContext({ write: true });
-  if (ctx instanceof NextResponse) return done({ drive_error: "Your Contract Radar session ended. Sign in and try again." });
+  if (ctx instanceof NextResponse) return done({ drive_error: "Your Outflow session ended. Sign in and try again." });
   if (ctx.session.workspace.id !== saved.ws) return done({ drive_error: "You switched workspace while signing in. Try again." });
   try {
     const tokens = await exchangeDriveCode(provider, code, driveRedirectUri(provider, req.nextUrl.origin));

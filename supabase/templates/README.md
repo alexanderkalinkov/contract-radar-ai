@@ -7,12 +7,12 @@ switch the body to **Source**, replace everything with the file's contents and s
 
 | Supabase template | Subject | File |
 | --- | --- | --- |
-| Confirm sign up | Confirm your email for Contract Radar | [confirm-signup.html](./confirm-signup.html) |
-| Invite user | You're invited to join your team on Contract Radar | [invite-user.html](./invite-user.html) |
-| Magic link | Your Contract Radar sign-in link | [magic-link.html](./magic-link.html) |
-| Reset password | Reset your Contract Radar password | [reset-password.html](./reset-password.html) |
-| Change email address | Confirm your new Contract Radar email | [change-email.html](./change-email.html) |
-| Reauthentication | Your Contract Radar verification code | [reauthentication.html](./reauthentication.html) |
+| Confirm sign up | Confirm your email for Outflow | [confirm-signup.html](./confirm-signup.html) |
+| Invite user | You're invited to join your team on Outflow | [invite-user.html](./invite-user.html) |
+| Magic link | Your Outflow sign-in link | [magic-link.html](./magic-link.html) |
+| Reset password | Reset your Outflow password | [reset-password.html](./reset-password.html) |
+| Change email address | Confirm your new Outflow email | [change-email.html](./change-email.html) |
+| Reauthentication | Your Outflow verification code | [reauthentication.html](./reauthentication.html) |
 
 The logo and footer links use `{{ .SiteURL }}`, so set **Authentication → URL Configuration → Site URL** to
 the app's address (https://outflow.radivarius.com). Nothing else needs changing

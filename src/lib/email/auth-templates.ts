@@ -17,7 +17,7 @@ const code = (token: string) =>
   <td style="background:${C.canvas};border:1px solid ${C.line};border-radius:10px;padding:14px 22px;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:26px;line-height:30px;font-weight:700;letter-spacing:6px;color:${C.ink};">${token}</td>
 </tr></table>`;
 
-export function authTemplates(name = "Contract Radar"): AuthTemplate[] {
+export function authTemplates(name = "Outflow"): AuthTemplate[] {
   const b: EmailBrand = { name, appUrl: "{{ .SiteURL }}", logoUrl: "{{ .SiteURL }}/email/logo.png" };
   const url = "{{ .ConfirmationURL }}";
   const ignore = "If you didn't ask for this, you can safely ignore this email.";

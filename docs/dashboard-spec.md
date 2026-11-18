@@ -9,7 +9,7 @@ Visual reference: [clickable mockup](https://claude.ai/artifact/JEo2NkLjt5ERuQHx
 
 ## 1. What the dashboard is for
 
-Contract Radar AI helps mid-market companies (50 to 1,000 employees) cut SaaS spend. The buyer and main user is the **CFO, VP Finance or procurement lead**. They log in about once a week, usually after the Monday digest email, and they want answers to three questions in under a minute:
+Outflow AI helps mid-market companies (50 to 1,000 employees) cut SaaS spend. The buyer and main user is the **CFO, VP Finance or procurement lead**. They log in about once a week, usually after the Monday digest email, and they want answers to three questions in under a minute:
 
 1. **How much money can we save?** (total identified savings)
 2. **What do I have to act on, and by when?** (deadlines)

@@ -4,7 +4,7 @@ Before each renewal, the department owner recommends what to do and an approver 
 
 ## Flow
 
-1. **Recommend.** On the contract page, the *Renewal decision* card offers Keep, Cut seats, Consolidate, Renegotiate or Cancel. It is pre-filled from what Contract Radar already found (unused seats, price hikes over the cap, missing caps, duplicate tools), with expected savings and a reason the owner can edit.
+1. **Recommend.** On the contract page, the *Renewal decision* card offers Keep, Cut seats, Consolidate, Renegotiate or Cancel. It is pre-filled from what Outflow already found (unused seats, price hikes over the cap, missing caps, duplicate tools), with expected savings and a reason the owner can edit.
 2. **Approve or send back.** Admins and Finance approvers (`owner` / `approver` roles) approve, or send it back with a required note. Sending back lets the owner revise and resubmit. An approver can reopen a decided renewal (for example when the vendor comes back with a new offer).
 3. **Act.** Once approved, "Draft the email to the vendor" jumps to the pushback email with the matching goal (cut seats with the approved seat count, push back on the increase, ask for a cap, cancel).
 

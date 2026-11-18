@@ -1,6 +1,6 @@
 # Seat usage from logins
 
-Contract Radar compares what you pay for (seats in the contract, or on the tool list) with who actually signs in,
+Outflow compares what you pay for (seats in the contract, or on the tool list) with who actually signs in,
 so "cut seats" recommendations rest on real login data instead of guesses.
 
 ## Where the data comes from

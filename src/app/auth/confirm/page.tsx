@@ -56,8 +56,8 @@ export default function ConfirmPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-canvas px-4 py-10">
       <span className="flex items-center gap-2.5 text-ink">
-        <Logo />
-        <span className="font-display text-lg font-bold">Contract Radar</span>
+        <Logo tone="light" />
+        <span className="font-brand text-lg font-semibold">Outflow</span>
       </span>
       <Card label="Sign in" className="flex w-full max-w-[440px] flex-col gap-4 p-6">
         {state === "working" && <p className="m-0 text-sm text-muted">Signing you in…</p>}

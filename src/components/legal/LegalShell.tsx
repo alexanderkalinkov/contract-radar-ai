@@ -12,7 +12,7 @@ export function LegalShell({ title, intro, current, children }: { title: string;
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-4 py-4 sm:px-8">
           <Link href="/" className="flex items-center gap-2.5 text-white">
             <Logo />
-            <span className="font-display text-lg font-bold">Contract Radar</span>
+            <span className="font-brand text-lg font-semibold">Outflow</span>
           </Link>
           <Link href="/login" className="inline-flex min-h-10 items-center rounded-[10px] px-3 text-sm font-semibold text-white hover:bg-navy-hover">
             Log in

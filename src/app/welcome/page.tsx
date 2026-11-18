@@ -9,7 +9,7 @@ export default function WelcomePage() {
       <header className="flex flex-wrap items-center justify-between gap-4 bg-navy px-4 py-4 text-white sm:px-8">
         <Link href="/" className="flex items-center gap-2.5 text-white">
           <Logo />
-          <span className="font-display text-lg font-bold">Contract Radar</span>
+          <span className="font-brand text-lg font-semibold">Outflow</span>
         </Link>
         <span className="text-[13px] text-navy-text">Free contract audit</span>
       </header>

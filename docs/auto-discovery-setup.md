@@ -13,7 +13,7 @@ Everything is read-only. We never write to QuickBooks, Xero, Google or Microsoft
 
 ## What you set up once
 
-You register one OAuth app per provider for Contract Radar (not one per customer). Each gives you a **client ID** and a
+You register one OAuth app per provider for Outflow (not one per customer). Each gives you a **client ID** and a
 **client secret**. Put them in `.env.local` for local runs and in Vercel for the live site. You only need the providers
 you want; the others show "Needs setup".
 
@@ -54,7 +54,7 @@ where `<provider>` is `quickbooks`, `xero`, `google` or `microsoft`.
 
 ### 3. Google Workspace (about 15 minutes)
 
-1. Go to https://console.cloud.google.com → create a project (e.g. "Contract Radar").
+1. Go to https://console.cloud.google.com → create a project (e.g. "Outflow").
 2. **APIs & Services → Library**: enable **Admin SDK API**.
 3. **APIs & Services → OAuth consent screen** (Google Auth Platform): app name, support email, audience **External**.
    Add scopes `admin.reports.audit.readonly` and `admin.directory.user.readonly`. While the app is in testing, add your
@@ -70,7 +70,7 @@ where `<provider>` is `quickbooks`, `xero`, `google` or `microsoft`.
 2. Supported account types: **Accounts in any organizational directory (Multitenant)**. Redirect URI: **Web**, the `microsoft` URL for localhost; add the Vercel one under **Authentication** afterwards.
 3. **Certificates & secrets → New client secret**. Copy the secret **Value** (not the ID) into `MICROSOFT_CLIENT_SECRET`, and the **Application (client) ID** from Overview into `MICROSOFT_CLIENT_ID`.
 4. **API permissions → Add → Microsoft Graph → Delegated**: `User.Read.All`, `AuditLog.Read.All`, `Directory.Read.All`, `offline_access`.
-5. Connect with a **Global Administrator** (or one who can grant admin consent). Sign-in logs need Entra ID P1 or P2; without it Radar counts who is assigned to each app instead and says so.
+5. Connect with a **Global Administrator** (or one who can grant admin consent). Sign-in logs need Entra ID P1 or P2; without it Outflow counts who is assigned to each app instead and says so.
 
 ### 5. Put the keys in
 

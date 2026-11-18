@@ -1,6 +1,6 @@
 # Security
 
-How Contract Radar protects customer data, and what to check when adding features. Last full audit: 2026-11-18.
+How Outflow protects customer data, and what to check when adding features. Last full audit: 2026-11-18.
 
 ## Passwords and sign-in
 - Passwords are stored only by Supabase Auth, as bcrypt hashes in `auth.users`. The app never stores, logs or emails a password.

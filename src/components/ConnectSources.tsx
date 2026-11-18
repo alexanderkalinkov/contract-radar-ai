@@ -48,7 +48,7 @@ export function ConnectSources({ onboarding = false }: { onboarding?: boolean })
           <p className="m-0 max-w-[620px] text-[15px] leading-relaxed text-muted">
             {onboarding
               ? "Start with three contracts for a free audit. Connect logins and spend when you are ready, and we will find unused seats and duplicate tools across every app."
-              : "What Contract Radar reads, and when each source last synced. Connectors are simulated in this version."}
+              : "What Outflow reads, and when each source last synced. Connectors are simulated in this version."}
           </p>
         </div>
 

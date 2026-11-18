@@ -5,11 +5,11 @@ import { AdminTabs, AdminToast } from "@/components/admin/AdminUi";
 import { IconShield, Logo } from "@/components/icons";
 import { getPlatformCtx } from "@/lib/server/platform";
 
-export const metadata: Metadata = { title: "Platform admin · Contract Radar", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Platform admin · Outflow", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 /**
- * The platform admin console: runs across every workspace, for the people who operate Contract Radar.
+ * The platform admin console: runs across every workspace, for the people who operate Outflow.
  * Anyone else gets a plain 404, and every page and action checks again on the server.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link href="/admin" className="flex items-center gap-2.5 text-white">
               <Logo />
-              <span className="font-display text-lg font-bold tracking-tight">Contract Radar</span>
+              <span className="font-brand text-lg font-semibold tracking-tight">Outflow</span>
               <span className="flex items-center gap-1 rounded-full bg-[#FFB27A] px-2 py-0.5 text-[11px] font-bold text-navy">
                 <IconShield size={12} /> Platform admin
               </span>

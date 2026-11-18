@@ -102,7 +102,7 @@ export function EmailInboxCard() {
             <CopyButton text={info.address!} primary />
           </div>
           <span className="text-[13px] text-muted">
-            Tip: save it as a contact called &quot;Contract Radar&quot; so anyone on the team can forward renewals in two clicks.
+            Tip: save it as a contact called &quot;Outflow&quot; so anyone on the team can forward renewals in two clicks.
           </span>
           {info.canRotate && (
             <div>

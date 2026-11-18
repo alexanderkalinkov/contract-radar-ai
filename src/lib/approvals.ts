@@ -104,7 +104,7 @@ export function goalFor(r: Recommendation, hasHike: boolean): EmailGoal {
   return "review";
 }
 
-/** A starting point for the form, from what Contract Radar already found on the contract. */
+/** A starting point for the form, from what Outflow already found on the contract. */
 export function suggestRecommendation(
   c: Contract,
   opps: (Opportunity & { targetSeats?: number; basis?: string })[],

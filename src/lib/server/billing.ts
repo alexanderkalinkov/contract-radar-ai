@@ -11,7 +11,7 @@ let _stripe: Stripe | null = null;
 export function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   if (!key) return null;
-  if (!_stripe) _stripe = new Stripe(key, { appInfo: { name: "Contract Radar" } });
+  if (!_stripe) _stripe = new Stripe(key, { appInfo: { name: "Outflow" } });
   return _stripe;
 }
 
@@ -199,8 +199,8 @@ export async function lockedReason(workspaceId: string): Promise<string | null> 
 function lockedMessage(b: BillingSummary): string | null {
   if (b.access) return null;
   return b.state === "canceled"
-    ? "Your subscription has ended. Choose a plan on the Billing page to keep using Contract Radar."
-    : "Your free trial has ended. Choose a plan on the Billing page to keep using Contract Radar.";
+    ? "Your subscription has ended. Choose a plan on the Billing page to keep using Outflow."
+    : "Your free trial has ended. Choose a plan on the Billing page to keep using Outflow.";
 }
 
 function limitMessage(b: BillingSummary, kind: "contracts" | "people", current: number): string | null {

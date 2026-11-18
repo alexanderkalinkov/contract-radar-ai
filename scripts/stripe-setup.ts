@@ -1,4 +1,4 @@
-// Creates Contract Radar's plans in your Stripe account, sets up the Customer Portal and (optionally) the webhook.
+// Creates Outflow's plans in your Stripe account, sets up the Customer Portal and (optionally) the webhook.
 // Safe to run again: anything that already exists is left alone.
 //
 //   npm run stripe:setup                                   products, prices and portal
@@ -40,11 +40,17 @@ async function main() {
     const product =
       found.data[0] ??
       (await stripe.products.create({
-        name: `Contract Radar ${plan.name}`,
+        name: `Outflow ${plan.name}`,
         description: plan.blurb,
         metadata: { app: "contract-radar", plan: plan.id },
         tax_code: "txcd_10103001", // Software as a service (SaaS), business use
       }));
+    if (found.data[0] && product.name !== `Outflow ${plan.name}`) {
+      // Renamed from Contract Radar: keep the same product (and its subscriptions), just update the name.
+      await stripe.products.update(product.id, { name: `Outflow ${plan.name}` });
+      product.name = `Outflow ${plan.name}`;
+      console.log(`renamed  product ${product.name}`);
+    }
     console.log(`${found.data[0] ? "exists " : "created"}  product ${product.name}`);
     const prices: string[] = [];
     for (const interval of ["month", "year"] as Interval[]) {
@@ -71,8 +77,8 @@ async function main() {
 
   // Customer Portal: switch plan, update card, invoices, cancel at period end.
   const portal: Stripe.BillingPortal.ConfigurationCreateParams = {
-    name: "Contract Radar",
-    business_profile: { headline: "Manage your Contract Radar plan" },
+    name: "Outflow",
+    business_profile: { headline: "Manage your Outflow plan" },
     features: {
       customer_update: { enabled: true, allowed_updates: ["name", "email", "address", "tax_id"] },
       invoice_history: { enabled: true },
@@ -104,7 +110,7 @@ async function main() {
       console.log(`exists   webhook ${url}`);
       console.log("         Its signing secret is under Developers → Webhooks → this endpoint → Signing secret.");
     } else {
-      const created = await stripe.webhookEndpoints.create({ url, enabled_events: WEBHOOK_EVENTS, description: "Contract Radar subscriptions" });
+      const created = await stripe.webhookEndpoints.create({ url, enabled_events: WEBHOOK_EVENTS, description: "Outflow subscriptions" });
       console.log(`created  webhook ${url}`);
       console.log(`\nAdd this to Vercel (and .env.local) as STRIPE_WEBHOOK_SECRET:\n\n  ${created.secret}\n`);
     }

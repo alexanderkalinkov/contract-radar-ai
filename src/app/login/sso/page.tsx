@@ -14,7 +14,7 @@ export default async function SsoLoginPage({
   const { email, next, required } = await searchParams;
   return (
     <AuthShell title="Sign in with SSO" subtitle="Use your company account (Okta, Microsoft Entra ID, Google Workspace or any SAML provider).">
-      {required && <FormAlert error="Your company requires single sign-on for Contract Radar, so you've been signed out. Continue with SSO below." />}
+      {required && <FormAlert error="Your company requires single sign-on for Outflow, so you've been signed out. Continue with SSO below." />}
       <SsoForm defaultEmail={email ?? ""} next={safeNextPath(next, "/")} />
       <Link href="/login" className="text-center text-[13px] font-semibold text-muted hover:text-ink">
         Back to email and password

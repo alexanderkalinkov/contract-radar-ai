@@ -10,7 +10,7 @@ export function SiteFooter() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2">
             <span className="rounded-md bg-navy p-1"><Logo size={18} /></span>
-            Contract Radar
+            Outflow
           </span>
           <span>SaaS contract and price-hike tracking for finance teams.</span>
         </div>
@@ -22,7 +22,7 @@ export function SiteFooter() {
               </Link>
             ))}
           </nav>
-          <span>© {new Date().getFullYear()} {LEGAL.companyName.startsWith("[") ? "Contract Radar" : LEGAL.companyName}</span>
+          <span>© {new Date().getFullYear()} {LEGAL.companyName.startsWith("[") ? "Outflow" : LEGAL.companyName}</span>
         </div>
       </div>
     </footer>

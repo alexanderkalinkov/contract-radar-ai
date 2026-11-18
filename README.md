@@ -1,4 +1,4 @@
-# Contract Radar AI
+# Outflow AI
 
 AI contract radar and price-increase tracker that helps mid-market companies cut SaaS spend.
 The buyer is the CFO, VP Finance or procurement lead.
