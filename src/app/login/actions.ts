@@ -125,6 +125,9 @@ export async function updatePassword(_prev: AuthState, form: FormData): Promise<
   if (weak) return { error: weak };
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
+    if (error.code === "insufficient_aal" || /AAL2/i.test(error.message)) {
+      return { error: "Enter your two-step sign-in code first: reload this page and it will ask for it." };
+    }
     if (/session/i.test(error.message)) return { error: "Your reset link has expired. Request a new one from the sign-in page." };
     return { error: error.message };
   }
