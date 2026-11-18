@@ -66,15 +66,16 @@ people to the new one. Also change `APP_URL` in `.env.local` on the Mac.
 Use the subdomain `outflow.radivarius.com` as the sending domain, so other projects can have their own.
 
 1. Resend → **Domains → Add domain** → `outflow.radivarius.com` (region EU is fine).
-2. Add the records Resend shows at your registrar. They look like this (copy the exact values from Resend):
+2. Add the records Resend shows at your registrar, with the **same Type** Resend lists. In late 2026 they were:
 
    | Type | Name / Host | Value |
    |---|---|---|
    | TXT | `resend._domainkey.outflow` | `p=MIGf…` (DKIM key) |
-   | MX | `send.outflow` | `feedback-smtp.<region>.amazonses.com`, priority 10 |
-   | TXT | `send.outflow` | `v=spf1 include:amazonses.com ~all` |
+   | CNAME | `rsend.outflow` | `rsend-euw1.forge.rmta.net` |
+   | CNAME | `send.outflow` | `send.forge.rmta.net` |
 
-   Optional but recommended, once for the whole domain: TXT `_dmarc` → `v=DMARC1; p=none;`
+   Older Resend setups used an MX + SPF TXT on `send.` instead; follow whatever Resend shows. GoDaddy already
+   adds its own `_dmarc` record, and only one DMARC record is allowed, so don't add a second one.
 3. Click **Verify** and wait for **Verified**.
 4. Vercel env: `EMAIL_FROM` = `Contract Radar <alerts@outflow.radivarius.com>`. Redeploy.
 5. Supabase → **Authentication → Emails → SMTP Settings** → Sender email `alerts@outflow.radivarius.com`
