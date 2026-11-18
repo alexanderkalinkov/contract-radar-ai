@@ -16,6 +16,8 @@ import { sendEmail } from "./mailer";
 // Setup: docs/email-inbox-setup.md.
 //
 //   INBOUND_EMAIL_DOMAIN       the receiving domain, e.g. "abc123.resend.app" now, "in.yourdomain.com" later
+//   INBOUND_EMAIL_OLD_DOMAINS  optional, comma separated: earlier receiving domains that keep working after a move,
+//                              so addresses people already saved still deliver (new addresses use INBOUND_EMAIL_DOMAIN)
 //   RESEND_WEBHOOK_SECRET      signing secret of the email.received webhook (whsec_...)
 //   RESEND_INBOUND_API_KEY     optional: a Resend key with full access (reading received mail). Defaults to RESEND_API_KEY.
 
@@ -24,6 +26,16 @@ const MAX_ATTACHMENTS = 10;
 export function inboundDomain(): string | null {
   const d = process.env.INBOUND_EMAIL_DOMAIN?.trim().toLowerCase().replace(/^@/, "");
   return d || null;
+}
+
+/** INBOUND_EMAIL_DOMAIN first, then any earlier domains still accepted. */
+export function acceptedInboundDomains(): string[] {
+  const primary = inboundDomain();
+  const old = (process.env.INBOUND_EMAIL_OLD_DOMAINS ?? "")
+    .split(",")
+    .map((d) => d.trim().toLowerCase().replace(/^@/, ""))
+    .filter(Boolean);
+  return [...new Set([...(primary ? [primary] : []), ...old])];
 }
 
 export const isInboundConfigured = () => Boolean(inboundDomain() && process.env.RESEND_WEBHOOK_SECRET?.trim());
@@ -159,7 +171,11 @@ async function run(db: Db, logId: string, event: ReceivedEvent) {
   const d = event.data;
 
   // 1. Which workspace? The token in the address the mail was sent to.
-  const token = tokenFromRecipients([d.to, d.received_for, d.cc], domain);
+  let token: string | null = null;
+  for (const accepted of acceptedInboundDomains()) {
+    token = tokenFromRecipients([d.to, d.received_for, d.cc], accepted);
+    if (token) break;
+  }
   if (!token) return finish(db, logId, "rejected", "Not addressed to a workspace inbox.");
   const { data: ws } = await db.from("workspaces").select("id, name, inbox_token").eq("inbox_token", token).maybeSingle();
   if (!ws) return finish(db, logId, "rejected", "No workspace uses this inbox address (it may have been replaced).");

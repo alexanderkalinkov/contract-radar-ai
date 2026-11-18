@@ -205,8 +205,8 @@ Vercel's 4.5 MB request limit doesn't apply to uploads (the limit is 20 MB per P
 2. **Add environment variables** (same values as your `.env.local`) before the first deploy:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `ANTHROPIC_API_KEY`. Then click *Deploy*.
 3. **Tell Supabase about the new address.** In Supabase, *Authentication → URL Configuration*:
-   - *Site URL*: your production address, e.g. `https://contract-radar-ai.vercel.app`
-   - *Redirect URLs*: add `https://contract-radar-ai.vercel.app/**`, `https://*-<your-vercel-team>.vercel.app/**`
+   - *Site URL*: your production address, e.g. `https://outflow.radivarius.com`
+   - *Redirect URLs*: add `https://outflow.radivarius.com/**`, `https://*-<your-vercel-team>.vercel.app/**`
      (so pull-request previews can confirm emails and password resets too) and keep `http://localhost:3000/**` for local work.
 4. Open the address, create an account (or sign in with your existing one: it's the same Supabase project, so your
    workspace and contracts are already there), and share the link with your partner.

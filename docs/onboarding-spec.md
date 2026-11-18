@@ -78,7 +78,7 @@ Admins who haven't finished setup see a "Bring in your department heads" banner 
 ## Setup notes for production
 
 - **Email volume**: Supabase's built-in email sends only a few messages an hour. For real invites, set custom SMTP (Resend, Postmark…) under Authentication → Emails → SMTP.
-- **Redirect URL**: add `https://contract-radar-ai.vercel.app/auth/confirm` (and `http://localhost:3000/auth/confirm`) under Authentication → URL Configuration → Redirect URLs. If it's missing, links still work: the app forwards sign-in tokens from any page to `/auth/confirm`.
+- **Redirect URL**: add `https://outflow.radivarius.com/auth/confirm` (and `http://localhost:3000/auth/confirm`) under Authentication → URL Configuration → Redirect URLs. If it's missing, links still work: the app forwards sign-in tokens from any page to `/auth/confirm`.
 - **Optional**: `SUPABASE_SERVICE_ROLE_KEY` (server only, never `NEXT_PUBLIC_`) switches the email to Supabase's proper invite template.
 
 ## Later

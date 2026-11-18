@@ -27,7 +27,7 @@ It adds a `renewal_alerts` on/off switch to workspaces and a `renewal_alerts` lo
 | `RESEND_API_KEY` | Resend → API Keys → Create (Sending access). The same Resend account Supabase uses for SMTP. |
 | `EMAIL_FROM` | `Contract Radar <alerts@your-domain.com>`, on a domain verified in Resend. |
 | `EMAIL_REPLY_TO` | Optional, e.g. `support@your-domain.com`. |
-| `APP_URL` | The app's address, e.g. `https://contract-radar-ai.vercel.app`. Links and the logo in emails use it. |
+| `APP_URL` | The app's address, e.g. `https://outflow.radivarius.com`. Links and the logo in emails use it. |
 | `CRON_SECRET` | Any long random string (`openssl rand -hex 32`). Vercel Cron sends it to the job automatically. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API keys → service_role / secret. Server only. |
 | `RENEWAL_ALERT_DAYS` | Optional. Default `90,60,30`. Add `7` for a last-week reminder: `90,60,30,7`. |
@@ -59,9 +59,9 @@ To change the wording or rebrand, edit `src/lib/email/auth-templates.ts` and run
 Test without sending anything:
 
 ```bash
-curl -H "Authorization: Bearer $CRON_SECRET" "https://contract-radar-ai.vercel.app/api/cron/renewal-alerts?dry=1"
+curl -H "Authorization: Bearer $CRON_SECRET" "https://outflow.radivarius.com/api/cron/renewal-alerts?dry=1"
 # pretend it's another day:
-curl -H "Authorization: Bearer $CRON_SECRET" "https://contract-radar-ai.vercel.app/api/cron/renewal-alerts?dry=1&today=2027-01-15"
+curl -H "Authorization: Bearer $CRON_SECRET" "https://outflow.radivarius.com/api/cron/renewal-alerts?dry=1&today=2027-01-15"
 ```
 
 ## Renewal calendar

@@ -19,7 +19,7 @@ How Contract Radar protects customer data, and what to check when adding feature
 - Email confirmations: on (required: invites match by email).
 - Minimum password length: 8 or more.
 - Leaked password protection: switch on when the project is on Pro (the app check above covers the Free plan).
-- Add `https://contract-radar-ai.vercel.app/**` (and later the real domain) to Redirect URLs, and nothing else.
+- Add `https://outflow.radivarius.com/**` to Redirect URLs (plus `http://localhost:3000/**` for local work), and nothing else.
 
 ## Two-step sign-in (authenticator apps)
 - Anyone can turn it on under My account → Two-step sign-in (Supabase Auth TOTP: scan a QR code, confirm a code).
