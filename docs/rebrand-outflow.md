@@ -18,5 +18,5 @@ Left on purpose: internal ids that would break things if renamed (`contract-rada
 1. **Vercel → Environment variables:** change the name part of `EMAIL_FROM` to `Outflow <alerts@outflow.radivarius.com>` and redeploy.
 2. **Supabase → Authentication → Emails → SMTP settings:** set the sender name to `Outflow`.
 3. **Supabase → Authentication → Emails → Templates:** paste the 6 regenerated templates and new subjects from `supabase/templates/README.md`.
-4. **Stripe:** run `npm run stripe:setup -- https://outflow.radivarius.com` once. It renames the existing products to "Outflow <plan>" (for example "Outflow Growth") without touching subscriptions. Also set the public business name under Stripe → Settings → Public details.
+4. **Stripe:** rename the products in Stripe → Product catalog (e.g. "Outflow Growth"), and set the public business name under Settings → Public details. The next `npm run stripe:setup` (for example at go-live) also renames them automatically without touching subscriptions.
 5. **Onboarding video:** the narration still says "Contract Radar". Re-record when convenient.
