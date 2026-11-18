@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, H2, PageHeader, btnPrimary } from "@/components/ui";
-import { HelpCard, PasswordCard, ProfileCard, SignOutCard } from "@/components/help/AccountSettings";
+import { HelpCard, PasswordCard, ProfileCard, SignOutCard, TwoStepCard } from "@/components/help/AccountSettings";
 import { getSession } from "@/lib/server/workspace";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +15,7 @@ export default async function AccountPage() {
           <>
             <ProfileCard jobTitle={session.jobTitle} />
             <PasswordCard />
+            <TwoStepCard />
             <HelpCard />
             <SignOutCard />
           </>

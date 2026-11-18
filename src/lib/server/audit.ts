@@ -33,7 +33,7 @@ export async function logAudit(supabase: Client, workspaceId: string, e: AuditEv
 }
 
 /** One "signed in" row in each of the user's workspaces. */
-export async function logSignIn(supabase: Client, method: "password" | "sso" | "email_link"): Promise<void> {
+export async function logSignIn(supabase: Client, method: "password" | "password+totp" | "sso" | "email_link"): Promise<void> {
   try {
     await supabase.rpc("log_sign_in", { method });
   } catch {

@@ -25,6 +25,8 @@ export interface AdminUser {
   provider: string;
   status: UserStatus;
   platformAdmin: boolean;
+  /** Two-step sign-in (authenticator app) is on. */
+  twoStep: boolean;
   memberships: { workspaceId: string; workspaceName: string; role: Role; isDemo: boolean }[];
 }
 
@@ -70,6 +72,7 @@ function toAdminUser(u: User, members: MemberRow[], wsById: Map<string, WsRow>, 
     bannedUntil: (u as User & { banned_until?: string | null }).banned_until ?? null,
     provider: String(u.app_metadata?.provider ?? "email"),
     status: statusOf(u),
+    twoStep: (u.factors ?? []).some((f) => f.status === "verified"),
     platformAdmin: admins.has(u.id) || (email !== "" && isPlatformAdminEmailFromEnv(email)),
     memberships: members
       .filter((m) => m.user_id === u.id)

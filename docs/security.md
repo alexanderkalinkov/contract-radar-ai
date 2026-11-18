@@ -21,6 +21,18 @@ How Contract Radar protects customer data, and what to check when adding feature
 - Leaked password protection: switch on when the project is on Pro (the app check above covers the Free plan).
 - Add `https://contract-radar-ai.vercel.app/**` (and later the real domain) to Redirect URLs, and nothing else.
 
+## Two-step sign-in (authenticator apps)
+- Anyone can turn it on under My account → Two-step sign-in (Supabase Auth TOTP: scan a QR code, confirm a code).
+  Turning it off needs a current code. Not offered to SSO users (their company handles it).
+- Sign-in asks for the code at `/login/mfa` after the password. `src/lib/supabase/middleware.ts` sends any session that
+  still needs its code (aal1 with a verified factor) to that page, and answers API calls with 401.
+- Database: migration `20261118120000_two_step_signin.sql` adds `public.mfa_ok()` and a restrictive policy on every table
+  (and contract files) so an aal1 session of someone with two-step sign-in sees nothing, even through the Supabase API.
+  The approval RPCs and `log_audit` check it too. **New tables with policies for `authenticated` need the same
+  restrictive policy**: re-running that migration adds it to every table.
+- Lost phone: a platform admin opens the user in /admin and clicks "Turn off two-step sign-in" after checking it's them.
+- Code attempts are rate limited (8 per account per 15 min at sign-in).
+
 ## Database
 - Row-level security is on for every table; access goes through `is_workspace_member`, `is_workspace_owner`, `can_write`,
   `can_approve_renewals` (SECURITY DEFINER with `search_path = ''`).

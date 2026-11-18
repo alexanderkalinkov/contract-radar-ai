@@ -29,6 +29,7 @@ export default async function AdminUser({ params }: { params: Promise<{ id: stri
   const facts: [string, React.ReactNode][] = [
     ["Name", u.name || "—"],
     ["Signs in with", u.provider],
+    ["Two-step sign-in", u.twoStep ? "On" : "Off"],
     ["Account created", when(u.createdAt)],
     ["Email confirmed", u.confirmedAt ? when(u.confirmedAt) : "Not yet"],
     ["Last sign-in", u.lastSignInAt ? `${when(u.lastSignInAt)} (${ago(u.lastSignInAt)})` : "Never"],
@@ -63,6 +64,13 @@ export default async function AdminUser({ params }: { params: Promise<{ id: stri
           <H2>Actions</H2>
           <div className="flex flex-wrap gap-2">
             <ActionButton payload={{ action: "user.reset_password", userId: u.id }} label="Send password reset" />
+            {u.twoStep && (
+              <ActionButton
+                payload={{ action: "user.reset_mfa", userId: u.id }}
+                label="Turn off two-step sign-in"
+                confirm="Only do this after you've checked it's really them (for example a call or a reply from their work email). They'll sign in with just their password until they set it up again."
+              />
+            )}
             {(u.status === "unconfirmed" || u.status === "invited") && (
               <ActionButton payload={{ action: "user.resend_invite", userId: u.id }} label="Resend sign-in link" tone="brand" />
             )}
