@@ -1,6 +1,6 @@
 # Onboarding video
 
-A 6½-minute guided tour for new users (re-recorded 2026-11-17 for the grouped sidebar, first sign-in tour and Help & support), recorded from the real app with a test account and the Northwind demo workspace.
+A 6½-minute guided tour for new users (re-recorded 2026-11-17 for the grouped sidebar, first sign-in tour and Help & support, and again on 2026-11-18 for the Outflow rebrand: new name in the narration, Outflow logo and Sora title cards), recorded from the real app with a test account and the Northwind demo workspace.
 
 - **Video:** `contract-radar-onboarding.mp4` (1440x900). Kept out of git because of its size. The Help page and the first sign-in tour play it from the public Supabase Storage bucket `help` (`help/contract-radar-onboarding.mp4`, a 34 MB crf 22 copy). A 24 MB sharing copy and the edit scripts (`edit/build.py`, `edit/upload.mjs`) are on Alex's Mac in `Claude Code/onboarding-video/`.
 - **Voice:** Kokoro text-to-speech (voice `af_heart`), one clip per scene.
