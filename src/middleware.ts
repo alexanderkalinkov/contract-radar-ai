@@ -62,5 +62,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|samples/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|pdf)$).*)"],
+  // Static files and the crawler files (robots.txt, sitemap.xml, llms.txt, manifest) skip the session check.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|samples/|brand/|robots.txt|sitemap.xml|llms.txt|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|pdf)$).*)"],
 };

@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/page-meta";
 import { A, ContactEmail, H, LegalShell, P, UL } from "@/components/legal/LegalShell";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "Data processing agreement · Outflow",
-  description: "Outflow's GDPR Article 28 data processing agreement for business customers.",
-};
+export const metadata: Metadata = pageMeta({ path: "/legal/dpa", title: "Data processing agreement", description: "Outflow's GDPR Article 28 data processing agreement for business customers." });
 
 export default function DpaPage() {
   return (

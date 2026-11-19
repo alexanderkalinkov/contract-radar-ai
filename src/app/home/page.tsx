@@ -1,28 +1,36 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { IconCal, IconCheck, IconClock, IconDoc, IconMail, IconPlug, IconSpark, IconTrend, IconUsers, Logo } from "@/components/icons";
+import { IconCal, IconCheck, IconClock, IconDoc, IconMail, IconPlug, IconSpark, IconTrend, IconUsers } from "@/components/icons";
 import { SiteFooter } from "@/components/legal/SiteFooter";
+import { FaqList, MarketingHeader, getStartCta } from "@/components/marketing/MarketingHeader";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { btnPrimary, cx } from "@/components/ui";
-import { getSession } from "@/lib/server/workspace";
+import { PLANS } from "@/lib/billing/plans";
+import { getPublicPrices } from "@/lib/server/public-prices";
+import { pageMeta } from "@/lib/page-meta";
+import { HOME_FAQ, SITE, SOLUTIONS } from "@/lib/site";
+import { faqPage, graph, organization, softwareApplication, webPage, website } from "@/lib/structured-data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
-export const metadata: Metadata = {
-  title: "Outflow: stop overpaying for SaaS",
-  description:
-    "Outflow finds every tool your company pays for, catches auto-renewals and price hikes before the notice deadline, and tells the C-level what to keep, cut or renegotiate.",
-};
+const TITLE = "Outflow: SaaS renewal and price-hike tracking for finance teams";
+const DESCRIPTION =
+  "Outflow finds every SaaS tool your company pays for, reads the contracts with AI, and warns you before auto-renewals and price hikes lock in. Know what to keep, cut seats, consolidate or renegotiate.";
+
+// Signed-out visitors see this page at / (the middleware rewrites to /home), so / is the canonical address.
+export const metadata: Metadata = pageMeta({ path: "/", title: TITLE, description: DESCRIPTION, absoluteTitle: true });
 
 // Public marketing page. Signed-out visitors to / are rewritten here by the middleware.
 export default async function LandingPage() {
-  const session = await getSession();
-  const signedIn = Boolean(session);
-  // Without Supabase the app runs as an open demo, so every CTA goes straight in.
-  const startHref = signedIn || !isSupabaseConfigured ? "/" : "/login?mode=signup";
-  const startLabel = signedIn ? "Open your dashboard" : isSupabaseConfigured ? "Start free audit" : "Try the demo";
+  const [{ signedIn, href: startHref, label: startLabel }, prices] = await Promise.all([getStartCta(), getPublicPrices()]);
+  const offers = PLANS.map((p) => {
+    const m = prices.find((x) => x.plan === p.id && x.interval === "month");
+    return { name: `${SITE.name} ${p.name}, monthly`, price: m?.amount ?? p.fallback.month, currency: m?.currency ?? "EUR" };
+  });
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <SiteHeader signedIn={signedIn} startHref={startHref} startLabel={startLabel} />
+      <JsonLd data={graph(organization, website, softwareApplication(offers), webPage("/", TITLE, DESCRIPTION), faqPage(HOME_FAQ, "/"))} />
+      <MarketingHeader />
       <main className="flex flex-col">
         <Hero startHref={startHref} startLabel={startLabel} />
         <IndustryNumbers />
@@ -30,36 +38,12 @@ export default async function LandingPage() {
         <HowItWorks />
         <DashboardPreview />
         <Extras />
+        <UseCases />
+        <Faq />
         <FinalCta startHref={startHref} startLabel={startLabel} signedIn={signedIn} />
       </main>
       <SiteFooter />
     </div>
-  );
-}
-
-function SiteHeader({ signedIn, startHref, startLabel }: { signedIn: boolean; startHref: string; startLabel: string }) {
-  return (
-    <header className="bg-navy text-white">
-      <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-4 py-4 sm:px-8">
-        <Link href="/" className="flex items-center gap-2.5 text-white">
-          <Logo />
-          <span className="font-brand text-lg font-semibold">Outflow</span>
-        </Link>
-        <nav aria-label="Main" className="flex items-center gap-2 sm:gap-5">
-          <a href="#how" className="hidden text-sm text-navy-text hover:text-white md:inline">How it works</a>
-          <a href="#features" className="hidden text-sm text-navy-text hover:text-white md:inline">What it catches</a>
-          {!signedIn && isSupabaseConfigured && (
-            <Link href="/login" className="inline-flex min-h-10 items-center rounded-[10px] px-3 text-sm font-semibold text-white hover:bg-navy-hover">
-              Log in
-            </Link>
-          )}
-          <Link href={startHref} className={cx(btnPrimary, "min-h-10 px-3.5 sm:px-4")}>
-            <span className="sm:hidden">{signedIn ? "Dashboard" : "Start free"}</span>
-            <span className="hidden sm:inline">{startLabel}</span>
-          </Link>
-        </nav>
-      </div>
-    </header>
   );
 }
 
@@ -379,6 +363,46 @@ function FinalCta({ startHref, startLabel, signedIn }: { startHref: string; star
             </Link>
           )}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function UseCases() {
+  return (
+    <section aria-labelledby="usecases-title" className="bg-canvas py-16 sm:py-20">
+      <div className="mx-auto max-w-[1180px] px-4 sm:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex max-w-[640px] flex-col gap-2">
+            <p className="m-0 text-[13px] font-semibold tracking-wide text-brand uppercase">Use cases</p>
+            <h2 id="usecases-title" className="m-0 font-display text-[28px] leading-tight font-bold sm:text-[34px]">One place for every SaaS contract decision</h2>
+          </div>
+          <Link href="/solutions" className="text-sm font-semibold text-brand hover:underline">All solutions →</Link>
+        </div>
+        <ul className="m-0 mt-8 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
+          {SOLUTIONS.map((s) => (
+            <li key={s.slug}>
+              <Link href={`/solutions/${s.slug}`} className="flex h-full flex-col gap-2 rounded-2xl border border-line bg-white p-5 hover:border-brand">
+                <h3 className="m-0 font-display text-[17px] font-semibold text-ink">{s.title}</h3>
+                <p className="m-0 text-[14px] leading-relaxed text-muted">{s.h1}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function Faq() {
+  return (
+    <section id="faq" aria-labelledby="faq-title" className="scroll-mt-4 bg-white py-16 sm:py-20">
+      <div className="mx-auto flex max-w-[860px] flex-col gap-8 px-4 sm:px-8">
+        <div className="flex flex-col gap-3 text-center">
+          <p className="m-0 text-[13px] font-semibold tracking-wide text-brand uppercase">FAQ</p>
+          <h2 id="faq-title" className="m-0 font-display text-[28px] leading-tight font-bold sm:text-[34px]">Questions finance teams ask</h2>
+        </div>
+        <FaqList items={HOME_FAQ} />
       </div>
     </section>
   );

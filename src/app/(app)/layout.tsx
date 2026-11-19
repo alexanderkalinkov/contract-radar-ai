@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import { BillingGate } from "@/components/billing/BillingGate";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { SectionTabs } from "@/components/nav";
 import { TourModal } from "@/components/help/Tour";
 import { getSession } from "@/lib/server/workspace";
+
+// The signed-in app: private workspace data, never in search results.
+export const metadata: Metadata = { title: { absolute: "Outflow" }, robots: { index: false, follow: false } };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();

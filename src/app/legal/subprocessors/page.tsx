@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/page-meta";
 import { A, ContactEmail, H, LegalShell, P, ProcessorTable } from "@/components/legal/LegalShell";
 import { INTEGRATIONS, SUBPROCESSORS } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "Subprocessors · Outflow",
-  description: "The service providers that process customer data for Outflow, what for and where.",
-};
+export const metadata: Metadata = pageMeta({ path: "/legal/subprocessors", title: "Subprocessors", description: "The service providers that process customer data for Outflow, what for and where." });
 
 export default function SubprocessorsPage() {
   return (
