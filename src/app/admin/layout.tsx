@@ -5,7 +5,7 @@ import { AdminTabs, AdminToast } from "@/components/admin/AdminUi";
 import { IconShield, Logo } from "@/components/icons";
 import { getPlatformCtx } from "@/lib/server/platform";
 
-export const metadata: Metadata = { title: "Platform admin · Outflow", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: { absolute: "Platform admin · Outflow" }, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 /**

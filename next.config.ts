@@ -41,6 +41,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Put <title>, description and Open Graph tags in the initial <head> for every visitor, not streamed later:
+  // many crawlers and link previewers (AI assistants, Slack, LinkedIn) don't run JavaScript.
+  htmlLimitedBots: /.*/,
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/icons";
 import { LEGAL, LEGAL_PAGES } from "@/lib/legal";
+import { SOLUTIONS } from "@/lib/site";
 
 /** Public footer for the landing and legal pages. */
 export function SiteFooter() {
@@ -14,6 +15,14 @@ export function SiteFooter() {
           </span>
           <span>SaaS contract and price-hike tracking for finance teams.</span>
         </div>
+        <nav aria-label="Product" className="flex flex-wrap gap-x-5 gap-y-2 border-t border-line-soft pt-4">
+          <Link href="/pricing" className="text-ink-2 hover:text-ink hover:underline">Pricing</Link>
+          <Link href="/solutions" className="text-ink-2 hover:text-ink hover:underline">Solutions</Link>
+          {SOLUTIONS.map((s) => (
+            <Link key={s.slug} href={`/solutions/${s.slug}`} className="text-ink-2 hover:text-ink hover:underline">{s.nav}</Link>
+          ))}
+          <Link href="/#faq" className="text-ink-2 hover:text-ink hover:underline">FAQ</Link>
+        </nav>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-4">
           <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
             {LEGAL_PAGES.map((p) => (

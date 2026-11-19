@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/page-meta";
 import { A, ContactEmail, H, LegalShell, P, UL } from "@/components/legal/LegalShell";
 import { TRIAL_DAYS } from "@/lib/billing/plans";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "Terms of service · Outflow",
-  description: "The agreement between Outflow and the businesses that use it.",
-};
+export const metadata: Metadata = pageMeta({ path: "/legal/terms", title: "Terms of service", description: "The agreement between Outflow and the businesses that use it." });
 
 export default function TermsPage() {
   return (

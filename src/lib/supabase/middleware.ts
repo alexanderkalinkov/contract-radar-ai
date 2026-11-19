@@ -2,9 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config";
 
-const PUBLIC_PATHS = ["/home", "/login", "/auth", "/samples", "/legal"];
+const PUBLIC_PATHS = ["/home", "/login", "/auth", "/samples", "/legal", "/pricing", "/solutions"];
 // Reachable before the two-step code has been entered.
-const MFA_FREE_PATHS = ["/login", "/auth/signout", "/auth/callback", "/auth/confirm", "/legal", "/home", "/samples", "/api/errors", "/api/stripe/webhook", "/api/inbound/resend", "/api/imports/worker", "/api/cron"];
+const MFA_FREE_PATHS = ["/login", "/auth/signout", "/auth/callback", "/auth/confirm", "/legal", "/home", "/pricing", "/solutions", "/samples", "/api/errors", "/api/stripe/webhook", "/api/inbound/resend", "/api/imports/worker", "/api/cron"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/page-meta";
 import { A, ContactEmail, H, LegalShell, P, UL } from "@/components/legal/LegalShell";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "Privacy policy · Outflow",
-  description: "How Outflow collects, uses and protects personal data, under the EU GDPR.",
-};
+export const metadata: Metadata = pageMeta({ path: "/legal/privacy", title: "Privacy policy", description: "How Outflow collects, uses and protects personal data, under the EU GDPR." });
 
 export default function PrivacyPage() {
   return (

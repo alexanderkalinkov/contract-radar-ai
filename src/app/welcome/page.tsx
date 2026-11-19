@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ConnectSources } from "@/components/ConnectSources";
 import { Logo } from "@/components/icons";
 
 // First-login onboarding (spec §5.1): no sidebar, just the setup steps.
+export const metadata: Metadata = { title: "Welcome", robots: { index: false, follow: false } };
+
 export default function WelcomePage() {
   return (
     <div className="flex min-h-screen flex-col">
