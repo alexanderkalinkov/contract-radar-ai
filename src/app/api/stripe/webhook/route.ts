@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe, syncSubscription } from "@/lib/server/billing";
+import { syncSavingsInvoice } from "@/lib/server/savings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Stripe sends subscription changes here (docs/billing-setup.md). Each one is copied to workspace_billing.
 // Events to send: checkout.session.completed, customer.subscription.created, .updated, .deleted, .paused, .resumed,
-// invoice.paid, invoice.payment_failed.
+// invoice.paid, invoice.payment_failed, invoice.voided, invoice.marked_uncollectible.
+// Savings-fee invoices (one-off, no subscription) update the savings ledger instead.
 export async function POST(req: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
@@ -20,6 +22,14 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(await req.text(), signature, secret);
   } catch (e) {
     return NextResponse.json({ error: `Bad signature: ${(e as Error).message}` }, { status: 400 });
+  }
+
+  if (event.type === "invoice.paid" || event.type === "invoice.payment_failed" || event.type === "invoice.voided" || event.type === "invoice.marked_uncollectible") {
+    try {
+      if (await syncSavingsInvoice(event.data.object, event.type)) return NextResponse.json({ received: true, savings: event.type });
+    } catch (e) {
+      return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    }
   }
 
   let subscriptionId: string | null = null;

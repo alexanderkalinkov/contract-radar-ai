@@ -31,7 +31,14 @@ type Tab = {
 type Section = { label: string; Icon: IconType; tabs: Tab[] };
 
 export const SECTIONS: Section[] = [
-  { label: "Savings", Icon: IconHome, tabs: [{ href: "/", label: "Savings" }] },
+  {
+    label: "Savings",
+    Icon: IconHome,
+    tabs: [
+      { href: "/", label: "Opportunities" },
+      { href: "/savings", label: "Realized savings", cloudOnly: true },
+    ],
+  },
   { label: "Leadership view", Icon: IconChart, tabs: [{ href: "/insights", label: "Leadership view", leadersOnly: true }] },
   {
     label: "Contracts",

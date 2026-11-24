@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { lookupKey, type Interval, type PlanId } from "@/lib/billing/plans";
+import { isPlanId, lookupKey, type Interval } from "@/lib/billing/plans";
 import { requireSession } from "@/lib/server/api";
 import { adminClient } from "@/lib/server/admin";
 import { appOrigin, getBillingRowAdmin, getStripe } from "@/lib/server/billing";
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   if (!db) return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is missing, so billing can't be saved." }, { status: 503 });
 
   const body = (await req.json().catch(() => ({}))) as { plan?: unknown; interval?: unknown };
-  const plan = ["starter", "growth", "business"].includes(String(body.plan)) ? (body.plan as PlanId) : null;
+  const plan = isPlanId(body.plan) ? body.plan : null;
   const interval: Interval = body.interval === "year" ? "year" : "month";
   if (!plan) return NextResponse.json({ error: "Pick a plan." }, { status: 400 });
 

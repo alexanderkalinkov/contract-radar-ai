@@ -18,7 +18,7 @@ export const LEGAL = {
   /** The app's public address. Falls back to the current Vercel URL. */
   appUrl: (process.env.APP_URL?.trim() || "https://outflow.radivarius.com").replace(/\/$/, ""),
   /** Date shown as "Last updated". Change it whenever a page changes in substance. */
-  lastUpdated: "16 November 2026",
+  lastUpdated: "24 November 2026",
   /** Shown as a banner on every legal page until a lawyer has reviewed them. Set LEGAL_REVIEWED=true to hide it. */
   isDraft: process.env.LEGAL_REVIEWED !== "true",
 };

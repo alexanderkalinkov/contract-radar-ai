@@ -5,7 +5,8 @@ import { SiteFooter } from "@/components/legal/SiteFooter";
 import { FaqList, MarketingHeader, getStartCta } from "@/components/marketing/MarketingHeader";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { btnPrimary, cx } from "@/components/ui";
-import { PLANS } from "@/lib/billing/plans";
+import { ALL_PLANS } from "@/lib/billing/plans";
+import { FEE_RATE } from "@/lib/billing/savings";
 import { getPublicPrices } from "@/lib/server/public-prices";
 import { pageMeta } from "@/lib/page-meta";
 import { HOME_FAQ, SITE, SOLUTIONS } from "@/lib/site";
@@ -22,7 +23,7 @@ export const metadata: Metadata = pageMeta({ path: "/", title: TITLE, descriptio
 // Public marketing page. Signed-out visitors to / are rewritten here by the middleware.
 export default async function LandingPage() {
   const [{ signedIn, href: startHref, label: startLabel }, prices] = await Promise.all([getStartCta(), getPublicPrices()]);
-  const offers = PLANS.map((p) => {
+  const offers = ALL_PLANS.map((p) => {
     const m = prices.find((x) => x.plan === p.id && x.interval === "month");
     return { name: `${SITE.name} ${p.name}, monthly`, price: m?.amount ?? p.fallback.month, currency: m?.currency ?? "EUR" };
   });
@@ -68,7 +69,10 @@ function Hero({ startHref, startLabel }: { startHref: string; startLabel: string
               See how it works
             </a>
           </div>
-          <p className="m-0 text-[13px] text-navy-muted">Free audit of your first 3 contracts. No credit card.</p>
+          <p className="m-0 text-[13px] text-navy-muted">
+            Free audit of your first 3 contracts. No credit card. Then pay {Math.round(FEE_RATE * 100)}% of what we save you:{" "}
+            <Link href="/pricing" className="underline underline-offset-2 hover:text-white">no savings, no fee</Link>.
+          </p>
         </div>
         <HeroCard />
       </div>
@@ -354,7 +358,9 @@ function FinalCta({ startHref, startLabel, signedIn }: { startHref: string; star
     <section className="bg-navy py-16 text-white sm:py-20">
       <div className="mx-auto flex max-w-[760px] flex-col items-center gap-5 px-4 text-center sm:px-8">
         <h2 className="m-0 font-display text-[30px] leading-tight font-bold sm:text-[38px]">Find out what your next renewal really costs.</h2>
-        <p className="m-0 text-[17px] text-navy-text">Upload 3 contracts and get a free audit of notice deadlines, price caps and seat waste.</p>
+        <p className="m-0 text-[17px] text-navy-text">
+          Upload 3 contracts and get a free audit of notice deadlines, price caps and seat waste. After that, pay a share of what you save, or a flat plan.
+        </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link href={startHref} className={cx(btnPrimary, "min-h-12 px-5 text-[15px]")}>{startLabel}</Link>
           {!signedIn && isSupabaseConfigured && (

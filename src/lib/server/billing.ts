@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import Stripe from "stripe";
-import { lookupKey, planById, planFromLookupKey, PLANS, TRIAL_DAYS, TRIAL_PLAN, type BillingSummary, type Interval, type PlanId } from "@/lib/billing/plans";
+import { ALL_PLANS, isPlanId, lookupKey, planById, planFromLookupKey, TRIAL_DAYS, TRIAL_PLAN, type BillingSummary, type Interval, type PlanId } from "@/lib/billing/plans";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { adminClient } from "./admin";
@@ -111,7 +111,7 @@ export interface PlanPrice {
 
 /** Live prices from Stripe by lookup key, with the fallback amounts for anything not set up yet. */
 export async function getPrices(): Promise<PlanPrice[]> {
-  const keys = PLANS.flatMap((p) => (["month", "year"] as Interval[]).map((i) => lookupKey(p.id, i)));
+  const keys = ALL_PLANS.flatMap((p) => (["month", "year"] as Interval[]).map((i) => lookupKey(p.id, i)));
   const found = new Map<string, Stripe.Price>();
   const stripe = getStripe();
   if (stripe) {
@@ -122,7 +122,7 @@ export async function getPrices(): Promise<PlanPrice[]> {
       // Bad key or network: show the fallback amounts.
     }
   }
-  return PLANS.flatMap((p) =>
+  return ALL_PLANS.flatMap((p) =>
     (["month", "year"] as Interval[]).map((interval) => {
       const pr = found.get(lookupKey(p.id, interval));
       return {
@@ -140,7 +140,7 @@ function planOfPrice(price: Stripe.Price): { plan: PlanId; interval: Interval } 
   const fromKey = planFromLookupKey(price.lookup_key);
   if (fromKey) return fromKey;
   const meta = price.metadata?.plan;
-  if (meta === "starter" || meta === "growth" || meta === "business") {
+  if (isPlanId(meta)) {
     return { plan: meta, interval: price.recurring?.interval === "year" ? "year" : "month" };
   }
   return null;
