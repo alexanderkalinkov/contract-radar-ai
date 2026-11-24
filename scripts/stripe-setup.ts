@@ -7,7 +7,7 @@
 // Reads STRIPE_SECRET_KEY from .env.local. Use the test key (sk_test_...) until you go live, then run it again
 // with the live key: test and live mode have separate products, prices, portal settings and webhooks.
 import Stripe from "stripe";
-import { lookupKey, PLANS, type Interval } from "../src/lib/billing/plans";
+import { ALL_PLANS as PLANS, lookupKey, type Interval } from "../src/lib/billing/plans";
 
 const key = process.env.STRIPE_SECRET_KEY?.trim();
 if (!key) {
@@ -27,6 +27,8 @@ const WEBHOOK_EVENTS: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
   "customer.subscription.resumed",
   "invoice.paid",
   "invoice.payment_failed",
+  "invoice.voided",
+  "invoice.marked_uncollectible",
 ];
 
 async function main() {

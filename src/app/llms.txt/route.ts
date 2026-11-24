@@ -1,5 +1,6 @@
 import { HOME_FAQ, SITE, SOLUTIONS, absoluteUrl } from "@/lib/site";
-import { PLANS } from "@/lib/billing/plans";
+import { PLANS, SAVINGS_PLAN } from "@/lib/billing/plans";
+import { FEE_CAP, FEE_RATE, PLATFORM_FEE } from "@/lib/billing/savings";
 
 // llms.txt (https://llmstxt.org): a plain-text summary of Outflow for AI assistants and answer engines,
 // built from the same facts as the public pages so it never drifts from them.
@@ -27,6 +28,7 @@ export function GET() {
     "## Pricing",
     "",
     "- Free audit of the first 3 contracts and a 14-day free trial, no credit card needed.",
+    `- ${SAVINGS_PLAN.name} (no savings, no fee): ${Math.round(FEE_RATE * 100)}% of confirmed first-year savings, capped at EUR ${FEE_CAP.toLocaleString("en-US")} per saving, plus a EUR ${PLATFORM_FEE.month} a month platform fee that is credited against savings fees. Only savings that came from an Outflow recommendation count, and the customer confirms each one.`,
     ...PLANS.map(
       (p) =>
         `- ${p.name}: ${p.blurb} ${p.contracts === null ? "Unlimited contracts" : `${p.contracts} contracts`}, ${p.people === null ? "unlimited people" : `${p.people} people`}.`,

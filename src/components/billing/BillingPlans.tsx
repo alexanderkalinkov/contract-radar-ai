@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PLANS, type BillingSummary, type Interval, type PlanId } from "@/lib/billing/plans";
+import Link from "next/link";
+import { planById, PLANS, SAVINGS_PLAN, type BillingSummary, type Interval, type Plan, type PlanId } from "@/lib/billing/plans";
+import { FEE_CAP, FEE_RATE, pct } from "@/lib/billing/savings";
 import { btnGhost, btnPrimary, Card, cx, H2, Segmented } from "@/components/ui";
 
 interface PlanPrice {
@@ -111,6 +113,19 @@ export function BillingPlans({
         />
       </div>
 
+      <SavingsPlanCard
+        plan={SAVINGS_PLAN}
+        price={price("savings", interval)}
+        interval={interval}
+        current={subscribed && billing.plan === "savings" && billing.interval === interval}
+        isAdmin={isAdmin}
+        busy={busy}
+        configured={configured}
+        label={subscribed ? "Switch to Savings share" : billing.state === "trial" ? "Choose Savings share" : "Subscribe to Savings share"}
+        onChoose={() => (subscribed ? go("/api/billing/portal", undefined, "savings") : go("/api/billing/checkout", { plan: "savings", interval }, "savings"))}
+      />
+
+      <p className="m-0 -mb-2 text-sm font-semibold text-ink-2">Or a flat plan, for a predictable bill</p>
       <div className="grid gap-4 md:grid-cols-3">
         {PLANS.map((plan) => {
           const p = price(plan.id, interval);
@@ -173,7 +188,7 @@ export function BillingPlans({
 }
 
 function statusTitle(b: BillingSummary): string {
-  const plan = PLANS.find((p) => p.id === b.plan)?.name;
+  const plan = planById(b.plan)?.name;
   switch (b.state) {
     case "off":
       return "No plan needed";
@@ -209,4 +224,65 @@ function statusDetail(b: BillingSummary): string {
     case "past_due":
       return "Stripe couldn't charge your card. Update it in Manage billing to keep the workspace open.";
   }
+}
+
+function SavingsPlanCard({
+  plan,
+  price,
+  interval,
+  current,
+  isAdmin,
+  busy,
+  configured,
+  label,
+  onChoose,
+}: {
+  plan: Plan;
+  price: PlanPrice | undefined;
+  interval: Interval;
+  current: boolean;
+  isAdmin: boolean;
+  busy: string | null;
+  configured: boolean;
+  label: string;
+  onChoose: () => void;
+}) {
+  return (
+    <Card className="grid gap-5 border-brand p-6 md:grid-cols-[1.2fr_1fr]" label={plan.name}>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="m-0 font-display text-lg font-semibold">{plan.name}</h3>
+          <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-dark">No savings, no fee</span>
+        </div>
+        <p className="m-0 text-sm text-muted">{plan.blurb}</p>
+        <ul className="m-0 flex list-none flex-col gap-2 p-0 text-sm text-ink-2">
+          {plan.features.map((f) => (
+            <li key={f} className="flex gap-2">
+              <span aria-hidden="true" className="text-good">✓</span>
+              {f}
+            </li>
+          ))}
+        </ul>
+        <Link href="/savings" className="w-fit text-sm font-semibold text-brand underline underline-offset-2">See your savings ledger</Link>
+      </div>
+      <div className="flex flex-col justify-between gap-4 rounded-xl bg-[#F8FAFC] p-5">
+        <div className="flex flex-col gap-1">
+          <span className="font-display text-[30px] font-semibold tracking-tight">{pct(FEE_RATE)}</span>
+          <span className="text-sm text-muted">of confirmed first-year savings, at most {money(FEE_CAP, "EUR")} per saving</span>
+          {price && (
+            <span className="mt-2 text-sm text-ink-2">
+              plus a {money(price.amount, price.currency)} / {interval === "year" ? "year" : "month"} platform fee, credited against savings fees · excl. VAT
+            </span>
+          )}
+        </div>
+        {current ? (
+          <span className="inline-flex min-h-11 items-center text-sm font-semibold text-good-dark">Your current plan</span>
+        ) : isAdmin ? (
+          <button type="button" className={cx(btnPrimary, "w-full")} disabled={busy !== null || !configured} onClick={onChoose}>
+            {busy === "savings" ? "Opening Stripe…" : label}
+          </button>
+        ) : null}
+      </div>
+    </Card>
+  );
 }

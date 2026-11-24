@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/page-meta";
 import { A, ContactEmail, H, LegalShell, P, UL } from "@/components/legal/LegalShell";
-import { TRIAL_DAYS } from "@/lib/billing/plans";
+import { SAVINGS_PLAN, TRIAL_DAYS } from "@/lib/billing/plans";
+import { FAIR_USE_DOCS_PER_MONTH, FEE_CAP, FEE_RATE, PLATFORM_FEE } from "@/lib/billing/savings";
 import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = pageMeta({ path: "/legal/terms", title: "Terms of service", description: "The agreement between Outflow and the businesses that use it." });
@@ -40,6 +41,34 @@ export default function TermsPage() {
         <li>Prices are shown before checkout and exclude VAT. Reverse charge applies to EU business customers with a valid VAT number.</li>
         <li>You can cancel at any time in Billing; the plan stays active until the end of the period you have paid for. Fees already paid are not refunded, except where the law requires it or we say otherwise in writing.</li>
         <li>We may change prices for future periods with at least 30 days&apos; notice by email.</li>
+      </UL>
+
+      <H id="savings">4a. Savings share plan</H>
+      <P>On the {SAVINGS_PLAN.name} plan you pay a platform fee and a savings fee instead of a flat plan fee:</P>
+      <UL>
+        <li>
+          The platform fee ({PLATFORM_FEE.month} EUR a month or {PLATFORM_FEE.year} EUR a year) is billed in advance like other plans. Platform fees paid in
+          the 12 months before a savings fee is invoiced are credited against it, in the same currency, and each payment is credited only once.
+        </li>
+        <li>
+          The savings fee is {Math.round(FEE_RATE * 100)}% of the first-year value of each confirmed saving, at most {FEE_CAP.toLocaleString("en-US")} in the
+          saving&apos;s currency per saving. It is invoiced once, when the saving is confirmed, and is due within 30 days or charged to the card on file.
+        </li>
+        <li>
+          A saving is the difference between a baseline and the new annual price for the same tool: the baseline is what the next 12 months would have
+          cost without the change (the vendor&apos;s renewal quote or, when there is none, the current price plus the increase the contract allows). It counts
+          only when it followed a recommendation made in the Service: an approved renewal decision, a pushback email drafted by the Service, or a savings
+          opportunity the Service identified.
+        </li>
+        <li>
+          Your workspace admin or Finance approver confirms each saving in the Service before it is billed, and can dispute one that is wrong. Confirmed
+          savings and their evidence are kept in the savings ledger. If a saving is reversed within 90 days (for example the vendor withdraws the price), tell
+          us and we credit the fee.
+        </li>
+        <li>
+          The platform fee covers fair use of up to {FAIR_USE_DOCS_PER_MONTH} new documents a month. If you regularly use far more, we may ask you to move to a
+          flat plan.
+        </li>
         <li>If a payment fails and is not fixed within 14 days, we may suspend the workspace until it is.</li>
       </UL>
 
